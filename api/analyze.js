@@ -16,68 +16,60 @@ function loadSystemPrompt() {
   return `You are a salary negotiation coach for Next Level Negotiation. Analyze the job offer details provided and return a structured negotiation analysis: an offer score (0-100) with a one-line interpretation, at least 3 specific negotiation opportunities with brief explanations and estimated dollar impact where possible, three negotiation strategies (Conservative, Balanced, Aggressive) each with an expected outcome, pros, cons, and risk level, and one clear recommended next step.`;
 }
 
-const RESPONSE_SCHEMA = {
+const STRATEGY_SCHEMA = {
   type: "object",
   properties: {
-    offerScore: {
-      type: "integer",
-      description: "Overall offer strength score from 0 to 100.",
-    },
-    scoreInterpretation: {
-      type: "string",
-      description: "One-line plain-English interpretation of the score.",
-    },
-    opportunities: {
-      type: "array",
-      minItems: 3,
-      items: {
+    name: { type: "string" },
+    expectedOutcome: { type: "string" },
+    pros: { type: "array", items: { type: "string" } },
+    cons: { type: "array", items: { type: "string" } },
+    riskLevel: { type: "string", enum: ["Low", "Medium", "High"] },
+  },
+  required: ["name", "expectedOutcome", "pros", "cons", "riskLevel"],
+};
+
+const ANALYSIS_TOOL = {
+  name: "submit_offer_analysis",
+  description: "Submit the structured offer analysis to the user.",
+  input_schema: {
+    type: "object",
+    properties: {
+      offerScore: {
+        type: "integer",
+        description: "Overall offer strength score from 0 to 100.",
+      },
+      scoreInterpretation: {
+        type: "string",
+        description: "One-line plain-English interpretation of the score.",
+      },
+      opportunities: {
+        type: "array",
+        minItems: 3,
+        items: {
+          type: "object",
+          properties: {
+            title: { type: "string" },
+            explanation: { type: "string" },
+            estimatedImpact: {
+              type: "string",
+              description: "Estimated dollar impact, e.g. '+$8,000-$12,000'. Empty string if not applicable.",
+            },
+          },
+          required: ["title", "explanation", "estimatedImpact"],
+        },
+      },
+      strategies: {
         type: "object",
         properties: {
-          title: { type: "string" },
-          explanation: { type: "string" },
-          estimatedImpact: {
-            type: "string",
-            description:
-              "Estimated dollar impact if applicable, e.g. '+$8,000-$12,000'. Empty string if not applicable.",
-          },
+          conservative: STRATEGY_SCHEMA,
+          balanced: STRATEGY_SCHEMA,
+          aggressive: STRATEGY_SCHEMA,
         },
-        required: ["title", "explanation", "estimatedImpact"],
-        additionalProperties: false,
+        required: ["conservative", "balanced", "aggressive"],
       },
+      recommendedNextStep: { type: "string" },
     },
-    strategies: {
-      type: "object",
-      properties: {
-        conservative: { $ref: "#/$defs/strategy" },
-        balanced: { $ref: "#/$defs/strategy" },
-        aggressive: { $ref: "#/$defs/strategy" },
-      },
-      required: ["conservative", "balanced", "aggressive"],
-      additionalProperties: false,
-    },
-    recommendedNextStep: { type: "string" },
-  },
-  required: [
-    "offerScore",
-    "scoreInterpretation",
-    "opportunities",
-    "strategies",
-    "recommendedNextStep",
-  ],
-  additionalProperties: false,
-  $defs: {
-    strategy: {
-      type: "object",
-      properties: {
-        name: { type: "string" },
-        expectedOutcome: { type: "string" },
-        pros: { type: "array", items: { type: "string" } },
-        cons: { type: "array", items: { type: "string" } },
-        riskLevel: { type: "string", enum: ["Low", "Medium", "High"] },
-      },
-      required: ["name", "expectedOutcome", "pros", "cons", "riskLevel"],
-      additionalProperties: false,
-    },
+    required: ["offerScore", "scoreInterpretation", "opportunities", "strategies", "recommendedNextStep"],
   },
 };
 
@@ -128,16 +120,15 @@ export default async function handler(req, res) {
       max_tokens: 4096,
       system: loadSystemPrompt(),
       messages: [{ role: "user", content: buildUserMessage(form) }],
-      output_config: {
-        format: { type: "json_schema", schema: RESPONSE_SCHEMA },
-      },
+      tools: [ANALYSIS_TOOL],
+      tool_choice: { type: "tool", name: "submit_offer_analysis" },
     });
 
-    const textBlock = response.content.find((b) => b.type === "text");
-    if (!textBlock) {
-      throw new Error("No text response from model.");
+    const toolBlock = response.content.find((b) => b.type === "tool_use");
+    if (!toolBlock) {
+      throw new Error("No tool use response from model.");
     }
-    const analysis = JSON.parse(textBlock.text);
+    const analysis = toolBlock.input;
 
     return res.status(200).json(analysis);
   } catch (err) {
