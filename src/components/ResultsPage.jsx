@@ -5,6 +5,7 @@ import ScoreCard from "./ScoreCard.jsx";
 import OpportunityList from "./OpportunityList.jsx";
 import StrategyCards from "./StrategyCards.jsx";
 import ShareButton from "./ShareButton.jsx";
+import wordmark from "../assets/nln-wordmark.png";
 
 export default function ResultsPage() {
   const [searchParams] = useSearchParams();
@@ -21,7 +22,7 @@ export default function ResultsPage() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 px-6">
+      <div className="min-h-screen flex items-center justify-center bg-navy-50 px-6">
         <div className="text-center">
           <p className="text-lg font-medium text-navy-900 mb-2">
             We couldn't load this result.
@@ -31,7 +32,7 @@ export default function ResultsPage() {
           </p>
           <Link
             to="/"
-            className="inline-block bg-navy-900 text-white rounded-md px-5 py-2.5 font-medium hover:bg-navy-800 transition"
+            className="inline-block bg-navy-900 text-white rounded-md px-5 py-2.5 font-medium hover:bg-navy-600 transition"
           >
             Analyze a New Offer
           </Link>
@@ -43,12 +44,20 @@ export default function ResultsPage() {
   const { form, analysis } = data;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-navy-50">
+      <div className="bg-white border-b border-navy-100">
+        <div className="max-w-3xl mx-auto px-6 py-4">
+          <Link to="/">
+            <img
+              src={wordmark}
+              alt="Next Level Negotiation"
+              className="h-10 sm:h-12 w-auto"
+            />
+          </Link>
+        </div>
+      </div>
       <header className="bg-navy-950 text-white">
         <div className="max-w-3xl mx-auto px-6 py-10">
-          <p className="text-navy-300 text-sm font-medium tracking-wide uppercase mb-2">
-            Next Level Negotiation
-          </p>
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
             Your Offer Analysis
           </h1>

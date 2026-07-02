@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { encodeResult } from "../lib/encodeResult.js";
+import wordmark from "../assets/nln-wordmark.png";
+import icon from "../assets/nln-icon.png";
 
 const INDUSTRIES = [
   "Tech",
@@ -54,6 +56,25 @@ function FieldLabel({ children, required }) {
 const inputClass =
   "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition";
 
+// "145000" -> "145,000". Digits only — for the salary fields.
+function formatSalary(value) {
+  const digits = value.replace(/\D/g, "");
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+// Adds thousands separators to any number typed inside free text,
+// preserving symbols like $ and % and decimal parts:
+// "$15000" -> "$15,000", "10%" -> "10%", "1234.56" -> "1,234.56"
+function formatNumbersInText(value) {
+  return value.replace(/\d[\d,]*(?:\.\d*)?/g, (match) => {
+    const [intPart, decPart] = match.split(".");
+    const grouped = intPart
+      .replace(/,/g, "")
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return decPart !== undefined ? `${grouped}.${decPart}` : grouped;
+  });
+}
+
 export default function OfferForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState(initialState);
@@ -67,7 +88,7 @@ export default function OfferForm() {
   function validate() {
     if (!form.role.trim()) return "Role / job title is required.";
     if (!form.location.trim()) return "Location is required.";
-    if (!form.offerBaseSalary || Number(form.offerBaseSalary) <= 0)
+    if (!form.offerBaseSalary || Number(form.offerBaseSalary.replace(/,/g, "")) <= 0)
       return "Offer base salary is required.";
     if (form.hasBonus && !form.bonusAmount.trim())
       return "Please provide the bonus amount or percentage.";
@@ -108,12 +129,19 @@ export default function OfferForm() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-navy-50">
+      {loading && <LoadingOverlay />}
+      <div className="bg-white border-b border-navy-100">
+        <div className="max-w-3xl mx-auto px-6 py-4">
+          <img
+            src={wordmark}
+            alt="Next Level Negotiation"
+            className="h-10 sm:h-12 w-auto"
+          />
+        </div>
+      </div>
       <header className="bg-navy-950 text-white">
         <div className="max-w-3xl mx-auto px-6 py-10">
-          <p className="text-navy-300 text-sm font-medium tracking-wide uppercase mb-2">
-            Next Level Negotiation
-          </p>
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
             Offer Analyzer
           </h1>
@@ -192,23 +220,23 @@ export default function OfferForm() {
               <div>
                 <FieldLabel>Current Salary</FieldLabel>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   className={inputClass}
                   value={form.currentSalary}
-                  onChange={(e) => update("currentSalary", e.target.value)}
+                  onChange={(e) => update("currentSalary", formatSalary(e.target.value))}
                   placeholder="Optional — for context only"
                 />
               </div>
               <div>
                 <FieldLabel required>Offer Base Salary</FieldLabel>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="numeric"
                   className={inputClass}
                   value={form.offerBaseSalary}
-                  onChange={(e) => update("offerBaseSalary", e.target.value)}
-                  placeholder="e.g. 145000"
+                  onChange={(e) => update("offerBaseSalary", formatSalary(e.target.value))}
+                  placeholder="e.g. 145,000"
                 />
               </div>
             </div>
@@ -227,7 +255,7 @@ export default function OfferForm() {
                   type="text"
                   className={inputClass}
                   value={form.bonusAmount}
-                  onChange={(e) => update("bonusAmount", e.target.value)}
+                  onChange={(e) => update("bonusAmount", formatNumbersInText(e.target.value))}
                   placeholder="Amount or percentage, e.g. $15,000 or 10%"
                 />
               )}
@@ -247,7 +275,7 @@ export default function OfferForm() {
                   type="text"
                   className={inputClass}
                   value={form.signOnBonusAmount}
-                  onChange={(e) => update("signOnBonusAmount", e.target.value)}
+                  onChange={(e) => update("signOnBonusAmount", formatNumbersInText(e.target.value))}
                   placeholder="e.g. $10,000"
                 />
               )}
@@ -267,7 +295,7 @@ export default function OfferForm() {
                   type="text"
                   className={inputClass}
                   value={form.equityAmount}
-                  onChange={(e) => update("equityAmount", e.target.value)}
+                  onChange={(e) => update("equityAmount", formatNumbersInText(e.target.value))}
                   placeholder="Approximate value or number of shares"
                 />
               )}
@@ -336,7 +364,7 @@ export default function OfferForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-navy-900 hover:bg-navy-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-md px-6 py-3.5 transition shadow-sm"
+            className="w-full bg-navy-900 hover:bg-navy-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-md px-6 py-3.5 transition shadow-sm"
           >
             {loading ? "Analyzing your offer…" : "Analyze My Offer"}
           </button>
@@ -346,6 +374,22 @@ export default function OfferForm() {
           Your information is used only to generate your analysis.
         </p>
       </main>
+    </div>
+  );
+}
+
+function LoadingOverlay() {
+  return (
+    <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center px-6 text-center">
+      <img src={icon} alt="NLN" className="h-14 w-auto animate-pulse mb-8" />
+      <div className="h-10 w-10 rounded-full border-4 border-navy-100 border-t-navy-600 animate-spin mb-6" />
+      <p className="text-xl font-serif font-semibold text-navy-900">
+        Analyzing your offer…
+      </p>
+      <p className="text-slate-600 text-sm mt-2 max-w-xs">
+        We're reviewing your compensation details and building your
+        negotiation strategy. This usually takes 15–30 seconds.
+      </p>
     </div>
   );
 }
