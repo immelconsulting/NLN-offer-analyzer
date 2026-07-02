@@ -109,6 +109,16 @@ export default function ResultsPage() {
             ← Analyze another offer
           </Link>
         </div>
+
+        <p className="text-center text-sm text-slate-500">
+          Have more questions about your offer? Reach out at{" "}
+          <a
+            href="mailto:alex@nextlevelnegotiation.com"
+            className="font-medium text-navy-600 hover:text-navy-900 transition"
+          >
+            alex@nextlevelnegotiation.com
+          </a>
+        </p>
       </main>
     </div>
   );
