@@ -65,7 +65,8 @@ async function verifyPayment(sessionId) {
   try {
     const stripe = new Stripe(stripeKey);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (session.payment_status !== "paid") {
+    // "no_payment_required" covers $0 checkouts (e.g. a 100%-off promo code).
+    if (!["paid", "no_payment_required"].includes(session.payment_status)) {
       return { paid: false, error: "This payment hasn't been completed.", status: 402 };
     }
     return { paid: true };
