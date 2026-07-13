@@ -6,6 +6,7 @@ import OpportunityList from "./OpportunityList.jsx";
 import StrategyCards from "./StrategyCards.jsx";
 import ShareButton from "./ShareButton.jsx";
 import wordmark from "../assets/nln-wordmark.png";
+import { STRIPE_PAYMENT_LINK_URL, SCHEDULING_URL } from "../lib/config.js";
 
 export default function ResultsPage() {
   const [searchParams] = useSearchParams();
@@ -82,23 +83,7 @@ export default function ResultsPage() {
           <p className="text-lg">{analysis.recommendedNextStep}</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-dashed border-slate-300 p-6 sm:p-8 text-center">
-          <p className="font-serif font-semibold text-navy-900 text-lg mb-1">
-            Want the exact words to say?
-          </p>
-          <p className="text-slate-600 text-sm mb-4">
-            Generate a full counter-offer script tailored to this strategy —
-            coming soon.
-          </p>
-          <button
-            type="button"
-            disabled
-            title="Coming soon"
-            className="bg-slate-200 text-slate-500 font-medium rounded-md px-6 py-3 cursor-not-allowed"
-          >
-            Generate Counter-Offer Script
-          </button>
-        </div>
+        <NextStepChoice encoded={encoded} />
 
         <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
           <ShareButton />
@@ -110,16 +95,48 @@ export default function ResultsPage() {
           </Link>
         </div>
 
-        <p className="text-center text-sm text-slate-500">
-          Have more questions about your offer? Reach out at{" "}
-          <a
-            href="mailto:alex@nextlevelnegotiation.com"
-            className="font-medium text-navy-600 hover:text-navy-900 transition"
-          >
-            alex@nextlevelnegotiation.com
-          </a>
-        </p>
       </main>
+    </div>
+  );
+}
+
+function NextStepChoice({ encoded }) {
+  function handleGetScript() {
+    // Keep the offer data in this browser so the post-payment page can
+    // generate the script after the round-trip through Stripe.
+    if (encoded) {
+      localStorage.setItem("nln:pendingScript", encoded);
+    }
+    window.location.href = STRIPE_PAYMENT_LINK_URL;
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
+      <p className="font-serif font-semibold text-navy-900 text-xl text-center mb-6">
+        What do you want next — a script you can run yourself, or a
+        negotiator in your corner?
+      </p>
+      <div className="grid sm:grid-cols-2 gap-4">
+        <button
+          type="button"
+          onClick={handleGetScript}
+          className="rounded-lg bg-navy-900 hover:bg-navy-600 text-white p-5 text-center transition"
+        >
+          <span className="block font-semibold">Get my custom script</span>
+          <span className="block text-sm text-navy-100 mt-1">
+            A full counter-offer script written for your exact offer
+          </span>
+        </button>
+        <a
+          href={SCHEDULING_URL}
+          className="rounded-lg border-2 border-navy-900 text-navy-900 hover:bg-navy-50 p-5 text-center transition"
+        >
+          <span className="block font-semibold">Talk to a negotiator</span>
+          <span className="block text-sm text-slate-600 mt-1">
+            Schedule a call and get an expert in your corner
+          </span>
+        </a>
+      </div>
     </div>
   );
 }

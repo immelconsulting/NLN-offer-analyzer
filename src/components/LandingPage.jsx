@@ -1,0 +1,163 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import wordmark from "../assets/nln-wordmark.png";
+
+const STAGES = [
+  {
+    value: "Applying",
+    label: "Applying",
+    description: "I'm sending out applications",
+  },
+  {
+    value: "Interviewing",
+    label: "Interviewing",
+    description: "I'm in the interview process",
+  },
+  {
+    value: "Received an offer",
+    label: "Received an offer",
+    description: "I have an offer in hand",
+  },
+  {
+    value: "Expecting an offer soon",
+    label: "Expecting an offer soon",
+    description: "An offer is likely on its way",
+  },
+];
+
+const HAS_OFFER_STAGES = ["Received an offer", "Expecting an offer soon"];
+
+export default function LandingPage() {
+  const navigate = useNavigate();
+  const [stage, setStage] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleContinue(e) {
+    e.preventDefault();
+    if (!stage) {
+      setError("Please select where you are in your job search.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+
+    const lead = { email: email.trim(), stage };
+    sessionStorage.setItem("nln:lead", JSON.stringify(lead));
+
+    // Store the lead, but never block the visitor on storage problems.
+    try {
+      await fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(lead),
+      });
+    } catch {
+      // Ignore — the visitor continues either way.
+    }
+
+    if (HAS_OFFER_STAGES.includes(stage)) {
+      navigate("/offer");
+    } else {
+      navigate("/thanks");
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-navy-50">
+      <div className="bg-white border-b border-navy-100">
+        <div className="max-w-3xl mx-auto px-6 py-4">
+          <img
+            src={wordmark}
+            alt="Next Level Negotiation"
+            className="h-10 sm:h-12 w-auto"
+          />
+        </div>
+      </div>
+
+      <header className="bg-navy-950 text-white">
+        <div className="max-w-3xl mx-auto px-6 py-12">
+          {/* Placeholder hero copy — final wording to come. */}
+          <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
+            Know exactly what your offer is worth — and how to get more.
+          </h1>
+          <p className="text-navy-200 mt-3 max-w-xl">
+            [Trust copy placeholder — e.g. "Trusted by hundreds of
+            professionals to negotiate stronger offers."]
+          </p>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-6 py-10">
+        <form
+          onSubmit={handleContinue}
+          className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6"
+        >
+          <div>
+            <h2 className="text-lg font-serif font-semibold text-navy-900 mb-4">
+              Where are you in your job search right now?
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {STAGES.map((s) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => setStage(s.value)}
+                  className={`text-left rounded-lg border p-4 transition ${
+                    stage === s.value
+                      ? "border-navy-600 ring-1 ring-navy-600 bg-navy-50"
+                      : "border-slate-300 bg-white hover:border-navy-300"
+                  }`}
+                >
+                  <span className="block font-medium text-navy-900">
+                    {s.label}
+                  </span>
+                  <span className="block text-sm text-slate-600 mt-0.5">
+                    {s.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-navy-800 mb-1.5">
+              Enter your email so we can send you the right resources for your
+              stage<span className="text-rose-600 ml-0.5">*</span>
+            </label>
+            <input
+              type="email"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+          </div>
+
+          {error && (
+            <div className="rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-sm px-4 py-3">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full bg-navy-900 hover:bg-navy-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-md px-6 py-3.5 transition shadow-sm"
+          >
+            {submitting ? "One moment…" : "Continue"}
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-slate-500 mt-6">
+          Your information is used only to send you relevant resources.
+        </p>
+      </main>
+    </div>
+  );
+}
