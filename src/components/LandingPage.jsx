@@ -82,13 +82,17 @@ export default function LandingPage() {
 
       <header className="bg-navy-950 text-white">
         <div className="max-w-3xl mx-auto px-6 py-12">
-          {/* Placeholder hero copy — final wording to come. */}
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
-            Know exactly what your offer is worth — and how to get more.
+            Only 42% of job seekers negotiate. Nearly 9 in 10 who do, win.
           </h1>
           <p className="text-navy-200 mt-3 max-w-xl">
-            [Trust copy placeholder — e.g. "Trusted by hundreds of
-            professionals to negotiate stronger offers."]
+            See exactly where your offer has room to grow — free, no strings
+            attached.
+          </p>
+          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm text-navy-100">
+            {/* Trustpilot brand green */}
+            <span className="text-[#00B67A]" aria-hidden="true">★</span>
+            4.6/5 on Trustpilot (19 reviews)
           </p>
         </div>
       </header>
@@ -99,9 +103,13 @@ export default function LandingPage() {
           className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6"
         >
           <div>
-            <h2 className="text-lg font-serif font-semibold text-navy-900 mb-4">
+            <h2 className="text-lg font-serif font-semibold text-navy-900 mb-1">
               Where are you in your job search right now?
             </h2>
+            <p className="text-sm text-slate-500 mb-4">
+              No offer yet? We'll send you prep resources to get you ready for
+              one.
+            </p>
             <div className="grid sm:grid-cols-2 gap-3">
               {STAGES.map((s) => (
                 <button
@@ -137,6 +145,9 @@ export default function LandingPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
             />
+            <p className="text-sm text-slate-500 mt-1.5">
+              No spam — just your results and relevant resources.
+            </p>
           </div>
 
           {error && (
