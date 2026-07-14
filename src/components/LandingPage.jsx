@@ -25,7 +25,9 @@ const STAGES = [
   },
 ];
 
-const HAS_OFFER_STAGES = ["Received an offer", "Expecting an offer soon"];
+// Only an offer in hand can be analyzed; everyone else gets the
+// stage-matched prep resources on /thanks.
+const HAS_OFFER_STAGES = ["Received an offer"];
 
 export default function LandingPage() {
   const navigate = useNavigate();
