@@ -76,7 +76,8 @@ export default function ProofPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 font-medium text-navy-600 hover:text-navy-900 transition"
             >
-              <span className="text-navy-300" aria-hidden="true">★★★★★</span>
+              {/* Trustpilot brand green */}
+              <span className="text-[#00B67A]" aria-hidden="true">★★★★★</span>
               Read all 19 reviews on Trustpilot →
             </a>
           </div>
