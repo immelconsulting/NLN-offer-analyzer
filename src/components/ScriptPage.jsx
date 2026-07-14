@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { decodeResult } from "../lib/encodeResult.js";
 import wordmark from "../assets/nln-wordmark.png";
 import icon from "../assets/nln-icon.png";
@@ -30,6 +31,16 @@ const markdownComponents = {
     <blockquote className="border-l-4 border-navy-200 pl-4 italic text-slate-700 mb-4" {...props} />
   ),
   hr: () => <hr className="border-slate-200 my-6" />,
+  table: (props) => (
+    <div className="overflow-x-auto mb-4">
+      <table className="w-full text-sm border border-slate-200 rounded-lg" {...props} />
+    </div>
+  ),
+  thead: (props) => <thead className="bg-navy-50 text-navy-900" {...props} />,
+  th: (props) => (
+    <th className="text-left font-semibold px-4 py-2 border-b border-slate-200" {...props} />
+  ),
+  td: (props) => <td className="px-4 py-2 border-b border-slate-100" {...props} />,
 };
 
 export default function ScriptPage() {
@@ -99,7 +110,7 @@ export default function ScriptPage() {
         </div>
       </div>
 
-      <header className="bg-navy-950 text-white">
+      <header className="bg-navy-950 text-white print:hidden">
         <div className="max-w-3xl mx-auto px-6 py-10">
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
             Your Counter-Offer Script
@@ -164,14 +175,41 @@ export default function ScriptPage() {
         )}
 
         {script && !loading && (
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <ReactMarkdown components={markdownComponents}>
-              {script}
-            </ReactMarkdown>
-          </div>
+          <>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:border-0 print:shadow-none print:p-0">
+              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                {script}
+              </ReactMarkdown>
+            </div>
+            <div className="text-center print:hidden">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="inline-flex items-center gap-2 rounded-md border border-navy-700 text-navy-800 font-medium px-5 py-2.5 hover:bg-navy-50 transition"
+              >
+                ⤓ Download as PDF
+              </button>
+              <p className="text-xs text-slate-500 mt-2">
+                Choose "Save as PDF" in the print dialog.
+              </p>
+            </div>
+          </>
         )}
 
-        <p className="text-center text-sm text-slate-500">
+        {script && !loading && (
+          <p className="text-center text-sm text-slate-500 print:hidden">
+            How did your negotiation go? I read every reply — email me at{" "}
+            <a
+              href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("How my negotiation went")}`}
+              className="font-medium text-navy-600 hover:text-navy-900 transition"
+            >
+              {CONTACT_EMAIL}
+            </a>{" "}
+            and tell me how it went, or share feedback on your script.
+          </p>
+        )}
+
+        <p className="text-center text-sm text-slate-500 print:hidden">
           Trouble with your script or payment? Reach out at{" "}
           <a
             href={`mailto:${CONTACT_EMAIL}`}
