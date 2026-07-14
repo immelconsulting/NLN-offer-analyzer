@@ -92,7 +92,7 @@ export default function LandingPage() {
           <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm text-navy-100">
             {/* Trustpilot brand green */}
             <span className="text-[#00B67A]" aria-hidden="true">★</span>
-            4.6/5 on Trustpilot (19 reviews)
+            100% 5-star reviews on Trustpilot (19 verified)
           </p>
         </div>
       </header>
