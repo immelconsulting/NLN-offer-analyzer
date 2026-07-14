@@ -13,3 +13,11 @@ export const SCHEDULING_URL = "https://calendly.com/aleximmel/salary-negotiation
 export const TRUSTPILOT_REVIEWS_URL = "https://www.trustpilot.com/review/nextlevelnegotiation.com";
 
 export const CONTACT_EMAIL = "alex@nextlevelnegotiation.com";
+
+// TEMPORARY: shows a free "skip payment" button on the proof page for
+// testing the script generator. To remove the free path later:
+//   1. Set this to false (hides the button)
+//   2. Delete the ALLOW_TEST_BYPASS env var in Vercel (disables the server
+//      bypass) and redeploy
+// The paid flow is unaffected either way — both paths share the same code.
+export const FREE_TEST_MODE = true;

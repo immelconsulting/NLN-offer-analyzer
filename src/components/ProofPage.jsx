@@ -1,9 +1,10 @@
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import wordmark from "../assets/nln-wordmark.png";
 import {
   STRIPE_PAYMENT_LINK_URL,
   SCHEDULING_URL,
   TRUSTPILOT_REVIEWS_URL,
+  FREE_TEST_MODE,
 } from "../lib/config.js";
 
 const PROOF_POINTS = [
@@ -17,15 +18,27 @@ const PROOF_POINTS = [
 // Reached via /proof?d=<encoded offer data> from the results page.
 export default function ProofPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const encoded = searchParams.get("d");
 
-  function handleCheckout() {
-    // Same stash the results page used to do — the post-payment /script
-    // page picks it up after the round-trip through Stripe.
+  function stashOfferData() {
+    // The /script page picks this up — after the round-trip through Stripe
+    // on the paid path, or immediately on the free test path.
     if (encoded) {
       localStorage.setItem("nln:pendingScript", encoded);
     }
+  }
+
+  function handleCheckout() {
+    stashOfferData();
     window.location.href = STRIPE_PAYMENT_LINK_URL;
+  }
+
+  function handleFreeTest() {
+    stashOfferData();
+    // Same destination as the Stripe redirect; the server honors this
+    // session id only while ALLOW_TEST_BYPASS is set.
+    navigate("/script?session_id=test_skip_payment");
   }
 
   return (
@@ -106,6 +119,15 @@ export default function ProofPage() {
             >
               Actually, I'd rather talk to an expert
             </a>
+            {FREE_TEST_MODE && (
+              <button
+                type="button"
+                onClick={handleFreeTest}
+                className="block w-full text-center text-sm text-slate-400 underline hover:text-navy-600 transition pt-1"
+              >
+                [Testing] Generate my script free — skip payment
+              </button>
+            )}
           </div>
         </div>
       </main>

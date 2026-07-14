@@ -51,9 +51,14 @@ function buildUserMessage(form, analysis) {
 }
 
 async function verifyPayment(sessionId) {
-  // Escape hatch for local/preview testing without a real payment.
-  // Never active in production.
-  if (sessionId === "test_skip_payment" && process.env.VERCEL_ENV !== "production") {
+  // Escape hatch for testing without a real payment. Always available off
+  // production; in production only while ALLOW_TEST_BYPASS=true is set
+  // (temporary free-test mode — see FREE_TEST_MODE in src/lib/config.js).
+  if (
+    sessionId === "test_skip_payment" &&
+    (process.env.VERCEL_ENV !== "production" ||
+      process.env.ALLOW_TEST_BYPASS === "true")
+  ) {
     return { paid: true };
   }
 
