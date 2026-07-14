@@ -104,7 +104,7 @@ export default function ProofPage() {
               href={SCHEDULING_URL}
               className="block w-full text-center rounded-md border border-slate-300 text-navy-800 font-medium px-6 py-3.5 hover:border-navy-600 hover:bg-navy-50 transition"
             >
-              Actually, I'd rather talk to someone
+              Actually, I'd rather talk to an expert
             </a>
           </div>
         </div>
