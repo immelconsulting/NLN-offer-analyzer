@@ -9,4 +9,7 @@ export const STRIPE_PAYMENT_LINK_URL = "https://buy.stripe.com/cNi4gA9XB37HaCc8x
 // Scheduling link (Calendly or similar) for the expert path.
 export const SCHEDULING_URL = "https://calendly.com/aleximmel/salary-negotiation-consultation";
 
+// Public Trustpilot profile, linked from the proof page.
+export const TRUSTPILOT_REVIEWS_URL = "https://www.trustpilot.com/review/nextlevelnegotiation.com";
+
 export const CONTACT_EMAIL = "alex@nextlevelnegotiation.com";

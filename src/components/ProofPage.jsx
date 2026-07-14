@@ -1,11 +1,15 @@
 import { Link, useSearchParams } from "react-router-dom";
 import wordmark from "../assets/nln-wordmark.png";
-import { STRIPE_PAYMENT_LINK_URL, SCHEDULING_URL } from "../lib/config.js";
+import {
+  STRIPE_PAYMENT_LINK_URL,
+  SCHEDULING_URL,
+  TRUSTPILOT_REVIEWS_URL,
+} from "../lib/config.js";
 
 const PROOF_POINTS = [
   "100% 5-star reviews on Trustpilot — 19 verified reviews",
-  "Real outcomes: clients have added as much as $26,000 to a single offer",
-  "Built by a salary negotiation expert with 5 years of experience helping 200+ people negotiate their offers",
+  "Real outcomes: an average 8% salary increase, with one client offer increasing by as much as $30,000",
+  "5+ years and 200+ negotiations behind every script — not a generic AI template",
   "Delivered instantly — a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
 ];
 
@@ -55,26 +59,26 @@ export default function ProofPage() {
             ))}
           </ul>
 
-          <blockquote className="mt-8 border-l-4 border-navy-600 bg-navy-50 rounded-r-lg px-5 py-4">
+          <blockquote className="mt-8 bg-navy-50 rounded-lg px-6 py-5 text-center">
             <p className="text-navy-900 font-medium">
-              "Working with Next Level is worth every penny!"
+              "His high-level script provided me with immense confidence
+              during my negotiation call."
             </p>
-            <cite className="block text-sm text-slate-600 not-italic mt-1">
-              — Trustpilot review, June 2023
+            <cite className="block text-sm text-slate-600 not-italic mt-2">
+              — VP of Finance, June 2024
             </cite>
           </blockquote>
 
-          {/*
-            Trustpilot TrustBox widget goes here.
-            Paste the embed snippet from the Trustpilot business account
-            (Integrations → TrustBox library) inside this div, and move the
-            required <script> tag to index.html per Trustpilot's docs.
-          */}
-          <div
-            id="trustpilot-widget"
-            className="mt-6 rounded-lg border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400"
-          >
-            Live Trustpilot reviews will appear here
+          <div className="mt-6 text-center">
+            <a
+              href={TRUSTPILOT_REVIEWS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 font-medium text-navy-600 hover:text-navy-900 transition"
+            >
+              <span className="text-navy-300" aria-hidden="true">★★★★★</span>
+              Read all 19 reviews on Trustpilot →
+            </a>
           </div>
 
           <div className="mt-10 text-center">
