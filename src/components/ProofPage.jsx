@@ -3,10 +3,10 @@ import wordmark from "../assets/nln-wordmark.png";
 import { STRIPE_PAYMENT_LINK_URL, SCHEDULING_URL } from "../lib/config.js";
 
 const PROOF_POINTS = [
-  "4.6/5 from 19 verified reviews on Trustpilot",
+  "100% 5-star reviews on Trustpilot — 19 verified reviews",
   "Real outcomes: clients have added as much as $26,000 to a single offer",
-  "Same collaborative, phone-first method used in every 1:1 engagement — not a generic script generator",
-  "Delivered instantly — most scripts are ready in under 5 minutes, because negotiation calls don't wait for a good time",
+  "Built by a salary negotiation expert with 5 years of experience helping 200+ people negotiate their offers",
+  "Delivered instantly — a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
 ];
 
 // Trust-building step between the results page and Stripe checkout.
