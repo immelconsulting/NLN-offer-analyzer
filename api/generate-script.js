@@ -45,6 +45,8 @@ function buildUserMessage(form, analysis) {
     "OFFER DETAILS:",
     offerLines.join("\n"),
     "",
+    "SELECTED STRATEGY: Balanced (the strategy recommended in their analysis)",
+    "",
     "NEGOTIATION ANALYSIS THEY RECEIVED:",
     JSON.stringify(analysis, null, 2),
   ].join("\n");

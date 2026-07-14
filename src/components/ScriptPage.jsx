@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import { decodeResult } from "../lib/encodeResult.js";
 import wordmark from "../assets/nln-wordmark.png";
 import icon from "../assets/nln-icon.png";
@@ -8,6 +9,28 @@ import { CONTACT_EMAIL } from "../lib/config.js";
 // Post-payment destination. Stripe's Payment Link redirects here with
 // ?session_id={CHECKOUT_SESSION_ID}; the offer data was stashed in
 // localStorage by the results page before checkout.
+
+// Brand styling for the markdown-formatted script.
+const markdownComponents = {
+  h1: (props) => (
+    <h1 className="text-2xl font-serif font-semibold text-navy-900 mt-8 mb-3 first:mt-0" {...props} />
+  ),
+  h2: (props) => (
+    <h2 className="text-xl font-serif font-semibold text-navy-900 mt-8 mb-3 first:mt-0 border-b border-slate-200 pb-2" {...props} />
+  ),
+  h3: (props) => (
+    <h3 className="text-lg font-serif font-semibold text-navy-900 mt-6 mb-2" {...props} />
+  ),
+  p: (props) => <p className="text-slate-800 leading-relaxed mb-4" {...props} />,
+  ul: (props) => <ul className="list-disc pl-6 mb-4 space-y-2 text-slate-800" {...props} />,
+  ol: (props) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-slate-800" {...props} />,
+  li: (props) => <li className="leading-relaxed" {...props} />,
+  strong: (props) => <strong className="font-semibold text-navy-900" {...props} />,
+  blockquote: (props) => (
+    <blockquote className="border-l-4 border-navy-200 pl-4 italic text-slate-700 mb-4" {...props} />
+  ),
+  hr: () => <hr className="border-slate-200 my-6" />,
+};
 
 export default function ScriptPage() {
   const [searchParams] = useSearchParams();
@@ -142,9 +165,9 @@ export default function ScriptPage() {
 
         {script && !loading && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <p className="whitespace-pre-wrap text-slate-800 leading-relaxed">
+            <ReactMarkdown components={markdownComponents}>
               {script}
-            </p>
+            </ReactMarkdown>
           </div>
         )}
 
