@@ -1,12 +1,12 @@
 import { useMemo } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { decodeResult } from "../lib/encodeResult.js";
 import ScoreCard from "./ScoreCard.jsx";
 import OpportunityList from "./OpportunityList.jsx";
 import StrategyCards from "./StrategyCards.jsx";
 import ShareButton from "./ShareButton.jsx";
 import wordmark from "../assets/nln-wordmark.png";
-import { STRIPE_PAYMENT_LINK_URL, SCHEDULING_URL } from "../lib/config.js";
+import { SCHEDULING_URL } from "../lib/config.js";
 
 export default function ResultsPage() {
   const [searchParams] = useSearchParams();
@@ -101,13 +101,12 @@ export default function ResultsPage() {
 }
 
 function NextStepChoice({ encoded }) {
+  const navigate = useNavigate();
+
   function handleGetScript() {
-    // Keep the offer data in this browser so the post-payment page can
-    // generate the script after the round-trip through Stripe.
-    if (encoded) {
-      localStorage.setItem("nln:pendingScript", encoded);
-    }
-    window.location.href = STRIPE_PAYMENT_LINK_URL;
+    // Proof/credibility step first; it stashes the offer data and sends
+    // the visitor on to Stripe from there.
+    navigate(`/proof${encoded ? `?d=${encoded}` : ""}`);
   }
 
   return (
