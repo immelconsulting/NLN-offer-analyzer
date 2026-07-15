@@ -44,6 +44,13 @@ export default function ResultsPage() {
 
   const { form, analysis } = data;
 
+  // The risk-tolerance answer picks the recommended strategy; older shared
+  // links predate the question and fall back to Balanced.
+  const recommendedKey =
+    { Cautious: "conservative", Balanced: "balanced", Aggressive: "aggressive" }[
+      form.riskTolerance
+    ] || "balanced";
+
   return (
     <div className="min-h-screen bg-navy-50">
       <div className="bg-white border-b border-navy-100">
@@ -74,7 +81,10 @@ export default function ResultsPage() {
 
         <OpportunityList opportunities={analysis.opportunities} />
 
-        <StrategyCards strategies={analysis.strategies} />
+        <StrategyCards
+          strategies={analysis.strategies}
+          recommendedKey={recommendedKey}
+        />
 
         <div className="bg-navy-900 text-white rounded-xl p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-wide text-navy-300 mb-2">
@@ -89,7 +99,7 @@ export default function ResultsPage() {
           <ShareButton />
           <Link
             to="/"
-            className="text-sm font-medium text-navy-700 hover:text-navy-900 transition"
+            className="inline-block py-2.5 text-sm font-medium text-navy-700 hover:text-navy-900 transition"
           >
             ← Analyze another offer
           </Link>

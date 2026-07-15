@@ -25,6 +25,24 @@ const PRIORITIES = [
   "Other",
 ];
 
+const RISK_OPTIONS = [
+  {
+    value: "Cautious",
+    label: "Cautious",
+    description: "I don't want to risk the offer",
+  },
+  {
+    value: "Balanced",
+    label: "Balanced",
+    description: "Some risk is fine",
+  },
+  {
+    value: "Aggressive",
+    label: "Aggressive",
+    description: "I want to push hard",
+  },
+];
+
 const initialState = {
   role: "",
   company: "",
@@ -42,6 +60,8 @@ const initialState = {
   hasLeverage: false,
   leverageDetails: "",
   offerDeadline: "",
+  riskTolerance: "",
+  additionalContext: "",
 };
 
 function FieldLabel({ children, required }) {
@@ -54,7 +74,7 @@ function FieldLabel({ children, required }) {
 }
 
 const inputClass =
-  "w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition";
+  "w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition";
 
 // "145000" -> "145,000". Digits only — for the salary fields.
 function formatSalary(value) {
@@ -96,6 +116,8 @@ export default function OfferForm() {
       return "Please provide the sign-on bonus amount.";
     if (form.hasEquity && !form.equityAmount.trim())
       return "Please provide the approximate equity value or shares.";
+    if (!form.riskTolerance)
+      return "Please choose how much risk you're comfortable with.";
     return "";
   }
 
@@ -353,6 +375,47 @@ export default function OfferForm() {
                 />
               )}
             </div>
+
+            <div>
+              <FieldLabel required>
+                How much risk are you comfortable with in this negotiation?
+              </FieldLabel>
+              <div className="grid sm:grid-cols-3 gap-3">
+                {RISK_OPTIONS.map((r) => (
+                  <button
+                    key={r.value}
+                    type="button"
+                    onClick={() => update("riskTolerance", r.value)}
+                    className={`text-left rounded-lg border p-4 transition ${
+                      form.riskTolerance === r.value
+                        ? "border-navy-600 ring-1 ring-navy-600 bg-navy-50"
+                        : "border-slate-300 bg-white hover:border-navy-300"
+                    }`}
+                  >
+                    <span className="block font-medium text-navy-900">
+                      {r.label}
+                    </span>
+                    <span className="block text-sm text-slate-600 mt-0.5">
+                      {r.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-slate-500 mt-1.5">
+                We'll use this to recommend the right strategy for you.
+              </p>
+            </div>
+
+            <div>
+              <FieldLabel>Anything else we should know?</FieldLabel>
+              <textarea
+                className={inputClass}
+                rows={4}
+                value={form.additionalContext}
+                onChange={(e) => update("additionalContext", e.target.value)}
+                placeholder="Optional — notes from your conversations with the recruiter, what you're targeting, research you've already done, or anything else that feels relevant."
+              />
+            </div>
           </section>
 
           {error && (
@@ -409,7 +472,7 @@ function ToggleGroup({ value, onChange }) {
       <button
         type="button"
         onClick={() => onChange(true)}
-        className={`px-3 py-1.5 text-sm font-medium transition ${
+        className={`px-4 py-2.5 text-sm font-medium transition ${
           value
             ? "bg-navy-900 text-white"
             : "bg-white text-slate-600 hover:bg-slate-50"
@@ -420,7 +483,7 @@ function ToggleGroup({ value, onChange }) {
       <button
         type="button"
         onClick={() => onChange(false)}
-        className={`px-3 py-1.5 text-sm font-medium transition border-l border-slate-300 ${
+        className={`px-4 py-2.5 text-sm font-medium transition border-l border-slate-300 ${
           !value
             ? "bg-navy-900 text-white"
             : "bg-white text-slate-600 hover:bg-slate-50"

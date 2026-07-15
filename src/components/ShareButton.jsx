@@ -17,7 +17,7 @@ export default function ShareButton() {
     <button
       type="button"
       onClick={handleCopy}
-      className="inline-flex items-center gap-2 rounded-md border border-navy-700 text-navy-800 font-medium px-4 py-2 hover:bg-navy-50 transition text-sm"
+      className="inline-flex items-center gap-2 rounded-md border border-navy-700 text-navy-800 font-medium px-4 py-2.5 hover:bg-navy-50 transition text-sm"
     >
       {copied ? "Link copied!" : "Copy shareable link"}
     </button>

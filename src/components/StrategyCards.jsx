@@ -15,7 +15,7 @@ function StrategyCard({ strategy, recommended }) {
     >
       {recommended && (
         <span className="absolute -top-3 left-6 bg-navy-900 text-white text-xs font-semibold uppercase tracking-wide px-3 py-1 rounded-full">
-          Recommended
+          Recommended for you
         </span>
       )}
       <h3 className="font-serif font-semibold text-lg text-navy-900 mt-1">
@@ -65,16 +65,25 @@ function StrategyCard({ strategy, recommended }) {
   );
 }
 
-export default function StrategyCards({ strategies }) {
+export default function StrategyCards({ strategies, recommendedKey = "balanced" }) {
   return (
     <div>
       <h2 className="text-lg font-serif font-semibold text-navy-900 mb-5">
         Your Negotiation Strategies
       </h2>
       <div className="grid sm:grid-cols-3 gap-6 sm:gap-5 pt-3">
-        <StrategyCard strategy={strategies.conservative} />
-        <StrategyCard strategy={strategies.balanced} recommended />
-        <StrategyCard strategy={strategies.aggressive} />
+        <StrategyCard
+          strategy={strategies.conservative}
+          recommended={recommendedKey === "conservative"}
+        />
+        <StrategyCard
+          strategy={strategies.balanced}
+          recommended={recommendedKey === "balanced"}
+        />
+        <StrategyCard
+          strategy={strategies.aggressive}
+          recommended={recommendedKey === "aggressive"}
+        />
       </div>
     </div>
   );

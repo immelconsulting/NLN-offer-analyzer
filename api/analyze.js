@@ -91,6 +91,12 @@ function buildUserMessage(form) {
       ? `Competing offer / leverage: yes${form.leverageDetails ? ` — ${form.leverageDetails}` : ""}`
       : "Competing offer / leverage: no",
     form.offerDeadline ? `Offer deadline: ${form.offerDeadline}` : null,
+    form.riskTolerance
+      ? `Risk tolerance: ${form.riskTolerance} — tailor the recommended next step to this appetite`
+      : null,
+    form.additionalContext
+      ? `Additional context from the candidate: ${form.additionalContext}`
+      : null,
   ].filter(Boolean);
 
   return `Analyze the following job offer and return the negotiation analysis.\n\n${lines.join("\n")}`;

@@ -37,7 +37,17 @@ function buildUserMessage(form, analysis) {
       ? `Competing offer / leverage: yes${form.leverageDetails ? ` — ${form.leverageDetails}` : ""}`
       : "Competing offer / leverage: no",
     form.offerDeadline ? `Offer deadline: ${form.offerDeadline}` : null,
+    form.additionalContext
+      ? `Additional context from the candidate: ${form.additionalContext}`
+      : null,
   ].filter(Boolean);
+
+  // The user's stated risk tolerance selects the strategy; older result
+  // links predate the question and fall back to Balanced.
+  const strategyName =
+    { Cautious: "Conservative", Balanced: "Balanced", Aggressive: "Aggressive" }[
+      form.riskTolerance
+    ] || "Balanced";
 
   return [
     "Write the counter-offer script for this candidate.",
@@ -45,7 +55,7 @@ function buildUserMessage(form, analysis) {
     "OFFER DETAILS:",
     offerLines.join("\n"),
     "",
-    "SELECTED STRATEGY: Balanced (the strategy recommended in their analysis)",
+    `SELECTED STRATEGY: ${strategyName} (chosen based on the candidate's stated risk tolerance${form.riskTolerance ? `: "${form.riskTolerance}"` : ""})`,
     "",
     "NEGOTIATION ANALYSIS THEY RECEIVED:",
     JSON.stringify(analysis, null, 2),
