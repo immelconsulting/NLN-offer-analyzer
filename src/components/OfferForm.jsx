@@ -11,6 +11,12 @@ const INDUSTRIES = [
   "Consulting",
   "Operations",
   "Data/Analytics",
+  "Finance",
+  "Legal",
+  "Healthcare",
+  "Government",
+  "Nonprofit",
+  "Education",
   "Other",
 ];
 
