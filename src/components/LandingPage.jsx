@@ -96,6 +96,10 @@ export default function LandingPage() {
             <span className="text-[#00B67A]" aria-hidden="true">★</span>
             100% 5-star reviews on Trustpilot (19 verified)
           </p>
+          <p className="mt-4 text-sm text-navy-200 max-w-xl">
+            This tool uses AI, trained on NLN's negotiation methodology, to
+            generate your offer analysis and script.
+          </p>
         </div>
       </header>
 
