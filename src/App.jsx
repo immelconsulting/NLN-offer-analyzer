@@ -5,6 +5,7 @@ import ThankYou from "./components/ThankYou.jsx";
 import ResultsPage from "./components/ResultsPage.jsx";
 import ProofPage from "./components/ProofPage.jsx";
 import ScriptPage from "./components/ScriptPage.jsx";
+import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/results" element={<ResultsPage />} />
       <Route path="/proof" element={<ProofPage />} />
       <Route path="/script" element={<ScriptPage />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
     </Routes>
   );
 }

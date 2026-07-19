@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { email, stage } = req.body || {};
+  const { email, stage, marketingOptIn } = req.body || {};
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !stage) {
     return res.status(400).json({ error: "A valid email and stage are required." });
   }
@@ -34,6 +34,7 @@ export default async function handler(req, res) {
       JSON.stringify({
         email: email.trim().toLowerCase(),
         stage,
+        marketingOptIn: marketingOptIn === true,
         timestamp: new Date().toISOString(),
       })
     );

@@ -34,12 +34,21 @@ export default async function handler(req, res) {
     const redis = new Redis({ url, token });
     const rows = await redis.lrange(LEADS_KEY, 0, -1);
 
-    const lines = ["email,stage,timestamp"];
+    const lines = ["email,stage,marketing_opt_in,timestamp"];
     for (const row of rows) {
       // Upstash may return already-parsed objects or JSON strings.
       const lead = typeof row === "string" ? JSON.parse(row) : row;
       lines.push(
-        [lead.email, lead.stage, lead.timestamp].map(csvEscape).join(",")
+        [
+          lead.email,
+          lead.stage,
+          // Leads captured before the checkbox existed have no value —
+          // export them as "no" so the opt-in column is never ambiguous.
+          lead.marketingOptIn === true ? "yes" : "no",
+          lead.timestamp,
+        ]
+          .map(csvEscape)
+          .join(",")
       );
     }
 

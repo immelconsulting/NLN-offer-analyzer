@@ -8,9 +8,12 @@ dashboards (Stripe, Vercel, Trustpilot).
 
 ## Funnel (all verified end-to-end, including a real Stripe payment)
 
-1. `/` **LandingPage** — hero + required email + job-search stage question. Every lead
-   (email/stage/timestamp) is POSTed to `/api/lead` (Upstash Redis list `nln:leads`).
-   CSV export: `GET /api/leads?token=<LEADS_EXPORT_TOKEN>`.
+1. `/` **LandingPage** — hero + required email + job-search stage question + an unchecked
+   marketing opt-in checkbox (compliance: email is required only to deliver results; marketing
+   needs the explicit opt-in). Every lead (email/stage/marketingOptIn/timestamp) is POSTed to
+   `/api/lead` (Upstash Redis list `nln:leads`). CSV export: `GET /api/leads?token=<LEADS_EXPORT_TOKEN>`
+   (pre-checkbox leads export as opt-in "no"). Privacy Policy lives at `/privacy`
+   (`src/components/PrivacyPolicy.jsx`), linked near the email field.
 2. Branch: only **"Received an offer"** → `/offer`. Applying / Interviewing / Expecting-soon →
    `/thanks`, a stage-matched resource page (PDF guides in `public/resources/`) + Calendly CTA.
 3. `/offer` **OfferForm** — analyzer form. Required: role, location, base salary, top priority,

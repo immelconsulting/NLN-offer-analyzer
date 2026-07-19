@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import wordmark from "../assets/nln-wordmark.png";
 
 const STAGES = [
@@ -33,6 +33,7 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [stage, setStage] = useState("");
   const [email, setEmail] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,7 +50,7 @@ export default function LandingPage() {
     setError("");
     setSubmitting(true);
 
-    const lead = { email: email.trim(), stage };
+    const lead = { email: email.trim(), stage, marketingOptIn };
     sessionStorage.setItem("nln:lead", JSON.stringify(lead));
 
     // Store the lead, but never block the visitor on storage problems.
@@ -149,6 +150,26 @@ export default function LandingPage() {
             />
             <p className="text-sm text-slate-500 mt-1.5">
               No spam — just your results and relevant resources.
+            </p>
+            <label className="flex items-start gap-2.5 mt-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                className="mt-0.5 h-5 w-5 rounded border-slate-300 text-navy-600 focus:ring-navy-600"
+              />
+              <span className="text-sm text-slate-600">
+                Also send me occasional negotiation tips and resources
+              </span>
+            </label>
+            <p className="text-sm text-slate-500 mt-2">
+              See our{" "}
+              <Link
+                to="/privacy"
+                className="font-medium text-navy-600 hover:text-navy-900 transition underline"
+              >
+                Privacy Policy
+              </Link>
             </p>
           </div>
 
