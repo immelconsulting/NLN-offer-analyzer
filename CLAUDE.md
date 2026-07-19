@@ -76,6 +76,10 @@ Industry lens (tech=base/equity; healthcare/gov/nonprofit=non-salary levers; fin
 bonus/sign-on) never overrides actual offer data. Free-consult mentions link Calendly
 (calendly.com/aleximmel/salary-negotiation-consultation). No fake urgency, no crossed-out prices.
 
+**Compliance copy (required — never remove):** AI-disclosure lines on the landing hero and above
+the results output, and an AI-disclosure + not-professional-advice disclaimer above the script
+output (which intentionally prints in the PDF).
+
 ## Local development quirks
 
 - `npm run dev` serves only the frontend — `/api` functions 404 locally (no Vercel CLI installed).
