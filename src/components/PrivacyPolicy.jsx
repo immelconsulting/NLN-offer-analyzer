@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import wordmark from "../assets/nln-wordmark.png";
+import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
 const EFFECTIVE_DATE = "July 19, 2026";
@@ -15,17 +15,7 @@ function SectionHeading({ children }) {
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-navy-50">
-      <div className="bg-white border-b border-navy-100">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <Link to="/">
-            <img
-              src={wordmark}
-              alt="Next Level Negotiation"
-              className="h-10 sm:h-12 w-auto"
-            />
-          </Link>
-        </div>
-      </div>
+      <SiteHeader />
 
       <main className="max-w-3xl mx-auto px-6 py-10">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { decodeResult } from "../lib/encodeResult.js";
-import wordmark from "../assets/nln-wordmark.png";
+import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
@@ -98,25 +98,15 @@ export default function ScriptPage() {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      <div className="bg-white border-b border-navy-100">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <Link to="/">
-            <img
-              src={wordmark}
-              alt="Next Level Negotiation"
-              className="h-10 sm:h-12 w-auto"
-            />
-          </Link>
-        </div>
-      </div>
+      <SiteHeader />
 
-      <header className="bg-navy-950 text-white print:hidden">
-        <div className="max-w-3xl mx-auto px-6 py-10">
-          <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
+      <header className="print:hidden">
+        <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
+          <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
             Your Counter-Offer Script
           </h1>
           {data?.form && (
-            <p className="text-navy-200 mt-3">
+            <p className="text-slate-700 mt-4">
               {data.form.role}
               {data.form.company ? ` at ${data.form.company}` : ""} ·{" "}
               {data.form.location}
@@ -125,7 +115,7 @@ export default function ScriptPage() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <main className="max-w-3xl mx-auto px-6 py-8 space-y-8">
         {(!sessionId || !data) && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
             <p className="text-lg font-medium text-navy-900 mb-2">

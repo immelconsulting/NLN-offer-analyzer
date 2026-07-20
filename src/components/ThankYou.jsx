@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import wordmark from "../assets/nln-wordmark.png";
+import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL, SCHEDULING_URL } from "../lib/config.js";
 
 const RESOURCES = {
@@ -61,17 +61,7 @@ export default function ThankYou() {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      <div className="bg-white border-b border-navy-100">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <Link to="/">
-            <img
-              src={wordmark}
-              alt="Next Level Negotiation"
-              className="h-10 sm:h-12 w-auto"
-            />
-          </Link>
-        </div>
-      </div>
+      <SiteHeader />
 
       <main className="max-w-3xl mx-auto px-6 py-12 space-y-6">
         <div className="text-center">

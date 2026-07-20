@@ -16,6 +16,17 @@ export default function ScoreCard({ score, interpretation }) {
           Offer Score
         </p>
         <p className="text-lg text-slate-800">{interpretation}</p>
+        <button
+          type="button"
+          onClick={() =>
+            document
+              .getElementById("recommended-next-step")
+              ?.scrollIntoView({ behavior: "smooth" })
+          }
+          className="mt-2 inline-flex items-center gap-1 py-2 text-sm font-medium text-navy-600 hover:text-navy-900 transition"
+        >
+          Recommended Next Steps <span aria-hidden="true">↓</span>
+        </button>
       </div>
     </div>
   );

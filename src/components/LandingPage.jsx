@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import wordmark from "../assets/nln-wordmark.png";
+import SiteHeader from "./SiteHeader.jsx";
 
 const STAGES = [
   {
@@ -73,28 +73,19 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      <div className="bg-white border-b border-navy-100">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <img
-            src={wordmark}
-            alt="Next Level Negotiation"
-            className="h-10 sm:h-12 w-auto"
-          />
-        </div>
-      </div>
+      <SiteHeader />
 
-      <header className="bg-navy-950 text-white">
-        <div className="max-w-3xl mx-auto px-6 py-12">
-          <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
+      <header>
+        <div className="max-w-3xl mx-auto px-6 pt-12 pb-2">
+          <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
             Only 42% of job seekers negotiate. Nearly 9 in 10 who do, win.
           </h1>
-          <p className="text-navy-200 mt-3 max-w-xl">
+          <p className="text-slate-700 mt-4 max-w-xl">
             See exactly where your offer has room to grow — free, no strings
             attached.
           </p>
-          <p className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm text-navy-100">
-            {/* Trustpilot brand green */}
-            <span className="text-[#00B67A]" aria-hidden="true">★</span>
+          <p className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-navy-600 px-4 py-1.5 text-sm text-white">
+            <span aria-hidden="true">★</span>
             100% 5-star reviews on Trustpilot (19 verified)
           </p>
         </div>

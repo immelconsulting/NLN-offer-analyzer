@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { encodeResult } from "../lib/encodeResult.js";
-import wordmark from "../assets/nln-wordmark.png";
+import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 
 const INDUSTRIES = [
@@ -159,21 +159,13 @@ export default function OfferForm() {
   return (
     <div className="min-h-screen bg-navy-50">
       {loading && <LoadingOverlay />}
-      <div className="bg-white border-b border-navy-100">
-        <div className="max-w-3xl mx-auto px-6 py-4">
-          <img
-            src={wordmark}
-            alt="Next Level Negotiation"
-            className="h-10 sm:h-12 w-auto"
-          />
-        </div>
-      </div>
-      <header className="bg-navy-950 text-white">
-        <div className="max-w-3xl mx-auto px-6 py-10">
-          <h1 className="text-3xl sm:text-4xl font-serif font-semibold">
+      <SiteHeader />
+      <header>
+        <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
+          <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
             Offer Analyzer
           </h1>
-          <p className="text-navy-200 mt-3 max-w-xl">
+          <p className="text-slate-700 mt-4 max-w-xl">
             Get a clear, professional read on your job offer — and a
             negotiation strategy tailored to your situation — in under a
             minute.
@@ -247,23 +239,17 @@ export default function OfferForm() {
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
                 <FieldLabel>Current Salary</FieldLabel>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className={inputClass}
+                <SalaryInput
                   value={form.currentSalary}
-                  onChange={(e) => update("currentSalary", formatSalary(e.target.value))}
+                  onChange={(v) => update("currentSalary", v)}
                   placeholder="Optional — for context only"
                 />
               </div>
               <div>
                 <FieldLabel required>Offer Base Salary</FieldLabel>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  className={inputClass}
+                <SalaryInput
                   value={form.offerBaseSalary}
-                  onChange={(e) => update("offerBaseSalary", formatSalary(e.target.value))}
+                  onChange={(v) => update("offerBaseSalary", v)}
                   placeholder="e.g. 145,000"
                 />
               </div>
@@ -476,6 +462,31 @@ function LoadingOverlay() {
   );
 }
 
+// Salary field with a purely visual "$" prefix once a value is entered —
+// the stored value stays digits + commas, so nothing downstream changes.
+function SalaryInput({ value, onChange, placeholder }) {
+  return (
+    <div className="relative">
+      {value && (
+        <span
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+          aria-hidden="true"
+        >
+          $
+        </span>
+      )}
+      <input
+        type="text"
+        inputMode="numeric"
+        className={`${inputClass} ${value ? "!pl-7" : ""}`}
+        value={value}
+        onChange={(e) => onChange(formatSalary(e.target.value))}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
 function ToggleGroup({ value, onChange }) {
   return (
     <div className="inline-flex rounded-md border border-slate-300 overflow-hidden shrink-0">
@@ -495,7 +506,7 @@ function ToggleGroup({ value, onChange }) {
         onClick={() => onChange(false)}
         className={`px-4 py-2.5 text-sm font-medium transition border-l border-slate-300 ${
           !value
-            ? "bg-navy-900 text-white"
+            ? "bg-slate-200 text-slate-700"
             : "bg-white text-slate-600 hover:bg-slate-50"
         }`}
       >
