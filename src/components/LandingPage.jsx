@@ -188,7 +188,7 @@ export default function LandingPage() {
           </button>
 
           <p className="text-center text-sm text-slate-500">
-            This tool uses AI, trained on NLN's negotiation methodology, to
+            This tool uses AI, guided by NLN's negotiation methodology, to
             generate your offer analysis and script.
           </p>
         </form>

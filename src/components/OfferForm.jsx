@@ -440,6 +440,10 @@ export default function OfferForm() {
         </form>
 
         <p className="text-center text-sm text-slate-500 mt-6">
+          This tool uses AI, guided by NLN's negotiation methodology, to
+          generate your offer analysis and script.
+        </p>
+        <p className="text-center text-sm text-slate-500 mt-2">
           Your information is used only to generate your analysis.
         </p>
         <p className="text-center text-sm text-slate-500 mt-2">
