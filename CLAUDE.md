@@ -79,9 +79,11 @@ Industry lens (tech=base/equity; healthcare/gov/nonprofit=non-salary levers; fin
 bonus/sign-on) never overrides actual offer data. Free-consult mentions link Calendly
 (calendly.com/aleximmel/salary-negotiation-consultation). No fake urgency, no crossed-out prices.
 
-**Compliance copy (required — never remove):** AI-disclosure lines on the landing hero and above
-the results output, and an AI-disclosure + not-professional-advice disclaimer above the script
-output (which intentionally prints in the PDF).
+**Compliance copy (required — never remove):** AI-disclosure lines below the CTAs on the landing
+page, offer form, and results page ("uses AI, guided by NLN's negotiation methodology" — never
+claim the AI is "trained on" NLN material), and an AI-disclosure + not-professional-advice
+disclaimer on the script page (which intentionally prints in the PDF). These support Anthropic
+AUP requirements for consumer-facing employment-related advice (disclosure at session start).
 
 ## Local development quirks
 
