@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
+import { TRUSTPILOT_REVIEWS_URL } from "../lib/config.js";
 
 const STAGES = [
   {
@@ -84,10 +85,15 @@ export default function LandingPage() {
             See exactly where your offer has room to grow — free, no strings
             attached.
           </p>
-          <p className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-navy-600 px-4 py-1.5 text-sm text-white">
+          <a
+            href={TRUSTPILOT_REVIEWS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-navy-600 hover:bg-navy-800 px-4 py-1.5 text-sm text-white transition"
+          >
             <span aria-hidden="true">★</span>
             100% 5-star reviews on Trustpilot (19 verified)
-          </p>
+          </a>
         </div>
       </header>
 
