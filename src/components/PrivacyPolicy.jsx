@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
-const EFFECTIVE_DATE = "July 19, 2026";
+const EFFECTIVE_DATE = "July 26, 2026";
 
 function SectionHeading({ children }) {
   return (
@@ -44,6 +44,10 @@ export default function PrivacyPolicy() {
               Basic usage data, such as which stage of your job search you
               selected
             </li>
+            <li>
+              The analysis and any negotiation script generated for you,
+              which we retain along with your submission
+            </li>
           </ul>
 
           <SectionHeading>How we use your information</SectionHeading>
@@ -55,6 +59,15 @@ export default function PrivacyPolicy() {
               resources by email
             </li>
             <li>To improve our tool and understand how it's used</li>
+            <li>
+              To prepare for coaching calls you book with us — we may review
+              your submission, analysis, and script before speaking with you
+            </li>
+            <li>
+              In anonymized, aggregated form — never your name, email, or
+              identifying details — to provide market context in other users'
+              analyses
+            </li>
           </ul>
 
           <SectionHeading>How we share your information</SectionHeading>

@@ -438,7 +438,9 @@ export default function OfferForm() {
           generate your offer analysis and script.
         </p>
         <p className="text-center text-sm text-slate-500 mt-2">
-          Your information is used only to generate your analysis.
+          Your submission is saved so our team can prepare if you book a
+          coaching call, and anonymized, aggregated compensation data may help
+          inform other users' analyses.
         </p>
         <p className="text-center text-sm text-slate-500 mt-2">
           Questions? Reach out at{" "}

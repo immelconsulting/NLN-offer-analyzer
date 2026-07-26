@@ -186,7 +186,14 @@ export default function LandingPage() {
 
           <p className="text-center text-sm text-slate-500">
             This tool uses AI, guided by NLN's negotiation methodology, to
-            generate your offer analysis and script.
+            generate your offer analysis and script. Submissions are saved so
+            our team can prepare if you book a coaching call, and anonymized,
+            aggregated compensation data may help inform other users'
+            analyses. See our{" "}
+            <Link to="/privacy" className="underline hover:text-navy-600 transition">
+              Privacy Policy
+            </Link>
+            .
           </p>
         </form>
 
