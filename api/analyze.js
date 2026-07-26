@@ -1,6 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
+import {
+  getRedis,
+  newSubmissionId,
+  saveSubmission,
+  listRecentSubmissions,
+} from "./_lib/store.js";
+import { buildComparablesSummary } from "./_lib/comparables.js";
 
 // Loads the system prompt from system-prompt.md at the project root so it can
 // be edited without touching this file. Falls back to a placeholder if the
@@ -102,6 +109,23 @@ function buildUserMessage(form) {
   return `Analyze the following job offer and return the negotiation analysis.\n\n${lines.join("\n")}`;
 }
 
+// Anonymized aggregate of similar prior submissions, or null. Any storage
+// problem degrades to "no internal data" rather than failing the request.
+async function getInternalMarketData(redis, form) {
+  if (!redis) return null;
+  try {
+    const recent = await listRecentSubmissions(redis, 200);
+    return buildComparablesSummary(recent, {
+      role: form.role,
+      location: form.location,
+      excludeEmail: (form.leadEmail || "").trim().toLowerCase(),
+    });
+  } catch (err) {
+    console.error("Comparables lookup failed:", err);
+    return null;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
@@ -121,11 +145,19 @@ export default async function handler(req, res) {
   try {
     const client = new Anthropic({ apiKey });
 
+    const redis = getRedis();
+    const comparables = await getInternalMarketData(redis, form);
+
+    let userMessage = buildUserMessage(form);
+    if (comparables) {
+      userMessage += `\n\nINTERNAL MARKET DATA (anonymized aggregate from NLN's own past submissions — treat as one signal alongside your general market knowledge, not as a replacement for it):\n${comparables}`;
+    }
+
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 4096,
       system: loadSystemPrompt(),
-      messages: [{ role: "user", content: buildUserMessage(form) }],
+      messages: [{ role: "user", content: userMessage }],
       tools: [ANALYSIS_TOOL],
       tool_choice: { type: "tool", name: "submit_offer_analysis" },
     });
@@ -135,6 +167,29 @@ export default async function handler(req, res) {
       throw new Error("No tool use response from model.");
     }
     const analysis = toolBlock.input;
+    // Set server-side (not by the model) so it's reliable in the admin view.
+    analysis.internalDataUsed = Boolean(comparables);
+
+    // Persist the submission; failures are logged but never block the user.
+    if (redis) {
+      try {
+        const id = newSubmissionId();
+        const { leadEmail, ...formFields } = form;
+        await saveSubmission(redis, {
+          id,
+          email: (leadEmail || "").trim().toLowerCase(),
+          timestamp: new Date().toISOString(),
+          form: formFields,
+          analysis,
+          comparablesSummary: comparables,
+          script: null,
+          scriptGeneratedAt: null,
+        });
+        analysis.submissionId = id;
+      } catch (err) {
+        console.error("Failed to store submission:", err);
+      }
+    }
 
     return res.status(200).json(analysis);
   } catch (err) {

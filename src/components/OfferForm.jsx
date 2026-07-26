@@ -137,10 +137,18 @@ export default function OfferForm() {
     setError("");
     setLoading(true);
     try {
+      // Attach the email captured on the landing page (if any) so the
+      // submission can be stored under it — invisible to the user.
+      let leadEmail = "";
+      try {
+        leadEmail = JSON.parse(sessionStorage.getItem("nln:lead"))?.email || "";
+      } catch {
+        // no lead in this session — store anonymously
+      }
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, leadEmail }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

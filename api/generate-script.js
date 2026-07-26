@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
+import { getRedis, updateSubmission } from "./_lib/store.js";
 
 // Generates the paid counter-offer script. The client sends the Stripe
 // Checkout session id from the Payment Link redirect plus the offer data it
@@ -133,6 +134,22 @@ export default async function handler(req, res) {
       .trim();
     if (!script) {
       throw new Error("Empty script response from model.");
+    }
+
+    // Attach the script to the stored submission (id travels inside the
+    // analysis object from /api/analyze). Never blocks the user on failure.
+    if (analysis.submissionId) {
+      try {
+        const redis = getRedis();
+        if (redis) {
+          await updateSubmission(redis, analysis.submissionId, {
+            script,
+            scriptGeneratedAt: new Date().toISOString(),
+          });
+        }
+      } catch (err) {
+        console.error("Failed to attach script to submission:", err);
+      }
     }
 
     return res.status(200).json({ script });
