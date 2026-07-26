@@ -34,7 +34,22 @@ dashboards (Stripe, Vercel, Trustpilot).
    script from `script-generator-prompt.md`. Output is markdown (comp table via remark-gfm),
    rendered with react-markdown; page offers Download-as-PDF (window.print) and a feedback mailto.
 
-## Key files
+## Submission storage & admin (added July 26, 2026)
+
+Every successful analysis persists to Upstash: `nln:sub:<id>` records (form + analysis +
+script when generated), indexed by `nln:subs` (newest first) and `nln:subs:email:<email>`.
+Append-only history; email comes from the landing-page session (`leadEmail` in the analyze
+payload). `analysis.submissionId` rides inside the encoded `?d=` data so `/api/generate-script`
+can attach the script to the same record. Storage failures never block users.
+
+`/admin` (route, not linked anywhere) + `GET /api/admin?token=<LEADS_EXPORT_TOKEN>` — search by
+email/role/company/location, detail view, CSV exports (`&export=full` or `&export=salary`).
+
+The analyzer feeds anonymized aggregates of similar past submissions into the prompt
+(`api/_lib/comparables.js`: synonym+token title matching, city match, IQR outlier filtering;
+median-only at 3-4 samples, range at 5+; requester's own email excluded). The server sets
+`analysis.internalDataUsed`; results page shows a subtle caption when true. Never pass
+identifying details into another user's analysis — aggregates only.
 
 - `system-prompt.md` / `script-generator-prompt.md` — both prompts are file-based, read at request time.
 - `src/lib/config.js` — Stripe Payment Link URL, Calendly URL, Trustpilot URL, contact email,
