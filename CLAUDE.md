@@ -36,9 +36,14 @@ dashboards (Stripe, Vercel, Trustpilot).
    Repvue + Betts for revenue roles; skip a source rather than guess, and never state a salary
    figure that didn't come from a search result this session. `sources: []` is valid and means
    "no usable data found" — the analysis then says so instead of inventing numbers.
-   **Latency: ~75–110s** (was ~25s), hence `maxDuration: 300` in `vercel.json` and the
+   **Latency: ~70–90s** (was ~25s), hence `maxDuration: 300` in `vercel.json` and the
    two-minute expectation in the loading overlay. Web search bills ~$10/1,000 searches on top
    of tokens, and the free analysis is what runs it — watch the per-analysis cost.
+   **Don't lower `max_uses` below 3 to chase speed — measured, it doesn't work.** Generation
+   alone is a fixed ~27s; each search adds ~15–20s. Going 5→2 saved only ~20s but made the
+   model drop the specialist sources entirely (a tech offer came back citing Glassdoor alone,
+   no Levels.fyi; sales lost Repvue and Betts). 3 is the floor that still routes correctly, and
+   it runs within ~5s of 2. Real speed levers are output size or model choice, not search count.
 5. `/results` **ResultsPage** — score, opportunities, three strategy cards. The risk-tolerance
    answer maps Cautious→Conservative / Balanced→Balanced / Aggressive→Aggressive and puts the
    "Recommended for you" badge on that card (old links without the field fall back to Balanced).

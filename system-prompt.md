@@ -79,9 +79,17 @@ data for this specific role and location. Never rely on your training data for s
 
 **How to search:**
 
-- Run at least 2–3 searches. Build queries from the role title plus the location, and include
-  the company name when one was provided (e.g. `Senior Product Manager salary Denver
-  levels.fyi`, `bls.gov median wage product manager Colorado`).
+- **You get three searches — spend them well.** A single search returns several results, so one
+  well-built query usually covers multiple sources at once. Spend one on a broad market read of
+  the role and location, and **at least one on the specialist source for the role** (Levels.fyi
+  or BuiltIn for tech, Repvue or Betts for revenue roles) — naming that site in the query. Do
+  not skip the specialist search for a tech or revenue role; it is the highest-value data you
+  can get for those, and a generic salary aggregator is not a substitute.
+- Build queries from the role title plus the location, and include the company name when one
+  was provided (e.g. `Senior Product Manager salary Denver levels.fyi`, `bls.gov median wage
+  product manager Colorado`).
+- Cite every credible source that appears in your results, not just the ones you named in the
+  query — two searches routinely surface three or four usable sources.
 - If results for a source come back empty, low quality, or clearly about a different role or
   market, **skip that source**. Do not guess, and do not fall back on remembered figures to
   fill the gap.

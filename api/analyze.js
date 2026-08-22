@@ -109,12 +109,13 @@ const ANALYSIS_TOOL = {
   },
 };
 
-// Anthropic-hosted search. Capped so a single analysis can't run away on
-// latency or search spend.
+// Anthropic-hosted search. Two searches is the deliberate latency/cost
+// ceiling — each one adds roughly 20-30s to the analysis. Raising this also
+// means loosening the "spend them well" guidance in system-prompt.md.
 const WEB_SEARCH_TOOL = {
   type: "web_search_20260209",
   name: "web_search",
-  max_uses: 5,
+  max_uses: 3,
 };
 
 function buildUserMessage(form) {
