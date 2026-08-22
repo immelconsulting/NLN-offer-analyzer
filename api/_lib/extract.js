@@ -1,5 +1,6 @@
-import { PDFParse } from "pdf-parse";
-import mammoth from "mammoth";
+// Parser libraries are imported lazily inside the function: if either fails
+// to load in the serverless environment, extraction returns null instead of
+// crashing the whole endpoint at boot.
 
 // Extracts plain text from an uploaded file sent as
 // { name, type, data } where data is base64 (no data-URL prefix).
@@ -20,6 +21,7 @@ export async function extractTextFromUpload(file) {
     let text = null;
 
     if (type.includes("pdf") || name.endsWith(".pdf")) {
+      const { PDFParse } = await import("pdf-parse");
       const parser = new PDFParse({ data: new Uint8Array(buf) });
       const result = await parser.getText();
       text = result?.text || null;
@@ -27,6 +29,7 @@ export async function extractTextFromUpload(file) {
       type.includes("officedocument.wordprocessingml") ||
       name.endsWith(".docx")
     ) {
+      const { default: mammoth } = await import("mammoth");
       const result = await mammoth.extractRawText({ buffer: buf });
       text = result?.value || null;
     } else if (type.startsWith("text/") || name.endsWith(".txt")) {
