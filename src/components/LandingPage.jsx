@@ -92,7 +92,7 @@ export default function LandingPage() {
             className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-navy-600 hover:bg-navy-800 px-4 py-1.5 text-sm text-white transition"
           >
             <span aria-hidden="true">★</span>
-            100% 5-star reviews on Trustpilot (19 verified)
+            100% 5-star reviews on Trustpilot (20 verified)
           </a>
         </div>
       </header>

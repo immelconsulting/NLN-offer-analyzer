@@ -8,7 +8,7 @@ import {
 } from "../lib/config.js";
 
 const PROOF_POINTS = [
-  "100% 5-star reviews on Trustpilot — 19 verified reviews",
+  "100% 5-star reviews on Trustpilot — 20 verified reviews",
   "Real outcomes: an average 8% salary increase, with one client offer increasing by as much as $30,000",
   "5+ years and 200+ negotiations behind every script — not a generic AI template",
   "Delivered instantly — a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
@@ -81,7 +81,7 @@ export default function ProofPage() {
             >
               {/* Trustpilot brand green */}
               <span className="text-[#00B67A]" aria-hidden="true">★★★★★</span>
-              Read all 19 reviews on Trustpilot →
+              Read all 20 reviews on Trustpilot →
             </a>
           </div>
 
