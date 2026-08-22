@@ -26,8 +26,19 @@ dashboards (Stripe, Vercel, Trustpilot).
    the endpoint can never die from a parser), which feeds both prompts and is stored on the
    submission record (text only, never files). `/api/generate-script` reloads it via
    `analysis.submissionId`. Salary inputs auto-format with thousands commas.
-4. `/api/analyze` — Claude with tool-use (forced `submit_offer_analysis` tool) returns structured
-   JSON: score, opportunities, three strategies. System prompt lives in `system-prompt.md`.
+4. `/api/analyze` — Claude with tool-use returns structured JSON: score, opportunities, three
+   strategies, plus a `sources` array. System prompt lives in `system-prompt.md`.
+   **The model web-searches for live comp data before answering**, so `tool_choice` must stay
+   `auto` — forcing `submit_offer_analysis` makes it answer immediately and skip every search
+   (that was the pre-Aug-2026 behavior). The handler loops to resume `pause_turn` (server-side
+   search cap) and nudges once with the tool forced if the model replies without calling it.
+   Source routing lives in the prompt: BLS + Glassdoor always, Levels.fyi + BuiltIn for tech,
+   Repvue + Betts for revenue roles; skip a source rather than guess, and never state a salary
+   figure that didn't come from a search result this session. `sources: []` is valid and means
+   "no usable data found" — the analysis then says so instead of inventing numbers.
+   **Latency: ~75–110s** (was ~25s), hence `maxDuration: 300` in `vercel.json` and the
+   two-minute expectation in the loading overlay. Web search bills ~$10/1,000 searches on top
+   of tokens, and the free analysis is what runs it — watch the per-analysis cost.
 5. `/results` **ResultsPage** — score, opportunities, three strategy cards. The risk-tolerance
    answer maps Cautious→Conservative / Balanced→Balanced / Aggressive→Aggressive and puts the
    "Recommended for you" badge on that card (old links without the field fall back to Balanced).
