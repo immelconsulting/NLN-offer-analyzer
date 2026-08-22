@@ -21,9 +21,11 @@ export async function extractTextFromUpload(file) {
     let text = null;
 
     if (type.includes("pdf") || name.endsWith(".pdf")) {
-      const { PDFParse } = await import("pdf-parse");
-      const parser = new PDFParse({ data: new Uint8Array(buf) });
-      const result = await parser.getText();
+      // unpdf bundles a serverless-friendly pdfjs build (no worker files),
+      // which is why it's used here instead of pdf-parse.
+      const { extractText, getDocumentProxy } = await import("unpdf");
+      const pdf = await getDocumentProxy(new Uint8Array(buf));
+      const result = await extractText(pdf, { mergePages: true });
       text = result?.text || null;
     } else if (
       type.includes("officedocument.wordprocessingml") ||

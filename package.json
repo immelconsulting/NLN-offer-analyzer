@@ -12,13 +12,13 @@
     "@anthropic-ai/sdk": "^0.32.1",
     "@upstash/redis": "^1.38.0",
     "mammoth": "^1.12.1",
-    "pdf-parse": "^2.4.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.26.2",
     "remark-gfm": "^4.0.1",
-    "stripe": "^22.3.1"
+    "stripe": "^22.3.1",
+    "unpdf": "^1.8.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.2",
