@@ -76,9 +76,45 @@ const ANALYSIS_TOOL = {
         required: ["conservative", "balanced", "aggressive"],
       },
       recommendedNextStep: { type: "string" },
+      sources: {
+        type: "array",
+        // Empty is allowed for the genuinely-no-data case; the system prompt
+        // requires at least one entry whenever searches found anything usable.
+        minItems: 0,
+        maxItems: 4,
+        description:
+          "The market-data sources actually used, from web searches run this session. Empty array only if no usable data was found.",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "e.g. 'Levels.fyi', 'BLS'" },
+            url: { type: "string", description: "URL from the search result." },
+            note: {
+              type: "string",
+              description: "One sentence on what data point this source supported.",
+            },
+          },
+          required: ["name", "url", "note"],
+        },
+      },
     },
-    required: ["offerScore", "scoreInterpretation", "opportunities", "strategies", "recommendedNextStep"],
+    required: [
+      "offerScore",
+      "scoreInterpretation",
+      "opportunities",
+      "strategies",
+      "recommendedNextStep",
+      "sources",
+    ],
   },
+};
+
+// Anthropic-hosted search. Capped so a single analysis can't run away on
+// latency or search spend.
+const WEB_SEARCH_TOOL = {
+  type: "web_search_20260209",
+  name: "web_search",
+  max_uses: 5,
 };
 
 function buildUserMessage(form) {
@@ -170,20 +206,58 @@ export default async function handler(req, res) {
       userMessage += `\n\nINTERNAL MARKET DATA (anonymized aggregate from NLN's own past submissions — treat as one signal alongside your general market knowledge, not as a replacement for it):\n${comparables}`;
     }
 
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 4096,
-      system: loadSystemPrompt(),
-      messages: [{ role: "user", content: userMessage }],
-      tools: [ANALYSIS_TOOL],
-      tool_choice: { type: "tool", name: "submit_offer_analysis" },
-    });
+    // The model searches first, then submits the analysis — so the tool choice
+    // must stay "auto" (forcing submit_offer_analysis would make it answer
+    // immediately, with no searches). That means driving a short loop:
+    //   - "pause_turn": the server-side search loop hit its cap; resend to resume.
+    //   - "end_turn" with no tool call: nudge once with the tool forced.
+    const messages = [{ role: "user", content: userMessage }];
+    let analysis = null;
+    let forceSubmit = false;
 
-    const toolBlock = response.content.find((b) => b.type === "tool_use");
-    if (!toolBlock) {
-      throw new Error("No tool use response from model.");
+    for (let attempt = 0; attempt < 4 && !analysis; attempt++) {
+      const response = await client.messages.create({
+        model: "claude-sonnet-4-6",
+        max_tokens: 8192,
+        system: loadSystemPrompt(),
+        messages,
+        tools: [WEB_SEARCH_TOOL, ANALYSIS_TOOL],
+        tool_choice: forceSubmit
+          ? { type: "tool", name: "submit_offer_analysis" }
+          : { type: "auto" },
+      });
+
+      const toolBlock = response.content.find(
+        (b) => b.type === "tool_use" && b.name === "submit_offer_analysis"
+      );
+      if (toolBlock) {
+        analysis = toolBlock.input;
+        break;
+      }
+
+      messages.push({ role: "assistant", content: response.content });
+
+      if (response.stop_reason === "pause_turn") {
+        // Resume without adding a user turn — the API picks up where it left off.
+        continue;
+      }
+
+      // Talked instead of calling the tool: ask once more, tool forced.
+      messages.push({
+        role: "user",
+        content:
+          "Now call submit_offer_analysis with your complete analysis, citing the sources you found.",
+      });
+      forceSubmit = true;
     }
-    const analysis = toolBlock.input;
+
+    if (!analysis) {
+      throw new Error("Model never returned a submit_offer_analysis tool call.");
+    }
+    // Older result links predate this field; keep it an array either way.
+    if (!Array.isArray(analysis.sources)) {
+      analysis.sources = [];
+    }
     // Set server-side (not by the model) so it's reliable in the admin view.
     analysis.internalDataUsed = Boolean(comparables);
 

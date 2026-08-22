@@ -79,6 +79,8 @@ export default function ResultsPage() {
 
         <ScoreCard score={analysis.offerScore} interpretation={analysis.scoreInterpretation} />
 
+        <SourceList sources={analysis.sources} />
+
         <OpportunityList opportunities={analysis.opportunities} />
 
         <StrategyCards
@@ -106,6 +108,33 @@ export default function ResultsPage() {
         </p>
       </main>
     </div>
+  );
+}
+
+// Market-data sources the analysis was built on. Absent on results generated
+// before sourcing existed, and empty when no usable data was found.
+function SourceList({ sources }) {
+  if (!Array.isArray(sources) || sources.length === 0) return null;
+
+  return (
+    <p className="text-sm text-slate-500 -mt-4">
+      Market data sourced from{" "}
+      {sources.map((s, i) => (
+        <span key={`${s.url}-${i}`}>
+          {i > 0 && (i === sources.length - 1 ? " and " : ", ")}
+          <a
+            href={s.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={s.note}
+            className="font-medium text-navy-600 hover:text-navy-900 underline transition"
+          >
+            {s.name}
+          </a>
+        </span>
+      ))}
+      .
+    </p>
   );
 }
 

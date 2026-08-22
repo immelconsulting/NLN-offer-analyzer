@@ -519,11 +519,12 @@ function LoadingOverlay() {
       <img src={icon} alt="NLN" className="h-14 w-auto animate-pulse mb-8" />
       <div className="h-10 w-10 rounded-full border-4 border-navy-100 border-t-navy-600 animate-spin mb-6" />
       <p className="text-xl font-serif font-semibold text-navy-900">
-        Analyzing your offer…
+        Researching your offer…
       </p>
       <p className="text-slate-600 text-sm mt-2 max-w-xs">
-        We're reviewing your compensation details and building your
-        negotiation strategy. This usually takes 15–30 seconds.
+        We're pulling current market data for your role and location, then
+        building your negotiation strategy. This takes up to two minutes —
+        worth the wait for real numbers.
       </p>
     </div>
   );
