@@ -18,7 +18,14 @@ dashboards (Stripe, Vercel, Trustpilot).
    `/thanks`, a stage-matched resource page (PDF guides in `public/resources/`) + Calendly CTA.
 3. `/offer` **OfferForm** — analyzer form. Required: role, location, base salary, top priority,
    **risk tolerance** (Cautious/Balanced/Aggressive). Optional: "Anything else we should know?"
-   context textarea. Salary inputs auto-format with thousands commas.
+   context textarea, plus an "Extra Context" section — resume upload and job-description
+   paste-or-upload (PDF/DOCX/TXT, 2MB client cap; no URL fetching by design — job boards block
+   it and server-side URL fetch is an SSRF risk). Files are base64-POSTed to `/api/analyze`
+   only; they never enter the URL-encoded results. `api/_lib/extract.js` extracts text
+   (**unpdf** for PDFs — pdf-parse crashes at boot on Vercel; mammoth for DOCX; lazy imports so
+   the endpoint can never die from a parser), which feeds both prompts and is stored on the
+   submission record (text only, never files). `/api/generate-script` reloads it via
+   `analysis.submissionId`. Salary inputs auto-format with thousands commas.
 4. `/api/analyze` — Claude with tool-use (forced `submit_offer_analysis` tool) returns structured
    JSON: score, opportunities, three strategies. System prompt lives in `system-prompt.md`.
 5. `/results` **ResultsPage** — score, opportunities, three strategy cards. The risk-tolerance
