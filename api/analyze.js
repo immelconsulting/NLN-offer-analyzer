@@ -8,6 +8,7 @@ import {
   listRecentSubmissions,
 } from "./_lib/store.js";
 import { buildComparablesSummary } from "./_lib/comparables.js";
+import { extractTextFromUpload } from "./_lib/extract.js";
 
 // Loads the system prompt from system-prompt.md at the project root so it can
 // be edited without touching this file. Falls back to a placeholder if the
@@ -148,7 +149,23 @@ export default async function handler(req, res) {
     const redis = getRedis();
     const comparables = await getInternalMarketData(redis, form);
 
+    // Optional context uploads: extract text server-side; failures simply
+    // mean the analysis proceeds without that context.
+    const resumeText = await extractTextFromUpload(form.resumeFile);
+    const jobDescriptionText =
+      (await extractTextFromUpload(form.jobDescriptionFile)) ||
+      (typeof form.jobDescriptionText === "string" &&
+      form.jobDescriptionText.trim()
+        ? form.jobDescriptionText.trim().slice(0, 8000)
+        : null);
+
     let userMessage = buildUserMessage(form);
+    if (resumeText) {
+      userMessage += `\n\nCANDIDATE RESUME (optional context provided by the candidate — use it to sharpen the value framing and opportunities, not to re-evaluate the candidate):\n${resumeText}`;
+    }
+    if (jobDescriptionText) {
+      userMessage += `\n\nJOB DESCRIPTION (optional context provided by the candidate):\n${jobDescriptionText}`;
+    }
     if (comparables) {
       userMessage += `\n\nINTERNAL MARKET DATA (anonymized aggregate from NLN's own past submissions — treat as one signal alongside your general market knowledge, not as a replacement for it):\n${comparables}`;
     }
@@ -174,7 +191,14 @@ export default async function handler(req, res) {
     if (redis) {
       try {
         const id = newSubmissionId();
-        const { leadEmail, ...formFields } = form;
+        // Files stay out of storage — only the extracted text is kept.
+        const {
+          leadEmail,
+          resumeFile,
+          jobDescriptionFile,
+          jobDescriptionText: _jdRaw,
+          ...formFields
+        } = form;
         await saveSubmission(redis, {
           id,
           email: (leadEmail || "").trim().toLowerCase(),
@@ -182,6 +206,8 @@ export default async function handler(req, res) {
           form: formFields,
           analysis,
           comparablesSummary: comparables,
+          resumeText,
+          jobDescriptionText,
           script: null,
           scriptGeneratedAt: null,
         });

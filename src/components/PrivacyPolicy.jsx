@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
-const EFFECTIVE_DATE = "July 26, 2026";
+const EFFECTIVE_DATE = "August 21, 2026";
 
 function SectionHeading({ children }) {
   return (
@@ -39,6 +39,11 @@ export default function PrivacyPolicy() {
               Details you enter about your job offer (role, location, salary
               figures, and any additional context you provide) — used only to
               generate your personalized analysis and script
+            </li>
+            <li>
+              If you choose to share them, the text of your resume and/or a
+              job description — used only to add context to your analysis and
+              script (we keep the extracted text, not the file itself)
             </li>
             <li>
               Basic usage data, such as which stage of your job search you

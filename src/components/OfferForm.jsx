@@ -104,6 +104,11 @@ function formatNumbersInText(value) {
 export default function OfferForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState(initialState);
+  // Optional context uploads live outside `form` so they never end up in
+  // the URL-encoded results — only their extracted text is used server-side.
+  const [resumeFile, setResumeFile] = useState(null);
+  const [jobDescriptionFile, setJobDescriptionFile] = useState(null);
+  const [jobDescriptionText, setJobDescriptionText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -148,7 +153,13 @@ export default function OfferForm() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, leadEmail }),
+        body: JSON.stringify({
+          ...form,
+          leadEmail,
+          resumeFile,
+          jobDescriptionFile,
+          jobDescriptionText,
+        }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -418,6 +429,52 @@ export default function OfferForm() {
             </div>
           </section>
 
+          {/* Optional context uploads */}
+          <section className="space-y-5">
+            <h2 className="text-lg font-serif font-semibold text-navy-900 border-b border-slate-200 pb-2">
+              Extra Context <span className="text-sm font-sans font-normal text-slate-500">(optional)</span>
+            </h2>
+            <p className="text-sm text-slate-500 -mt-2">
+              These are used only to add context to your analysis and script —
+              nothing here is required.
+            </p>
+
+            <div>
+              <FieldLabel>Your resume</FieldLabel>
+              <FileUpload
+                file={resumeFile}
+                onChange={setResumeFile}
+                onError={setError}
+              />
+              <p className="text-sm text-slate-500 mt-1.5">
+                Helps tailor your value framing to your actual background.
+              </p>
+            </div>
+
+            <div>
+              <FieldLabel>Job description</FieldLabel>
+              <textarea
+                className={inputClass}
+                rows={4}
+                value={jobDescriptionText}
+                onChange={(e) => setJobDescriptionText(e.target.value)}
+                placeholder="Paste the job description here…"
+              />
+              <div className="mt-2">
+                <FileUpload
+                  file={jobDescriptionFile}
+                  onChange={setJobDescriptionFile}
+                  onError={setError}
+                  label="…or upload it as a file"
+                />
+              </div>
+              <p className="text-sm text-slate-500 mt-1.5">
+                Pasting works best — links to job boards often can't be read,
+                so copy the text instead.
+              </p>
+            </div>
+          </section>
+
           {error && (
             <div className="rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-sm px-4 py-3">
               {error}
@@ -469,6 +526,66 @@ function LoadingOverlay() {
         negotiation strategy. This usually takes 15–30 seconds.
       </p>
     </div>
+  );
+}
+
+const UPLOAD_MAX_BYTES = 2 * 1024 * 1024; // 2MB
+const UPLOAD_ACCEPT = ".pdf,.docx,.txt";
+
+// Optional-context file picker. Reads the file into base64 in the browser
+// and hands back { name, type, data } — the server extracts the text.
+function FileUpload({ file, onChange, onError, label }) {
+  function handlePick(e) {
+    const picked = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
+    if (!picked) return;
+    const name = picked.name.toLowerCase();
+    if (!/\.(pdf|docx|txt)$/.test(name)) {
+      onError("Please upload a PDF, Word (.docx), or plain text (.txt) file.");
+      return;
+    }
+    if (picked.size > UPLOAD_MAX_BYTES) {
+      onError("That file is over 2MB — please upload a smaller version.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = String(reader.result).split(",")[1] || "";
+      onChange({ name: picked.name, type: picked.type, data: base64 });
+      onError("");
+    };
+    reader.onerror = () => onError("We couldn't read that file — please try again.");
+    reader.readAsDataURL(picked);
+  }
+
+  if (file) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-md border border-navy-200 bg-navy-50 px-3 py-2.5">
+        <span className="text-sm text-navy-900 truncate">📄 {file.name}</span>
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="shrink-0 text-sm font-medium text-slate-500 hover:text-rose-600 transition py-1 px-2"
+        >
+          Remove
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <label className="flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-3 py-2.5 cursor-pointer hover:border-navy-400 transition">
+      <span className="text-sm text-slate-600">
+        {label || "Upload a file"}{" "}
+        <span className="text-slate-400">(PDF, Word, or .txt — max 2MB)</span>
+      </span>
+      <input
+        type="file"
+        accept={UPLOAD_ACCEPT}
+        onChange={handlePick}
+        className="sr-only"
+      />
+    </label>
   );
 }
 

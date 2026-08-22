@@ -147,6 +147,26 @@ export default function AdminPage() {
               <Field label="Leverage" value={f.hasLeverage ? f.leverageDetails || "Yes" : "No"} />
             </dl>
             <Field label="Additional context" value={f.additionalContext} />
+            {selected.resumeText && (
+              <details className="mt-4">
+                <summary className="text-sm font-medium text-navy-700 cursor-pointer">
+                  Resume (extracted text)
+                </summary>
+                <pre className="text-xs text-slate-700 whitespace-pre-wrap bg-slate-50 rounded-lg p-4 mt-2 overflow-x-auto">
+                  {selected.resumeText}
+                </pre>
+              </details>
+            )}
+            {selected.jobDescriptionText && (
+              <details className="mt-4">
+                <summary className="text-sm font-medium text-navy-700 cursor-pointer">
+                  Job description
+                </summary>
+                <pre className="text-xs text-slate-700 whitespace-pre-wrap bg-slate-50 rounded-lg p-4 mt-2 overflow-x-auto">
+                  {selected.jobDescriptionText}
+                </pre>
+              </details>
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">

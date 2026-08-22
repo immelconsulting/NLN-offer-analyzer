@@ -2,7 +2,7 @@ import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
-import { getRedis, updateSubmission } from "./_lib/store.js";
+import { getRedis, getSubmission, updateSubmission } from "./_lib/store.js";
 
 // Generates the paid counter-offer script. The client sends the Stripe
 // Checkout session id from the Payment Link redirect plus the offer data it
@@ -120,11 +120,33 @@ export default async function handler(req, res) {
 
   try {
     const client = new Anthropic({ apiKey });
+
+    // Optional resume/JD context was extracted and stored at analysis time
+    // (files can't travel through the URL-encoded results). Missing record
+    // or storage trouble simply means the script goes without it.
+    let userMessage = buildUserMessage(form, analysis);
+    if (analysis.submissionId) {
+      try {
+        const redis = getRedis();
+        const record = redis
+          ? await getSubmission(redis, analysis.submissionId)
+          : null;
+        if (record?.resumeText) {
+          userMessage += `\n\nCANDIDATE RESUME (optional context — use it to make the value headline and counter specific to their background):\n${record.resumeText}`;
+        }
+        if (record?.jobDescriptionText) {
+          userMessage += `\n\nJOB DESCRIPTION (optional context):\n${record.jobDescriptionText}`;
+        }
+      } catch (err) {
+        console.error("Failed to load stored context for script:", err);
+      }
+    }
+
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
       system: loadSystemPrompt(),
-      messages: [{ role: "user", content: buildUserMessage(form, analysis) }],
+      messages: [{ role: "user", content: userMessage }],
     });
 
     const script = response.content
