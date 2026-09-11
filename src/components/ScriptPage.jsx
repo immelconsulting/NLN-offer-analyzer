@@ -5,7 +5,7 @@ import remarkGfm from "remark-gfm";
 import { decodeResult } from "../lib/encodeResult.js";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
-import { CONTACT_EMAIL, SCHEDULING_URL } from "../lib/config.js";
+import { CONTACT_EMAIL } from "../lib/config.js";
 
 // Post-payment destination. Stripe's Payment Link redirects here with
 // ?session_id={CHECKOUT_SESSION_ID}; the offer data was stashed in
@@ -195,17 +195,15 @@ export default function ScriptPage() {
                 Want a negotiator in your corner for the real call?
               </h2>
               <p className="text-navy-200 text-sm mt-2 max-w-md mx-auto">
-                Book a free 1:1 consultation and we'll walk through your script
-                together before you pick up the phone.
+                Book a Negotiation Strategy Session and we'll walk through
+                your script together before you pick up the phone.
               </p>
-              <a
-                href={SCHEDULING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                to="/session"
                 className="inline-block mt-5 bg-white text-navy-900 hover:bg-navy-50 font-medium rounded-md px-6 py-3 transition"
               >
-                Book a free consultation
-              </a>
+                Learn About Strategy Sessions
+              </Link>
             </div>
           </>
         )}

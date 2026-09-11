@@ -6,7 +6,6 @@ import OpportunityList from "./OpportunityList.jsx";
 import StrategyCards from "./StrategyCards.jsx";
 import ShareButton from "./ShareButton.jsx";
 import SiteHeader from "./SiteHeader.jsx";
-import { SCHEDULING_URL } from "../lib/config.js";
 
 export default function ResultsPage() {
   const [searchParams] = useSearchParams();
@@ -147,6 +146,13 @@ function NextStepChoice({ encoded }) {
     navigate(`/proof${encoded ? `?d=${encoded}` : ""}`);
   }
 
+  function handleBookSession() {
+    // Same pattern as the script path: sell the value on its own page
+    // before handing off to the external booking link, rather than sending
+    // people straight out of the app on the first click.
+    navigate("/session");
+  }
+
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
       <p className="font-serif font-semibold text-navy-900 text-xl text-center mb-6">
@@ -164,15 +170,16 @@ function NextStepChoice({ encoded }) {
             A full counter-offer script written for your exact offer
           </span>
         </button>
-        <a
-          href={SCHEDULING_URL}
+        <button
+          type="button"
+          onClick={handleBookSession}
           className="rounded-lg border-2 border-navy-900 text-navy-900 hover:bg-navy-50 p-5 text-center transition"
         >
-          <span className="block font-semibold">Talk to a negotiator</span>
+          <span className="block font-semibold">Book a Strategy Session</span>
           <span className="block text-sm text-slate-600 mt-1">
-            Schedule a call and get an expert in your corner
+            Get a negotiator in your corner for the actual call
           </span>
-        </a>
+        </button>
       </div>
     </div>
   );

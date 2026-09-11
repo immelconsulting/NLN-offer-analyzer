@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
-import { CONTACT_EMAIL, SCHEDULING_URL } from "../lib/config.js";
+import { CONTACT_EMAIL } from "../lib/config.js";
 
 const RESOURCES = {
   databases: {
@@ -114,12 +114,12 @@ export default function ThankYou() {
             It's never too early to start strategizing your negotiation — the
             earlier we talk, the more options you have.
           </p>
-          <a
-            href={SCHEDULING_URL}
+          <Link
+            to="/session"
             className="inline-block mt-5 bg-white text-navy-900 hover:bg-navy-50 font-medium rounded-md px-6 py-3 transition"
           >
-            Book a free consultation
-          </a>
+            Learn About Strategy Sessions
+          </Link>
         </div>
 
         <p className="text-center text-sm text-slate-500">

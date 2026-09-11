@@ -1,8 +1,8 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import {
   STRIPE_PAYMENT_LINK_URL,
-  SCHEDULING_URL,
+  STRATEGY_SESSION_PRICE_LABEL,
   TRUSTPILOT_REVIEWS_URL,
   FREE_TEST_MODE,
 } from "../lib/config.js";
@@ -103,12 +103,16 @@ export default function ProofPage() {
             >
               Get my instant script — $47
             </button>
-            <a
-              href={SCHEDULING_URL}
+            <Link
+              to="/session"
               className="block w-full text-center rounded-md border border-slate-300 text-navy-800 font-medium px-6 py-3.5 hover:border-navy-600 hover:bg-navy-50 transition"
             >
-              Actually, I'd rather talk to an expert
-            </a>
+              Book a Negotiation Strategy Session instead
+            </Link>
+            <p className="text-center text-xs text-slate-500">
+              1:1 support from a Next Level Negotiation strategist — sessions
+              start at {STRATEGY_SESSION_PRICE_LABEL}.
+            </p>
             {FREE_TEST_MODE && (
               <button
                 type="button"

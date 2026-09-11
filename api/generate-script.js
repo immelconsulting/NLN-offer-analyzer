@@ -1,8 +1,9 @@
-import Stripe from "stripe";
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
 import { getRedis, getSubmission, updateSubmission } from "./_lib/store.js";
+import { verifyPayment } from "./_lib/payment.js";
+import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
 
 // Generates the paid counter-offer script. The client sends the Stripe
 // Checkout session id from the Payment Link redirect plus the offer data it
@@ -13,7 +14,14 @@ function loadSystemPrompt() {
   try {
     const filePath = path.join(process.cwd(), "script-generator-prompt.md");
     const content = fs.readFileSync(filePath, "utf-8").trim();
-    if (content) return content;
+    // The prompt's sign-off links out to the paid strategy session. That URL
+    // stays in src/lib/config.js rather than being duplicated in the prompt,
+    // so changing the booking link is a one-line edit. It stays an absolute
+    // external URL (not /session) because the script gets downloaded as a
+    // standalone PDF, where an in-app relative link would be dead.
+    if (content) {
+      return content.replaceAll("{{strategy_session_url}}", STRATEGY_SESSION_URL);
+    }
   } catch {
     // fall through to placeholder
   }
@@ -61,37 +69,6 @@ function buildUserMessage(form, analysis) {
     "NEGOTIATION ANALYSIS THEY RECEIVED:",
     JSON.stringify(analysis, null, 2),
   ].join("\n");
-}
-
-async function verifyPayment(sessionId) {
-  // Escape hatch for testing without a real payment. Always available off
-  // production; in production only while ALLOW_TEST_BYPASS=true is set
-  // (temporary free-test mode — see FREE_TEST_MODE in src/lib/config.js).
-  if (
-    sessionId === "test_skip_payment" &&
-    (process.env.VERCEL_ENV !== "production" ||
-      process.env.ALLOW_TEST_BYPASS === "true")
-  ) {
-    return { paid: true };
-  }
-
-  const stripeKey = process.env.STRIPE_SECRET_KEY;
-  if (!stripeKey) {
-    return { paid: false, error: "Payment verification is not configured.", status: 500 };
-  }
-
-  try {
-    const stripe = new Stripe(stripeKey);
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
-    // "no_payment_required" covers $0 checkouts (e.g. a 100%-off promo code).
-    if (!["paid", "no_payment_required"].includes(session.payment_status)) {
-      return { paid: false, error: "This payment hasn't been completed.", status: 402 };
-    }
-    return { paid: true };
-  } catch (err) {
-    console.error("Stripe session lookup failed:", err);
-    return { paid: false, error: "We couldn't verify your payment.", status: 402 };
-  }
 }
 
 export default async function handler(req, res) {

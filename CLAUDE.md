@@ -15,7 +15,8 @@ dashboards (Stripe, Vercel, Trustpilot).
    (pre-checkbox leads export as opt-in "no"). Privacy Policy lives at `/privacy`
    (`src/components/PrivacyPolicy.jsx`), linked near the email field.
 2. Branch: only **"Received an offer"** → `/offer`. Applying / Interviewing / Expecting-soon →
-   `/thanks`, a stage-matched resource page (PDF guides in `public/resources/`) + Calendly CTA.
+   `/thanks`, a stage-matched resource page (PDF guides in `public/resources/`) + Strategy
+   Session CTA.
 3. `/offer` **OfferForm** — analyzer form. Required: role, location, base salary, top priority,
    **risk tolerance** (Cautious/Balanced/Aggressive). Optional: "Anything else we should know?"
    context textarea, plus an "Extra Context" section — resume upload and job-description
@@ -49,13 +50,27 @@ dashboards (Stripe, Vercel, Trustpilot).
    "Recommended for you" badge on that card (old links without the field fall back to Balanced).
    Results are stateless: everything is base64-encoded in the `?d=` URL param (`src/lib/encodeResult.js`).
 6. Micro-decision → `/proof` **ProofPage** — credibility page ($47 early-access price, Trustpilot
-   proof, quote) with two CTAs: Stripe checkout or Calendly. Before checkout the encoded offer data
-   is stashed in `localStorage["nln:pendingScript"]`.
+   proof, quote) with two CTAs: Stripe checkout or a Strategy Session booking (routes to
+   `/session`, never straight to the external booking link). Before checkout the encoded offer
+   data is stashed in `localStorage["nln:pendingScript"]`.
 7. Stripe Payment Link redirects to `/script?session_id={CHECKOUT_SESSION_ID}`. **ScriptPage** reads
    the stash and POSTs to `/api/generate-script`, which verifies the checkout session is paid
    (`paid` or `no_payment_required`) via `STRIPE_SECRET_KEY`, then generates the counter-offer
    script from `script-generator-prompt.md`. Output is markdown (comp table via remark-gfm),
    rendered with react-markdown; page offers Download-as-PDF (window.print) and a feedback mailto.
+   The script's own sign-off links directly to `STRATEGY_SESSION_URL` (not `/session`), since it
+   must still work when the script is downloaded/printed as a standalone PDF outside the app.
+   The prompt holds a `{{strategy_session_url}}` placeholder that `api/generate-script.js`
+   substitutes at request time, so the booking URL lives only in `src/lib/config.js`.
+8. `/session` **SessionProofPage** (added Sept 2026, mirrors ProofPage) — sells the paid
+   Negotiation Strategy Session ($199 / 30 min, $329 / hour) before handing off to
+   `STRATEGY_SESSION_URL`. Every in-app "book a session" CTA (ResultsPage, ProofPage,
+   ScriptPage's post-script upsell, ThankYou's dead-end pages) routes here first rather than
+   linking the external booking URL directly. `PROOF_POINTS` in that file are deliberately
+   generic (no invented client counts, win rates, or years-in-business); swap in real numbers or
+   a real client quote from Jenny/Alisa when available, following the same pattern as
+   `PROOF_POINTS` and the blockquote in `ProofPage.jsx` — don't reuse the script testimonial
+   there, it's about the script product specifically, not a live session.
 
 ## Submission storage & admin (added July 26, 2026)
 
@@ -75,8 +90,8 @@ median-only at 3-4 samples, range at 5+; requester's own email excluded). The se
 identifying details into another user's analysis — aggregates only.
 
 - `system-prompt.md` / `script-generator-prompt.md` — both prompts are file-based, read at request time.
-- `src/lib/config.js` — Stripe Payment Link URL, Calendly URL, Trustpilot URL, contact email,
-  and the `FREE_TEST_MODE` flag.
+- `src/lib/config.js` — Stripe Payment Link URL, Strategy Session booking URL + price labels,
+  Trustpilot URL, contact email, and the `FREE_TEST_MODE` flag.
 - `api/analyze.js`, `api/generate-script.js`, `api/lead.js`, `api/leads.js` — Vercel functions.
 - Brand: navy scale in `tailwind.config.js` (#001E34 / #16163F / #0099CC / #6BCCF7 / #D8F0F8),
   logos in `src/assets/`, Trustpilot green #00B67A for stars.
@@ -114,8 +129,13 @@ questions (hiring-team feedback early; "How did you come to this offer?" pre-cou
 can do without putting yourself in a bad position" for objections). Clear open questions before
 negotiating. No day-specific timing advice unless the deadline confirms a safe window.
 Industry lens (tech=base/equity; healthcare/gov/nonprofit=non-salary levers; finance/legal=
-bonus/sign-on) never overrides actual offer data. Free-consult mentions link Calendly
-(calendly.com/aleximmel/salary-negotiation-consultation). No fake urgency, no crossed-out prices.
+bonus/sign-on) never overrides actual offer data. Paid-session mentions link
+`STRATEGY_SESSION_URL` (`src/lib/config.js`) — a Negotiation Strategy Session, never called a
+"free consult" or a "quickie". As of the JobJenny pilot this books time with the JobJenny team
+(Jenny/Alisa), not Alex; the script-generator prompt gets the same URL substituted in at request
+time (`{{strategy_session_url}}` in `script-generator-prompt.md`, filled by
+`api/generate-script.js`) so it's a one-place update, not two. No fake urgency, no crossed-out
+prices.
 
 **Compliance copy (required — never remove):** AI-disclosure lines below the CTAs on the landing
 page, offer form, and results page ("uses AI, guided by NLN's negotiation methodology" — never
