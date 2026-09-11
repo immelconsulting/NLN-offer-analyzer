@@ -4,16 +4,20 @@ import {
   STRATEGY_SESSION_60MIN_CHECKOUT_URL,
   STRATEGY_SESSION_PRICE_LABEL,
   STRATEGY_SESSION_PRICE_LABEL_60MIN,
-  TRUSTPILOT_REVIEWS_URL,
   FREE_TEST_MODE,
 } from "../lib/config.js";
 
-// Mirrors ProofPage.jsx (which sells the $47 self-serve script) but sells the
-// paid 1:1 Negotiation Strategy Session instead. Reached whenever someone
-// chooses the "human" path instead of the DIY script — from the results
-// page, the post-script upsell, or the /thanks dead-end for the three
-// earlier stages — so the sell happens on its own page instead of a single
-// button dropped into someone else's page.
+// Sells the paid 1:1 Negotiation Strategy Session. Structurally mirrors
+// ProofPage.jsx (which sells the $47 self-serve script), but the two pages
+// address different audiences and the copy here should not be synced to it.
+//
+// AUDIENCE: mostly JobJenny coaching clients who just finished their
+// resume/LinkedIn work and were sent straight here as the next step — not
+// cold traffic discovering the tool, and often people who have never touched
+// the self-serve script. So the copy leans on the JobJenny relationship they
+// already trust, and deliberately never frames a session as the better
+// choice over the script; for most visitors here the script isn't the thing
+// they're weighing it against.
 //
 // Flow: pick a tier here → Stripe checkout for that tier → /booking, which
 // confirms the payment and only then reveals JobJenny's Thrive calendar.
@@ -26,10 +30,10 @@ import {
 // from ProofPage, since that quote is about the script product, not a live
 // session.
 const PROOF_POINTS = [
-  "Live, 1:1 coaching from an experienced negotiator, not a static document.",
-  "Your strategist adapts in real time to whatever the recruiter actually says, including the objections a script can't predict.",
-  "Built on the same negotiation methodology behind your script, applied live to your specific offer and your specific conversation.",
-  "Choose 30 or 60 minutes depending on how much support you want going into the call.",
+  "One-on-one time with a JobJenny negotiation coach, working from your actual target role, your numbers, and the specific conversation ahead of you, not generic advice.",
+  "You don't need an offer in hand to book this. The earlier you prep, the more room you have to shape how the conversation goes.",
+  "Real conversations rarely go the way you rehearsed. Your coach can adjust in real time to whatever the recruiter or hiring manager actually says back.",
+  "Built on Next Level Negotiation's methodology, the same approach behind hundreds of real negotiations, applied to your specific situation.",
 ];
 
 const TIERS = [
@@ -63,12 +67,13 @@ export default function SessionProofPage() {
       <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
           <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-navy-900 text-center">
-            A script gets you ready. A strategist gets you through it.
+            Your resume is polished. Let's make sure your negotiation is too.
           </h1>
           <p className="text-slate-700 text-center mt-3 max-w-xl mx-auto">
-            Some negotiations are simple enough to run yourself. Others go
-            better with an experienced negotiator in your corner, live, while
-            it's happening.
+            You've already put in the work on your resume and LinkedIn. A
+            Negotiation Strategy Session with your JobJenny coach makes sure
+            that work actually pays off, literally, when it's time to talk
+            numbers.
           </p>
 
           <ul className="mt-8 space-y-4">
@@ -94,19 +99,6 @@ export default function SessionProofPage() {
               </cite>
             </blockquote>
           */}
-
-          <div className="mt-6 text-center">
-            <a
-              href={TRUSTPILOT_REVIEWS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 font-medium text-navy-600 hover:text-navy-900 transition"
-            >
-              {/* Trustpilot brand green */}
-              <span className="text-[#00B67A]" aria-hidden="true">★★★★★</span>
-              See what past clients say on Trustpilot →
-            </a>
-          </div>
 
           <h2 className="mt-10 text-lg font-serif font-semibold text-navy-900 text-center">
             Choose your session
