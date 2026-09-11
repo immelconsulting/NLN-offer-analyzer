@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL, THRIVE_BOOKING_URL } from "../lib/config.js";
+import { track } from "../lib/track.js";
 
 // Post-payment destination for the Negotiation Strategy Session. Both Stripe
 // Payment Links (30 min and 60 min) redirect here with
@@ -35,7 +36,10 @@ export default function BookingPage() {
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(body.error || "We couldn't verify your payment.");
-        if (!cancelled) setStatus("paid");
+        if (!cancelled) {
+          setStatus("paid");
+          track("booking_confirmed");
+        }
       } catch (err) {
         if (!cancelled) {
           setStatus("error");

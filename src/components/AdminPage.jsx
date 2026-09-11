@@ -9,6 +9,47 @@ import SiteHeader from "./SiteHeader.jsx";
 const inputClass =
   "w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition";
 
+// Funnel events in order, with short labels for the rollup row.
+const FUNNEL_STEPS = [
+  ["results_viewed", "Results"],
+  ["script_cta_clicked", "Script CTA"],
+  ["proof_viewed", "Proof"],
+  ["script_checkout_clicked", "Script checkout"],
+  ["script_generated", "Script done"],
+  ["session_cta_clicked", "Session CTA"],
+  ["session_viewed", "Session"],
+  ["session_checkout_clicked", "Session checkout"],
+  ["booking_confirmed", "Booked"],
+];
+
+function FunnelSummary({ funnel }) {
+  if (!funnel) return null;
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Funnel
+        </h2>
+        <span className="text-xs text-slate-400">today / last 7 days</span>
+      </div>
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+        {FUNNEL_STEPS.map(([key, label]) => (
+          <div key={key}>
+            <p className="text-lg font-serif font-semibold text-navy-900 leading-none">
+              {funnel[key]?.today ?? 0}
+              <span className="text-sm font-sans font-normal text-slate-400">
+                {" "}
+                / {funnel[key]?.week ?? 0}
+              </span>
+            </p>
+            <p className="text-xs text-slate-500 mt-1">{label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function Field({ label, value }) {
   if (value === undefined || value === null || value === "") return null;
   return (
@@ -28,6 +69,7 @@ export default function AdminPage() {
   const [tokenInput, setTokenInput] = useState("");
   const [query, setQuery] = useState("");
   const [subs, setSubs] = useState([]);
+  const [funnel, setFunnel] = useState(null);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,6 +89,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error("Could not load submissions.");
       const body = await res.json();
       setSubs(body.submissions);
+      setFunnel(body.funnel ?? null);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -230,6 +273,8 @@ export default function AdminPage() {
             </a>
           </div>
         </div>
+
+        <FunnelSummary funnel={funnel} />
 
         <form
           onSubmit={(e) => {

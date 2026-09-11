@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { track } from "../lib/track.js";
 import { decodeResult } from "../lib/encodeResult.js";
 import ScoreCard from "./ScoreCard.jsx";
 import OpportunityList from "./OpportunityList.jsx";
@@ -19,6 +20,14 @@ export default function ResultsPage() {
       return null;
     }
   }, [encoded]);
+
+  // Guarded inside the effect rather than wrapped in a condition, so the hook
+  // order stays stable across the no-data early return below.
+  useEffect(() => {
+    if (data?.analysis) {
+      track("results_viewed", { offerScore: data.analysis.offerScore });
+    }
+  }, [data]);
 
   if (!data) {
     return (
@@ -141,12 +150,14 @@ function NextStepChoice({ encoded }) {
   const navigate = useNavigate();
 
   function handleGetScript() {
+    track("script_cta_clicked");
     // Proof/credibility step first; it stashes the offer data and sends
     // the visitor on to Stripe from there.
     navigate(`/proof${encoded ? `?d=${encoded}` : ""}`);
   }
 
   function handleBookSession() {
+    track("session_cta_clicked");
     // Same pattern as the script path: sell the value on its own page
     // before handing off to the external booking link, rather than sending
     // people straight out of the app on the first click.

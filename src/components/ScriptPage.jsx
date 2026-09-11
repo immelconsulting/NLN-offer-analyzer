@@ -6,6 +6,7 @@ import { decodeResult } from "../lib/encodeResult.js";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
+import { track } from "../lib/track.js";
 
 // Post-payment destination. Stripe's Payment Link redirects here with
 // ?session_id={CHECKOUT_SESSION_ID}; the offer data was stashed in
@@ -82,7 +83,10 @@ export default function ScriptPage() {
         if (!res.ok) {
           throw new Error(body.error || "Something went wrong generating your script.");
         }
-        if (!cancelled) setScript(body.script);
+        if (!cancelled) {
+          setScript(body.script);
+          track("script_generated");
+        }
       } catch (err) {
         if (!cancelled) setError(err.message || "Something went wrong. Please try again.");
       } finally {

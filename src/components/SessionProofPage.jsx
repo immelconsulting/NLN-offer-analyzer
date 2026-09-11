@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import SiteHeader from "./SiteHeader.jsx";
+import { track } from "../lib/track.js";
 import {
   STRATEGY_SESSION_30MIN_CHECKOUT_URL,
   STRATEGY_SESSION_60MIN_CHECKOUT_URL,
@@ -60,6 +62,10 @@ const TIERS = [
 ];
 
 export default function SessionProofPage() {
+  useEffect(() => {
+    track("session_viewed");
+  }, []);
+
   return (
     <div className="min-h-screen bg-navy-50">
       <SiteHeader />
@@ -131,6 +137,11 @@ export default function SessionProofPage() {
                 </p>
                 <a
                   href={tier.checkoutUrl}
+                  // Beacon fires and the link navigates as normal — no
+                  // preventDefault, so checkout is never delayed by tracking.
+                  onClick={() =>
+                    track("session_checkout_clicked", { tier: tier.duration })
+                  }
                   className={`mt-5 block w-full text-center font-semibold rounded-md px-5 py-3.5 transition shadow-sm ${
                     tier.featured
                       ? "bg-navy-900 hover:bg-navy-600 text-white"

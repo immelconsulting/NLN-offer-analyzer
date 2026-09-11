@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
+import { track } from "../lib/track.js";
 import {
   STRIPE_PAYMENT_LINK_URL,
   STRATEGY_SESSION_PRICE_LABEL,
@@ -21,6 +23,10 @@ export default function ProofPage() {
   const navigate = useNavigate();
   const encoded = searchParams.get("d");
 
+  useEffect(() => {
+    track("proof_viewed");
+  }, []);
+
   function stashOfferData() {
     // The /script page picks this up — after the round-trip through Stripe
     // on the paid path, or immediately on the free test path.
@@ -30,6 +36,7 @@ export default function ProofPage() {
   }
 
   function handleCheckout() {
+    track("script_checkout_clicked");
     stashOfferData();
     window.location.href = STRIPE_PAYMENT_LINK_URL;
   }

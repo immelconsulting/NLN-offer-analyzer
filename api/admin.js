@@ -2,6 +2,7 @@ import {
   getRedis,
   getSubmission,
   listRecentSubmissions,
+  getFunnelCounts,
 } from "./_lib/store.js";
 
 // Read-only admin API, protected by the same token as the leads export:
@@ -108,8 +109,19 @@ export default async function handler(req, res) {
     const q = (req.query.q || "").trim().toLowerCase();
     const filtered = q ? subs.filter((s) => matchesQuery(s, q)) : subs;
 
+    // Rollup rides along on the list response so the admin page doesn't need
+    // a second request. A counter read failing shouldn't cost Alex the
+    // submissions table, so it degrades to null.
+    let funnel = null;
+    try {
+      funnel = await getFunnelCounts(redis);
+    } catch (err) {
+      console.error("Funnel rollup failed:", err);
+    }
+
     // List view: summaries only, full record fetched by id on click.
     return res.status(200).json({
+      funnel,
       submissions: filtered.map((s) => ({
         id: s.id,
         timestamp: s.timestamp,
