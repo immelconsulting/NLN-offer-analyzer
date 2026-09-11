@@ -6,7 +6,30 @@ https://nln-offer-analyzer.vercel.app (repo: immelconsulting/NLN-offer-analyzer,
 Alex is non-technical: explain changes in plain English and give click-by-click steps for
 dashboards (Stripe, Vercel, Trustpilot).
 
-## Funnel (all verified end-to-end, including a real Stripe payment)
+## Current status (Sept 11, 2026)
+
+Two products ship from this funnel:
+
+1. **$47 self-serve counter-offer script** — fully live and working end-to-end, including real
+   Stripe payments. Nothing outstanding.
+2. **Paid Negotiation Strategy Session** ($199 / 30 min, $329 / hour) — pages are built and
+   deployed, but **three URLs are still `REPLACE_ME` placeholders in `src/lib/config.js`**, so
+   checkout and booking are non-functional until they're filled in:
+   - `STRATEGY_SESSION_30MIN_CHECKOUT_URL` — Stripe Payment Link, $199 tier
+   - `STRATEGY_SESSION_60MIN_CHECKOUT_URL` — Stripe Payment Link, $329 tier
+   - `THRIVE_BOOKING_URL` — JobJenny's Thrive calendar, revealed after payment on `/booking`
+
+   The two Stripe links must be created on `acct_1MRh0gKjxEB5kBDn` with their after-payment
+   redirect set to `https://<domain>/booking?session_id={CHECKOUT_SESSION_ID}`. Until then the
+   tier buttons lead to dead Stripe URLs — safe only because the site currently gets no traffic.
+
+**JobJenny pilot:** strategy sessions are delivered by the JobJenny team (Jenny/Alisa), not
+Alex. Most `/session` visitors are JobJenny coaching clients sent there straight after their
+resume/LinkedIn work — see item 8 below, that audience drives the page's copy rules. There is
+no longer a free-consult path anywhere in the funnel; every "talk to a human" CTA leads to a
+paid tier.
+
+## Funnel (script path verified end-to-end, including a real Stripe payment)
 
 1. `/` **LandingPage** — hero + required email + job-search stage question + an unchecked
    marketing opt-in checkbox (compliance: email is required only to deliver results; marketing
@@ -62,15 +85,25 @@ dashboards (Stripe, Vercel, Trustpilot).
    must still work when the script is downloaded/printed as a standalone PDF outside the app.
    The prompt holds a `{{strategy_session_url}}` placeholder that `api/generate-script.js`
    substitutes at request time, so the booking URL lives only in `src/lib/config.js`.
-8. `/session` **SessionProofPage** (added Sept 2026, mirrors ProofPage) — sells the paid
-   Negotiation Strategy Session ($199 / 30 min, $329 / hour) before handing off to
-   `STRATEGY_SESSION_URL`. Every in-app "book a session" CTA (ResultsPage, ProofPage,
-   ScriptPage's post-script upsell, ThankYou's dead-end pages) routes here first rather than
-   linking the external booking URL directly. `PROOF_POINTS` in that file are deliberately
-   generic (no invented client counts, win rates, or years-in-business); swap in real numbers or
-   a real client quote from Jenny/Alisa when available, following the same pattern as
-   `PROOF_POINTS` and the blockquote in `ProofPage.jsx` — don't reuse the script testimonial
-   there, it's about the script product specifically, not a live session.
+8. `/session` **SessionProofPage** (added Sept 2026, structurally mirrors ProofPage) — sells the
+   paid Negotiation Strategy Session as two tiers, each linking its own Stripe Payment Link:
+   $199 / 30 min (`STRATEGY_SESSION_30MIN_CHECKOUT_URL`) and $329 / hour
+   (`STRATEGY_SESSION_60MIN_CHECKOUT_URL`, visually featured as "Most support"). Every in-app
+   "book a session" CTA (ResultsPage, ProofPage's secondary CTA, ScriptPage's post-script
+   upsell, ThankYou's dead-end pages) routes here rather than linking a booking URL directly.
+   **Audience — this drives the copy:** mostly JobJenny coaching clients sent here right after
+   their resume/LinkedIn work, not cold traffic, and often people who never touched the
+   self-serve script. So the copy leans on the JobJenny relationship and must **never** frame a
+   session as the better choice over the script — for most visitors the script isn't what
+   they're weighing it against. Don't sync this page's copy to ProofPage's. No Trustpilot block
+   here (JobJenny has no Trustpilot presence); the testimonial slot is an empty comment
+   placeholder — a real quote from Jenny/Alisa's practice can fill it, but never reuse
+   ProofPage's script testimonial, which is about the script product.
+9. `/booking` **BookingPage** — post-payment destination for both session tiers. Stripe redirects
+   here with `?session_id={CHECKOUT_SESSION_ID}`; the page POSTs to `/api/verify-payment`, and
+   only on a confirmed-paid session does it reveal `THRIVE_BOOKING_URL` (JobJenny's calendar).
+   Gating it server-side is deliberate — Stripe *could* redirect straight to the calendar, but
+   then anyone who saw the URL could book a paid session for free.
 
 ## Submission storage & admin (added July 26, 2026)
 
@@ -90,9 +123,16 @@ median-only at 3-4 samples, range at 5+; requester's own email excluded). The se
 identifying details into another user's analysis — aggregates only.
 
 - `system-prompt.md` / `script-generator-prompt.md` — both prompts are file-based, read at request time.
-- `src/lib/config.js` — Stripe Payment Link URL, Strategy Session booking URL + price labels,
-  Trustpilot URL, contact email, and the `FREE_TEST_MODE` flag.
-- `api/analyze.js`, `api/generate-script.js`, `api/lead.js`, `api/leads.js` — Vercel functions.
+- `src/lib/config.js` — every external URL and price label in one place: the $47 script Stripe
+  link, the two session-tier Stripe links, `THRIVE_BOOKING_URL`, `STRATEGY_SESSION_URL` (the
+  absolute `/session` URL used by generated script PDFs — absolute because a relative link is
+  dead once the PDF leaves the site), price labels, Trustpilot URL, contact email, and the
+  `FREE_TEST_MODE` flag.
+- `api/analyze.js`, `api/generate-script.js`, `api/verify-payment.js`, `api/lead.js`,
+  `api/leads.js`, `api/admin.js` — Vercel functions. Shared helpers live in `api/_lib/`
+  (underscore = not deployed as functions): `store.js` (Upstash), `comparables.js`,
+  `extract.js`, and `payment.js` (one Stripe checkout verifier, used by both the script and the
+  session booking gate).
 - Brand: navy scale in `tailwind.config.js` (#001E34 / #16163F / #0099CC / #6BCCF7 / #D8F0F8),
   logos in `src/assets/`, Trustpilot green #00B67A for stars.
 
@@ -105,9 +145,12 @@ code also accepts `UPSTASH_*` names), `STRIPE_SECRET_KEY`, `LEADS_EXPORT_TOKEN`,
 ## Testing without paying
 
 `session_id=test_skip_payment` skips Stripe verification — always on non-production deployments,
-and in production only while `ALLOW_TEST_BYPASS=true`. A visible "[Testing] Generate my script
-free" button on `/proof` (gated by `FREE_TEST_MODE` in config.js) uses it.
-**This free-test path is temporary — remove both flags when testing ends.**
+and in production only while `ALLOW_TEST_BYPASS=true`. Two visible testing links use it, both
+gated by `FREE_TEST_MODE` in config.js: "[Testing] Generate my script free" on `/proof`, and
+"[Testing] Skip payment and preview the booking step" on `/session` (jumps to `/booking`).
+**This free-test path is temporary — remove both flags when testing ends** (set
+`FREE_TEST_MODE = false` to hide the links, delete `ALLOW_TEST_BYPASS` in Vercel to close the
+server-side bypass, then redeploy).
 Stripe promo-code testing: 100%-off codes are rejected on one-time Payment Links, and discounts
 leaving less than $0.50 also fail — use 99% off (or price − $0.50 max discount).
 
@@ -117,7 +160,8 @@ Alex has multiple Stripe accounts, two formerly both named "Immel Consulting LLC
 account (payment link, coupons, secret key must ALL live here) is `acct_1MRh0gKjxEB5kBDn`,
 renamed "Next Level Negotiation". Stripe object IDs embed the account fingerprint (the chars
 after the 6-char unique part match the account ID tail) — useful to detect wrong-account objects.
-Payment Link after-payment redirect must be `https://<domain>/script?session_id={CHECKOUT_SESSION_ID}`.
+After-payment redirects: the $47 script link → `https://<domain>/script?session_id={CHECKOUT_SESSION_ID}`;
+**both** session-tier links → `https://<domain>/booking?session_id={CHECKOUT_SESSION_ID}`.
 
 ## Script content rules (Alex's voice — do not regress)
 
