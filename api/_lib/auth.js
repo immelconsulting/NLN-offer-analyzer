@@ -1,12 +1,10 @@
 import crypto from "node:crypto";
 
-// Admin session auth. Before this, /api/admin took the export token as a
-// query parameter, which meant the secret rode in every URL — logged by the
+// Admin session auth. /api/admin once took the export token as a query
+// parameter, which meant the secret rode in every URL — logged by the
 // platform, kept in browser history, and easy to leak by pasting a link.
-// Now a password is exchanged once for a signed, httpOnly session cookie.
-//
-// The query token still works so existing bookmarks and scripts don't break;
-// the login flow simply stops putting it in URLs.
+// A password is now exchanged once for a signed, httpOnly session cookie,
+// and a URL alone never grants access.
 
 export const COOKIE_NAME = "nln_admin";
 export const SESSION_DAYS = 7;
@@ -84,18 +82,11 @@ export function clearCookie() {
   return sessionCookie("", 0);
 }
 
-// True when the request carries a valid session cookie, or the legacy
-// ?token= query parameter.
+// True only for a request carrying a valid session cookie. Passing the
+// export token as ?token= used to authorize too; that was removed so no URL
+// can ever grant admin access.
 export function isAuthorized(req) {
   const secret = adminSecret();
   if (!secret) return false;
-
-  const cookies = parseCookies(req.headers?.cookie);
-  if (verifySession(cookies[COOKIE_NAME], secret)) return true;
-
-  const token = process.env.LEADS_EXPORT_TOKEN;
-  if (token && req.query?.token && safeEqual(req.query.token, token)) {
-    return true;
-  }
-  return false;
+  return verifySession(parseCookies(req.headers?.cookie)[COOKIE_NAME], secret);
 }

@@ -10,14 +10,15 @@ import {
 } from "./_lib/store.js";
 import { isAuthorized } from "./_lib/auth.js";
 
-// Read-only admin API, protected by the same token as the leads export:
-//   GET /api/admin?token=X                    -> submission list (newest first)
-//   GET /api/admin?token=X&q=alice           -> filtered by email/role/company/location
-//   GET /api/admin?token=X&range=30          -> trailing 30 days (preset)
-//   GET /api/admin?token=X&start=&end=       -> custom YYYY-MM-DD range
-//   GET /api/admin?token=X&id=sub_...        -> one full record
-//   GET /api/admin?token=X&export=full       -> CSV of everything
-//   GET /api/admin?token=X&export=salary     -> CSV of salary-relevant fields only
+// Read-only admin API. Requires the session cookie from /api/login — there
+// is no query-parameter token, so a URL alone never grants access.
+//   GET /api/admin                    -> submission list (newest first)
+//   GET /api/admin?q=alice           -> filtered by email/role/company/location
+//   GET /api/admin?range=3m          -> preset window (1d/7d/30d/3m/4m/6m/12m)
+//   GET /api/admin?start=&end=       -> custom YYYY-MM-DD range
+//   GET /api/admin?id=sub_...        -> one full record
+//   GET /api/admin?export=full       -> CSV of everything
+//   GET /api/admin?export=salary     -> CSV of salary-relevant fields only
 //
 // The date range drives both the funnel rollup and the submission list (and
 // therefore the CSV exports), so the page has one control rather than two
