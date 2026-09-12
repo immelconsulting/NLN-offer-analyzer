@@ -22,25 +22,155 @@ const FUNNEL_STEPS = [
   ["booking_confirmed", "Booked"],
 ];
 
-function FunnelSummary({ funnel }) {
+// Trailing-day presets, matching RANGE_PRESETS in api/admin.js.
+const RANGE_PRESETS = [
+  ["Today", 1],
+  ["7 days", 7],
+  ["30 days", 30],
+  ["90 days", 90],
+  ["120 days", 120],
+  ["1 year", 365],
+];
+
+const DEFAULT_RANGE = { preset: 7, start: "", end: "" };
+
+// Counters are keyed by UTC day, so day stamps are formatted as UTC too —
+// otherwise "2026-09-12" would render as Sept 11 for anyone west of London.
+function prettyDay(day) {
+  if (!day) return "";
+  const [y, m, d] = day.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+function rangeLabel(range) {
+  if (!range) return "";
+  return range.start === range.end
+    ? prettyDay(range.start)
+    : `${prettyDay(range.start)} – ${prettyDay(range.end)}`;
+}
+
+// One URL builder for both the fetch and the CSV export links, so exports
+// always cover exactly the range on screen.
+function buildAdminUrl(token, range, extra = {}) {
+  const params = new URLSearchParams({ token });
+  if (range.preset === "custom") {
+    params.set("start", range.start);
+    params.set("end", range.end);
+  } else {
+    params.set("range", String(range.preset));
+  }
+  for (const [key, value] of Object.entries(extra)) {
+    if (value) params.set(key, value);
+  }
+  return `/api/admin?${params.toString()}`;
+}
+
+function RangeControls({ applied, onApply }) {
+  const [showCustom, setShowCustom] = useState(applied.preset === "custom");
+  const [start, setStart] = useState(applied.start);
+  const [end, setEnd] = useState(applied.end);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const dateClass =
+    "rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2">
+        {RANGE_PRESETS.map(([label, value]) => {
+          const active = applied.preset === value;
+          return (
+            <button
+              key={value}
+              type="button"
+              onClick={() => {
+                setShowCustom(false);
+                onApply({ preset: value, start: "", end: "" });
+              }}
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition border ${
+                active
+                  ? "bg-navy-900 border-navy-900 text-white"
+                  : "bg-white border-slate-300 text-slate-700 hover:border-navy-600 hover:text-navy-900"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setShowCustom((s) => !s)}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition border ${
+            applied.preset === "custom"
+              ? "bg-navy-900 border-navy-900 text-white"
+              : "bg-white border-slate-300 text-slate-700 hover:border-navy-600 hover:text-navy-900"
+          }`}
+        >
+          Custom…
+        </button>
+      </div>
+
+      {showCustom && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (start && end) onApply({ preset: "custom", start, end });
+          }}
+          className="flex flex-wrap items-center gap-2"
+        >
+          <input
+            type="date"
+            className={dateClass}
+            value={start}
+            max={end || today}
+            onChange={(e) => setStart(e.target.value)}
+            aria-label="Start date"
+          />
+          <span className="text-sm text-slate-400">to</span>
+          <input
+            type="date"
+            className={dateClass}
+            value={end}
+            min={start || undefined}
+            max={today}
+            onChange={(e) => setEnd(e.target.value)}
+            aria-label="End date"
+          />
+          <button
+            type="submit"
+            disabled={!start || !end}
+            className="rounded-md bg-navy-900 hover:bg-navy-600 disabled:opacity-40 disabled:hover:bg-navy-900 text-white text-sm font-medium px-4 py-1.5 transition"
+          >
+            Apply
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+function FunnelSummary({ funnel, range }) {
   if (!funnel) return null;
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5">
-      <div className="flex items-baseline justify-between mb-3">
+      <div className="flex items-baseline justify-between gap-3 mb-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
           Funnel
         </h2>
-        <span className="text-xs text-slate-400">today / last 7 days</span>
+        <span className="text-xs text-slate-400 text-right">
+          {rangeLabel(range)}
+        </span>
       </div>
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
         {FUNNEL_STEPS.map(([key, label]) => (
           <div key={key}>
             <p className="text-lg font-serif font-semibold text-navy-900 leading-none">
-              {funnel[key]?.today ?? 0}
-              <span className="text-sm font-sans font-normal text-slate-400">
-                {" "}
-                / {funnel[key]?.week ?? 0}
-              </span>
+              {funnel[key] ?? 0}
             </p>
             <p className="text-xs text-slate-500 mt-1">{label}</p>
           </div>
@@ -70,17 +200,18 @@ export default function AdminPage() {
   const [query, setQuery] = useState("");
   const [subs, setSubs] = useState([]);
   const [funnel, setFunnel] = useState(null);
+  const [range, setRange] = useState(DEFAULT_RANGE);
+  const [shownRange, setShownRange] = useState(null);
+  const [capped, setCapped] = useState(false);
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function load(q = "") {
+  async function load(q = "", activeRange = range) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(
-        `/api/admin?token=${encodeURIComponent(token)}${q ? `&q=${encodeURIComponent(q)}` : ""}`
-      );
+      const res = await fetch(buildAdminUrl(token, activeRange, { q }));
       if (res.status === 401) {
         localStorage.removeItem("nln:adminToken");
         setToken("");
@@ -90,6 +221,10 @@ export default function AdminPage() {
       const body = await res.json();
       setSubs(body.submissions);
       setFunnel(body.funnel ?? null);
+      // The server echoes the range it actually used, which can differ from
+      // what was asked for (future end date, over-long span).
+      setShownRange(body.range ?? null);
+      setCapped(Boolean(body.submissionsCapped));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -114,9 +249,9 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    if (token) load();
+    if (token) load(query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, range]);
 
   if (!token) {
     return (
@@ -261,20 +396,22 @@ export default function AdminPage() {
           <div className="flex gap-3 text-sm">
             <a
               className="py-2 font-medium text-navy-600 hover:text-navy-900 transition underline"
-              href={`/api/admin?token=${encodeURIComponent(token)}&export=full`}
+              href={buildAdminUrl(token, range, { export: "full" })}
             >
               Export all (CSV)
             </a>
             <a
               className="py-2 font-medium text-navy-600 hover:text-navy-900 transition underline"
-              href={`/api/admin?token=${encodeURIComponent(token)}&export=salary`}
+              href={buildAdminUrl(token, range, { export: "salary" })}
             >
               Salary data (CSV)
             </a>
           </div>
         </div>
 
-        <FunnelSummary funnel={funnel} />
+        <RangeControls applied={range} onApply={setRange} />
+
+        <FunnelSummary funnel={funnel} range={shownRange} />
 
         <form
           onSubmit={(e) => {
@@ -301,7 +438,15 @@ export default function AdminPage() {
         {error && <p className="text-sm text-rose-700">{error}</p>}
         {loading && <p className="text-sm text-slate-500">Loading…</p>}
         {!loading && subs.length === 0 && (
-          <p className="text-sm text-slate-500">No submissions found.</p>
+          <p className="text-sm text-slate-500">
+            No submissions in this date range.
+          </p>
+        )}
+        {!loading && capped && (
+          <p className="text-xs text-slate-500">
+            Showing the 500 most recent submissions — older ones in this range
+            aren't included.
+          </p>
         )}
 
         <div className="space-y-2">

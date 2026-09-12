@@ -69,31 +69,60 @@ export async function updateSubmission(redis, id, patch) {
   return updated;
 }
 
-// Funnel rollup from the per-day counters only — one mget, never a scan of
-// the events list. Returns { event: { today, week } } per tracked event,
-// where week is the trailing 7 days including today.
-export async function getFunnelCounts(redis, today = new Date()) {
+// Longest window the rollup will read, so a bad ?start= can't ask for tens of
+// thousands of keys. A year (the longest preset) fits comfortably under it.
+export const MAX_RANGE_DAYS = 400;
+
+// Upstash takes every mget key in one request, so a year of keys (9 events x
+// 365 days) is split into batches rather than sent as a single huge call.
+const MGET_CHUNK = 400;
+
+// Every UTC day stamp from startDay to endDay, inclusive.
+export function dayRange(startDay, endDay) {
+  const cursor = new Date(`${startDay}T00:00:00Z`);
+  const last = new Date(`${endDay}T00:00:00Z`);
+  if (Number.isNaN(cursor.getTime()) || Number.isNaN(last.getTime())) return [];
+
   const days = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(today);
-    d.setUTCDate(d.getUTCDate() - i);
-    days.push(eventDay(d));
+  while (cursor <= last && days.length < MAX_RANGE_DAYS) {
+    days.push(eventDay(cursor));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return days;
+}
+
+async function mgetChunked(redis, keys) {
+  if (keys.length === 0) return [];
+  const batches = [];
+  for (let i = 0; i < keys.length; i += MGET_CHUNK) {
+    batches.push(keys.slice(i, i + MGET_CHUNK));
+  }
+  const results = await Promise.all(batches.map((b) => redis.mget(...b)));
+  return results.flat();
+}
+
+// Funnel rollup from the per-day counters only — never a scan of the events
+// list. Returns { event: total } per tracked event, summed over the inclusive
+// day range. Missing days simply read as 0.
+export async function getFunnelCounts(redis, startDay, endDay) {
+  const days = dayRange(startDay, endDay);
+  const counts = {};
+  if (days.length === 0) {
+    TRACKED_EVENTS.forEach((event) => {
+      counts[event] = 0;
+    });
+    return counts;
   }
 
   const keys = TRACKED_EVENTS.flatMap((event) =>
     days.map((day) => eventCountKey(event, day))
   );
-  const values = await redis.mget(...keys);
+  const values = await mgetChunked(redis, keys);
 
-  const counts = {};
   TRACKED_EVENTS.forEach((event, i) => {
-    const nums = values
+    counts[event] = values
       .slice(i * days.length, (i + 1) * days.length)
-      .map((v) => Number(v) || 0);
-    counts[event] = {
-      today: nums[0], // days[0] is today
-      week: nums.reduce((a, b) => a + b, 0),
-    };
+      .reduce((sum, v) => sum + (Number(v) || 0), 0);
   });
   return counts;
 }
