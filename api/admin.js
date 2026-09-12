@@ -4,8 +4,11 @@ import {
   listRecentSubmissions,
   getFunnelCounts,
   eventDay,
+  shiftDays,
+  shiftMonths,
   MAX_RANGE_DAYS,
 } from "./_lib/store.js";
+import { isAuthorized } from "./_lib/auth.js";
 
 // Read-only admin API, protected by the same token as the leads export:
 //   GET /api/admin?token=X                    -> submission list (newest first)
@@ -22,17 +25,32 @@ import {
 
 const LIST_LIMIT = 500;
 
-// Trailing-day presets the UI offers. 1 = today only.
-const RANGE_PRESETS = [1, 7, 30, 90, 120, 365];
-const DEFAULT_RANGE = 7;
+// Presets the UI offers, keyed by the id sent as ?range=. Short windows stay
+// in days; longer ones are calendar months, so "3 months" back from Sep 12 is
+// Jun 12 rather than an approximate 90 days.
+const RANGE_PRESETS = {
+  "1d": (end) => shiftDays(end, 1),
+  "7d": (end) => shiftDays(end, 7),
+  "30d": (end) => shiftDays(end, 30),
+  "3m": (end) => shiftMonths(end, 3),
+  "4m": (end) => shiftMonths(end, 4),
+  "6m": (end) => shiftMonths(end, 6),
+  "12m": (end) => shiftMonths(end, 12),
+};
+const DEFAULT_RANGE = "7d";
+
+// Numeric ?range= values predate the month presets; map the ones that were
+// offered so old links keep working.
+const LEGACY_RANGES = {
+  1: "1d",
+  7: "7d",
+  30: "30d",
+  90: "3m",
+  120: "4m",
+  365: "12m",
+};
 
 const isDayStamp = (v) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
-
-function trailingStart(endDay, days) {
-  const d = new Date(`${endDay}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() - (days - 1));
-  return eventDay(d);
-}
 
 // Turns the query string into an inclusive {start, end} pair of UTC day
 // stamps. Anything malformed, inverted, in the future, or longer than
@@ -49,15 +67,16 @@ export function resolveRange(query) {
         : [query.end, query.start];
     if (end > today) end = today;
     if (start > end) start = end;
-    const earliest = trailingStart(end, MAX_RANGE_DAYS);
+    const earliest = shiftDays(end, MAX_RANGE_DAYS);
     if (start < earliest) start = earliest;
     return { start, end, preset: null };
   }
 
-  const preset = RANGE_PRESETS.includes(Number(query.range))
-    ? Number(query.range)
-    : DEFAULT_RANGE;
-  return { start: trailingStart(today, preset), end: today, preset };
+  const asked = String(query.range ?? "");
+  const preset = RANGE_PRESETS[asked]
+    ? asked
+    : LEGACY_RANGES[Number(asked)] || DEFAULT_RANGE;
+  return { start: RANGE_PRESETS[preset](today), end: today, preset };
 }
 
 // Submission timestamps are ISO strings, so the date half compares directly
@@ -94,8 +113,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const expected = process.env.LEADS_EXPORT_TOKEN;
-  if (!expected || req.query.token !== expected) {
+  if (!isAuthorized(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -117,7 +135,7 @@ export default async function handler(req, res) {
 
     if (req.query.export === "full") {
       const lines = [
-        "timestamp,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script",
+        "timestamp,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script,has_resume,has_job_description",
       ];
       for (const s of subs) {
         const f = s.form || {};
@@ -133,6 +151,8 @@ export default async function handler(req, res) {
             s.analysis?.offerScore,
             s.analysis?.internalDataUsed ? "yes" : "no",
             s.script ? "yes" : "no",
+            s.resumeText ? "yes" : "no",
+            s.jobDescriptionText ? "yes" : "no",
           ])
         );
       }
@@ -188,10 +208,19 @@ export default async function handler(req, res) {
         role: s.form?.role,
         company: s.form?.company,
         location: s.form?.location,
+        industry: s.form?.industry,
         offerBaseSalary: s.form?.offerBaseSalary,
+        topPriority: s.form?.topPriority,
+        riskTolerance: s.form?.riskTolerance,
         offerScore: s.analysis?.offerScore,
         internalDataUsed: Boolean(s.analysis?.internalDataUsed),
         hasScript: Boolean(s.script),
+        // Length, not content — enough for the table to show whether a
+        // resume came in without shipping the whole text to the list view.
+        resumeChars: s.resumeText ? s.resumeText.length : 0,
+        jobDescriptionChars: s.jobDescriptionText
+          ? s.jobDescriptionText.length
+          : 0,
       })),
     });
   } catch (err) {

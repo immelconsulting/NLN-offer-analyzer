@@ -77,6 +77,27 @@ export const MAX_RANGE_DAYS = 400;
 // 365 days) is split into batches rather than sent as a single huge call.
 const MGET_CHUNK = 400;
 
+// The day N calendar months before the given day. Day-of-month is clamped to
+// the target month's length, so 1 month before Mar 31 is Feb 28 (or Feb 29 in
+// a leap year) rather than rolling forward into March.
+export function shiftMonths(day, months) {
+  const [y, m, d] = day.split("-").map(Number);
+  const firstOfTarget = new Date(Date.UTC(y, m - 1 - months, 1));
+  const daysInTarget = new Date(
+    Date.UTC(firstOfTarget.getUTCFullYear(), firstOfTarget.getUTCMonth() + 1, 0)
+  ).getUTCDate();
+  firstOfTarget.setUTCDate(Math.min(d, daysInTarget));
+  return eventDay(firstOfTarget);
+}
+
+// The day N days before the given day (N=1 means the day itself, so a
+// "7 days" range covers today plus the six before it).
+export function shiftDays(day, days) {
+  const d = new Date(`${day}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - (days - 1));
+  return eventDay(d);
+}
+
 // Every UTC day stamp from startDay to endDay, inclusive.
 export function dayRange(startDay, endDay) {
   const cursor = new Date(`${startDay}T00:00:00Z`);
