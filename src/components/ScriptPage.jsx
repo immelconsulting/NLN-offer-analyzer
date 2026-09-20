@@ -44,6 +44,27 @@ const markdownComponents = {
   td: (props) => <td className="px-4 py-2 border-b border-slate-100" {...props} />,
 };
 
+const FLOW_COPY = {
+  offer: {
+    title: "Your Counter-Offer Script",
+    loading: "Writing your script…",
+    loadingNote:
+      "We're turning your analysis into a word-for-word counter-offer script. This usually takes under a minute.",
+    upsellHeading: "Want a negotiator in your corner for the real call?",
+    upsellBody:
+      "Book a Negotiation Strategy Session and we'll walk through your script together before you pick up the phone.",
+  },
+  apply: {
+    title: "Your Recruiter Screening Call Script",
+    loading: "Writing your script…",
+    loadingNote:
+      "We're turning your range into word-for-word answers for the recruiter call. This usually takes under a minute.",
+    upsellHeading: "Want a negotiator in your corner for the real call?",
+    upsellBody:
+      "Book a Negotiation Strategy Session and we'll practice your answers together before the recruiter calls.",
+  },
+};
+
 export default function ScriptPage() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
@@ -56,6 +77,11 @@ export default function ScriptPage() {
       return null;
     }
   }, []);
+
+  // Which funnel produced this purchase. Offer-flow stashes predate the
+  // field and decode without it, so anything that isn't "apply" is an offer.
+  const flow = data?.flow === "apply" ? "apply" : "offer";
+  const copy = FLOW_COPY[flow];
 
   const [script, setScript] = useState("");
   const [error, setError] = useState("");
@@ -75,6 +101,7 @@ export default function ScriptPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sessionId,
+            flow,
             form: data.form,
             analysis: data.analysis,
           }),
@@ -98,7 +125,7 @@ export default function ScriptPage() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId, data, attempt]);
+  }, [sessionId, data, attempt, flow]);
 
   return (
     <div className="min-h-screen bg-navy-50">
@@ -107,13 +134,15 @@ export default function ScriptPage() {
       <header className="print:hidden">
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
-            Your Counter-Offer Script
+            {copy.title}
           </h1>
           {data?.form && (
             <p className="text-slate-700 mt-4">
-              {data.form.role}
-              {data.form.company ? ` at ${data.form.company}` : ""} ·{" "}
-              {data.form.location}
+              {flow === "apply" ? data.form.targetRole : data.form.role}
+              {(flow === "apply" ? data.form.targetCompany : data.form.company)
+                ? ` at ${flow === "apply" ? data.form.targetCompany : data.form.company}`
+                : ""}{" "}
+              · {data.form.location}
             </p>
           )}
         </div>
@@ -144,11 +173,10 @@ export default function ScriptPage() {
             <img src={icon} alt="NLN" className="h-12 w-auto animate-pulse mb-6" />
             <div className="h-10 w-10 rounded-full border-4 border-navy-100 border-t-navy-600 animate-spin mb-6" />
             <p className="text-xl font-serif font-semibold text-navy-900">
-              Writing your script…
+              {copy.loading}
             </p>
             <p className="text-slate-600 text-sm mt-2 max-w-xs">
-              We're turning your analysis into a word-for-word counter-offer
-              script. This usually takes under a minute.
+              {copy.loadingNote}
             </p>
           </div>
         )}
@@ -196,11 +224,10 @@ export default function ScriptPage() {
 
             <div className="bg-navy-950 text-white rounded-xl p-6 sm:p-8 text-center print:hidden">
               <h2 className="text-lg font-serif font-semibold">
-                Want a negotiator in your corner for the real call?
+                {copy.upsellHeading}
               </h2>
               <p className="text-navy-200 text-sm mt-2 max-w-md mx-auto">
-                Book a Negotiation Strategy Session and we'll walk through
-                your script together before you pick up the phone.
+                {copy.upsellBody}
               </p>
               <Link
                 to="/session"

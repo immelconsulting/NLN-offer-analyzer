@@ -37,9 +37,9 @@ paid tier.
    `/api/lead` (Upstash Redis list `nln:leads`). CSV export: `GET /api/leads?token=<LEADS_EXPORT_TOKEN>`
    (pre-checkbox leads export as opt-in "no"). Privacy Policy lives at `/privacy`
    (`src/components/PrivacyPolicy.jsx`), linked near the email field.
-2. Branch: only **"Received an offer"** → `/offer`. Applying / Interviewing / Expecting-soon →
-   `/thanks`, a stage-matched resource page (PDF guides in `public/resources/`) + Strategy
-   Session CTA.
+2. Branch (`STAGE_ROUTES` in LandingPage): **"Received an offer"** → `/offer`, **"Applying"** →
+   `/apply` (see the Applying flow below). Interviewing / Expecting-soon → `/thanks`, a
+   stage-matched resource page (PDF guides in `public/resources/`) + Strategy Session CTA.
 3. `/offer` **OfferForm** — analyzer form. Required: role, location, base salary, top priority,
    **risk tolerance** (Cautious/Balanced/Aggressive). Optional: "Anything else we should know?"
    context textarea, plus an "Extra Context" section — resume upload and job-description
@@ -105,6 +105,51 @@ paid tier.
    Gating it server-side is deliberate — Stripe *could* redirect straight to the calendar, but
    then anyone who saw the URL could book a paid session for free.
 
+## Applying flow (added Sept 20, 2026)
+
+The first of the three dead-end stages to become a real flow. Same shape as the offer path
+(short form → free researched analysis → $47 script → Strategy Session CTA), but there is no
+offer yet, so the product is a **researched target range** and a **Recruiter Screening Call
+Script** instead of a score and a counter-offer script.
+
+- `/apply` **ApplyForm** — deliberately short. Required: target role, location, years of
+  experience (0-2 / 3-5 / 6-9 / 10-15 / 15+), risk tolerance (same component and copy as the
+  offer form), and "Where are you with the salary question?" (no call yet / call scheduled /
+  asked and dodged / already gave a number). Picking "already gave a number" reveals an optional
+  "What number did you share?" field. Optional: target company, current base salary, free-text
+  context, and the same resume + job-description upload section.
+- `/api/analyze-apply` + `apply-analyze-prompt.md` — same search architecture as `/api/analyze`
+  (see below), returning `submit_apply_analysis`: `market_range` (base + optional total_comp,
+  each low/target/stretch), `confidence`, `range_rationale`, `biggest_risk`, `call_status_note`,
+  three strategies (cautious/balanced/aggressive), `recommended_strategy`, and `sources`.
+  **No score.** `market_range` is null when `sources` is empty, and the page says so rather than
+  inventing numbers. `recommended_strategy` is set server-side from risk tolerance, not trusted
+  from the model.
+- **Current salary is context only.** It is passed to the analyzer purely to sanity-check the
+  range, is never echoed into the analysis or the script, and never drags the range below what
+  the market supports. The script generator computes a **walk-away floor** = max(range low,
+  current salary) so a script can't tell someone to accept less than they already earn, without
+  revealing why.
+- **Apply submissions never feed `comparables.js`** — they are aspirational targets, not real
+  offers. They're excluded there and from the admin salary CSV for the same reason.
+- `/apply/results` **ApplyResultsPage** — range is the hero; also shows sources, biggest risk,
+  call-status note, and the three strategies with the Recommended badge. Stateless via the same
+  base64 `?d=` param, with `flow: "apply"` inside the payload.
+- `/apply/proof` — ProofPage with `flow="apply"` (copy differs, structure shared, offer flow
+  untouched). Reuses the **same $47 Stripe Payment Link and the same `/script?session_id=`
+  redirect**, so nothing new exists in Stripe. No testimonial yet: the counter-offer quote is
+  about a different product and must not be reused here.
+- `/script` branches on the stashed `flow`, using `apply-script-generator-prompt.md`. The script
+  is built around Alex's existing screening-call language (Option A / Option B, the
+  "current salary" refusal, the wide-range answer) kept close to verbatim, with branches on the
+  user's real numbers and a recovery section only when they already gave a number. Voice rules
+  there add **no em dashes and no double dashes**. Sign-off links back to `/offer` for when the
+  offer arrives, plus the usual `{{strategy_session_url}}`.
+
+Shared search loop lives in `api/_lib/analysis.js` (`runSearchAnalysis` + `SOURCES_SCHEMA`),
+used by both analyzers — the `tool_choice: auto` / `pause_turn` / single-nudge behavior and
+`max_uses: 3` are defined once there.
+
 ## Submission storage & admin (added July 26, 2026)
 
 Every successful analysis persists to Upstash: `nln:sub:<id>` records (form + analysis +
@@ -113,8 +158,16 @@ Append-only history; email comes from the landing-page session (`leadEmail` in t
 payload). `analysis.submissionId` rides inside the encoded `?d=` data so `/api/generate-script`
 can attach the script to the same record. Storage failures never block users.
 
-`/admin` (route, not linked anywhere) + `GET /api/admin?token=<LEADS_EXPORT_TOKEN>` — search by
-email/role/company/location, detail view, CSV exports (`&export=full` or `&export=salary`).
+Apply submissions store the same way with `flow: "apply"`; offer records predate the field, so
+anything unmarked is an offer.
+
+`/admin` (route, not linked anywhere) — password login (`ADMIN_PASSWORD`, falling back to
+`LEADS_EXPORT_TOKEN`) exchanged for an httpOnly session cookie by `/api/login`; `/api/admin`
+requires that cookie and no longer accepts a `?token=` parameter, so no URL grants access.
+Date-range filter (today / 7d / 30d / 3m / 4m / 6m / 1yr / custom) drives the funnel rollup, the
+submissions table, and both CSV exports together. Sortable spreadsheet table with a Flow column
+and an All / Offer / Apply filter; visual funnel with per-step percentages. **The salary CSV is
+offer-rows only** — apply rows carry target ranges, not real offers.
 
 The analyzer feeds anonymized aggregates of similar past submissions into the prompt
 (`api/_lib/comparables.js`: synonym+token title matching, city match, IQR outlier filtering;
@@ -122,17 +175,20 @@ median-only at 3-4 samples, range at 5+; requester's own email excluded). The se
 `analysis.internalDataUsed`; results page shows a subtle caption when true. Never pass
 identifying details into another user's analysis — aggregates only.
 
-- `system-prompt.md` / `script-generator-prompt.md` — both prompts are file-based, read at request time.
+- `system-prompt.md` / `script-generator-prompt.md` / `apply-analyze-prompt.md` /
+  `apply-script-generator-prompt.md` — all four prompts are file-based, read at request time.
 - `src/lib/config.js` — every external URL and price label in one place: the $47 script Stripe
   link, the two session-tier Stripe links, `THRIVE_BOOKING_URL`, `STRATEGY_SESSION_URL` (the
   absolute `/session` URL used by generated script PDFs — absolute because a relative link is
   dead once the PDF leaves the site), price labels, Trustpilot URL, contact email, and the
   `FREE_TEST_MODE` flag.
-- `api/analyze.js`, `api/generate-script.js`, `api/verify-payment.js`, `api/lead.js`,
-  `api/leads.js`, `api/admin.js` — Vercel functions. Shared helpers live in `api/_lib/`
-  (underscore = not deployed as functions): `store.js` (Upstash), `comparables.js`,
-  `extract.js`, and `payment.js` (one Stripe checkout verifier, used by both the script and the
-  session booking gate).
+- `api/analyze.js`, `api/analyze-apply.js`, `api/generate-script.js`, `api/verify-payment.js`,
+  `api/lead.js`, `api/leads.js`, `api/admin.js`, `api/login.js`, `api/event.js` — **9 Vercel
+  functions; the Hobby plan caps at 12**, so there's room for about three more before the plan
+  matters. Shared helpers live in `api/_lib/` (underscore = not deployed as functions):
+  `store.js` (Upstash), `comparables.js`, `extract.js`, `analysis.js` (the shared web-search
+  loop), `auth.js` (admin sessions), and `payment.js` (one Stripe checkout verifier, used by
+  both the script and the session booking gate).
 - Brand: navy scale in `tailwind.config.js` (#001E34 / #16163F / #0099CC / #6BCCF7 / #D8F0F8),
   logos in `src/assets/`, Trustpilot green #00B67A for stars.
 

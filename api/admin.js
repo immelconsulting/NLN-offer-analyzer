@@ -96,13 +96,15 @@ function toRow(values) {
   return values.map(csvEscape).join(",");
 }
 
+// Records predate the flow field, so anything unmarked is an offer.
+const flowOf = (sub) => (sub.flow === "apply" ? "apply" : "offer");
+
+// The two flows name the role and company differently.
+const roleOf = (sub) => sub.form?.role || sub.form?.targetRole || "";
+const companyOf = (sub) => sub.form?.company || sub.form?.targetCompany || "";
+
 function matchesQuery(sub, q) {
-  const hay = [
-    sub.email,
-    sub.form?.role,
-    sub.form?.company,
-    sub.form?.location,
-  ]
+  const hay = [sub.email, roleOf(sub), companyOf(sub), sub.form?.location]
     .join(" ")
     .toLowerCase();
   return hay.includes(q);
@@ -132,17 +134,23 @@ export default async function handler(req, res) {
 
     const range = resolveRange(req.query);
     const all = await listRecentSubmissions(redis, LIST_LIMIT);
-    const subs = all.filter((s) => inRange(s, range));
+    const flowFilter = ["offer", "apply"].includes(req.query.flow)
+      ? req.query.flow
+      : null;
+    const subs = all.filter(
+      (s) => inRange(s, range) && (!flowFilter || flowOf(s) === flowFilter)
+    );
 
     if (req.query.export === "full") {
       const lines = [
-        "timestamp,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script,has_resume,has_job_description",
+        "timestamp,flow,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script,has_resume,has_job_description,years_experience,salary_stage,shared_number,range_low,range_target,range_stretch,range_confidence",
       ];
       for (const s of subs) {
         const f = s.form || {};
+        const base = s.analysis?.market_range?.base || {};
         lines.push(
           toRow([
-            s.timestamp, s.email, f.role, f.company, f.location, f.industry,
+            s.timestamp, flowOf(s), s.email, roleOf(s), companyOf(s), f.location, f.industry,
             f.currentSalary, f.offerBaseSalary,
             f.hasBonus ? f.bonusAmount : "",
             f.hasSignOnBonus ? f.signOnBonusAmount : "",
@@ -154,6 +162,9 @@ export default async function handler(req, res) {
             s.script ? "yes" : "no",
             s.resumeText ? "yes" : "no",
             s.jobDescriptionText ? "yes" : "no",
+            // Apply-flow only; blank on offer rows.
+            f.yearsExperience, f.salaryStage, f.sharedNumber,
+            base.low, base.target, base.stretch, s.analysis?.confidence,
           ])
         );
       }
@@ -166,7 +177,11 @@ export default async function handler(req, res) {
       const lines = [
         "timestamp,role,location,industry,offer_base_salary,bonus,sign_on,equity",
       ];
-      for (const s of subs) {
+      // Offer rows only. Apply-stage submissions carry target ranges rather
+      // than real offers, so mixing them in would quietly corrupt this as a
+      // market-data export — the same reason they're excluded from
+      // comparables.
+      for (const s of subs.filter((x) => flowOf(x) === "offer")) {
         const f = s.form || {};
         lines.push(
           toRow([
@@ -205,12 +220,15 @@ export default async function handler(req, res) {
       submissions: filtered.map((s) => ({
         id: s.id,
         timestamp: s.timestamp,
+        flow: flowOf(s),
         email: s.email,
-        role: s.form?.role,
-        company: s.form?.company,
+        role: roleOf(s),
+        company: companyOf(s),
         location: s.form?.location,
         industry: s.form?.industry,
         offerBaseSalary: s.form?.offerBaseSalary,
+        // Apply rows have a researched target instead of an offer.
+        rangeTarget: s.analysis?.market_range?.base?.target ?? null,
         topPriority: s.form?.topPriority,
         riskTolerance: s.form?.riskTolerance,
         offerScore: s.analysis?.offerScore,

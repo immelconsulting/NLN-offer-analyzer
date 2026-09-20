@@ -1,6 +1,7 @@
 {
   "functions": {
     "api/analyze.js": { "maxDuration": 300 },
+    "api/analyze-apply.js": { "maxDuration": 300 },
     "api/generate-script.js": { "maxDuration": 120 }
   },
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]

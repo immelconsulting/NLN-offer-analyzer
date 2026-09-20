@@ -86,8 +86,9 @@ function formatPct(value) {
 
 // One URL builder for both the fetch and the CSV export links, so exports
 // always cover exactly the range on screen. Auth rides on the cookie.
-function buildAdminUrl(range, extra = {}) {
+function buildAdminUrl(range, extra = {}, flow = "all") {
   const params = new URLSearchParams();
+  if (flow !== "all") params.set("flow", flow);
   if (range.preset === "custom") {
     params.set("start", range.start);
     params.set("end", range.end);
@@ -283,6 +284,38 @@ function FunnelBar({ label, count, top, previous, tone = "bar" }) {
   );
 }
 
+// Filters the submissions table by funnel. The funnel rollup above it is
+// event-based and not flow-aware, so this deliberately only affects the
+// table and the CSV exports.
+function FlowFilter({ value, onChange }) {
+  const options = [
+    ["All flows", "all"],
+    ["Offer", "offer"],
+    ["Apply", "apply"],
+  ];
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 mr-1">
+        Submissions
+      </span>
+      {options.map(([label, key]) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onChange(key)}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition border ${
+            value === key
+              ? "bg-navy-900 border-navy-900 text-white"
+              : "bg-white border-slate-300 text-slate-700 hover:border-navy-600 hover:text-navy-900"
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function FunnelVisual({ funnel, range }) {
   if (!funnel) return null;
 
@@ -355,6 +388,7 @@ function FunnelVisual({ funnel, range }) {
 // record.
 const COLUMNS = [
   { key: "timestamp", label: "Date", type: "date" },
+  { key: "flow", label: "Flow", type: "text" },
   { key: "email", label: "Email", type: "text" },
   { key: "role", label: "Role", type: "text" },
   { key: "company", label: "Company", type: "text" },
@@ -438,6 +472,17 @@ function SubmissionsTable({ rows, sort, onSort, onOpen }) {
                 <td className={`${cell} text-slate-500`}>
                   {new Date(s.timestamp).toLocaleDateString()}
                 </td>
+                <td className={cell}>
+                  <span
+                    className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
+                      s.flow === "apply"
+                        ? "bg-navy-100 text-navy-900"
+                        : "bg-slate-100 text-slate-600"
+                    }`}
+                  >
+                    {s.flow === "apply" ? "Apply" : "Offer"}
+                  </span>
+                </td>
                 <td className={`${cell} text-navy-900 font-medium`}>
                   {s.email || "—"}
                 </td>
@@ -446,7 +491,16 @@ function SubmissionsTable({ rows, sort, onSort, onOpen }) {
                 <td className={`${cell} text-slate-700`}>{s.location || "—"}</td>
                 <td className={`${cell} text-slate-700`}>{s.industry || "—"}</td>
                 <td className={`${cell} text-slate-700 tabular-nums`}>
-                  {s.offerBaseSalary ? `$${s.offerBaseSalary}` : "—"}
+                  {s.offerBaseSalary ? (
+                    `$${s.offerBaseSalary}`
+                  ) : s.rangeTarget ? (
+                    <span title="Researched target range, not an offer">
+                      ${Number(s.rangeTarget).toLocaleString()}
+                      <span className="text-slate-400 text-xs"> target</span>
+                    </span>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className={`${cell} text-slate-700 tabular-nums`}>
                   {s.offerScore ?? "—"}
@@ -529,16 +583,17 @@ export default function AdminPage() {
   const [range, setRange] = useState(DEFAULT_RANGE);
   const [shownRange, setShownRange] = useState(null);
   const [capped, setCapped] = useState(false);
+  const [flow, setFlow] = useState("all");
   const [sort, setSort] = useState({ key: "timestamp", dir: "desc" });
   const [selected, setSelected] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function load(q = "", activeRange = range) {
+  async function load(q = "", activeRange = range, activeFlow = flow) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(buildAdminUrl(activeRange, { q }));
+      const res = await fetch(buildAdminUrl(activeRange, { q }, activeFlow));
       if (res.status === 401) {
         setAuthed(false);
         return;
@@ -601,7 +656,7 @@ export default function AdminPage() {
   useEffect(() => {
     load(query);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range]);
+  }, [range, flow]);
 
   function toggleSort(key) {
     setSort((s) =>
@@ -630,6 +685,10 @@ export default function AdminPage() {
 
   if (selected) {
     const f = selected.form || {};
+    const isApply = selected.flow === "apply";
+    const displayRole = isApply ? f.targetRole : f.role;
+    const displayCompany = isApply ? f.targetCompany : f.company;
+    const base = selected.analysis?.market_range?.base;
     return (
       <div className="min-h-screen bg-navy-50">
         <SiteHeader />
@@ -644,7 +703,16 @@ export default function AdminPage() {
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
             <h1 className="text-xl font-serif font-semibold text-navy-900 mb-1">
-              {f.role} {f.company ? `at ${f.company}` : ""}
+              {displayRole} {displayCompany ? `at ${displayCompany}` : ""}
+              <span
+                className={`ml-2 align-middle text-xs font-sans font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
+                  isApply
+                    ? "bg-navy-100 text-navy-900"
+                    : "bg-slate-100 text-slate-600"
+                }`}
+              >
+                {isApply ? "Apply" : "Offer"}
+              </span>
             </h1>
             <p className="text-sm text-slate-500 mb-5">
               {selected.email || "no email captured"} ·{" "}
@@ -652,6 +720,17 @@ export default function AdminPage() {
             </p>
             <dl className="grid sm:grid-cols-2 gap-4">
               <Field label="Location" value={f.location} />
+              {/* Apply-flow fields */}
+              <Field label="Years of experience" value={f.yearsExperience} />
+              <Field label="Salary question stage" value={f.salaryStage} />
+              <Field label="Number already shared" value={f.sharedNumber} />
+              {base && (
+                <Field
+                  label="Researched range (base)"
+                  value={`$${Number(base.low).toLocaleString()} / $${Number(base.target).toLocaleString()} / $${Number(base.stretch).toLocaleString()}`}
+                />
+              )}
+              <Field label="Range confidence" value={selected.analysis?.confidence} />
               <Field label="Industry" value={f.industry} />
               <Field label="Current salary" value={f.currentSalary} />
               <Field label="Offer base salary" value={f.offerBaseSalary} />
@@ -683,7 +762,9 @@ export default function AdminPage() {
 
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
             <h2 className="text-lg font-serif font-semibold text-navy-900 mb-3">
-              Analysis · Score {selected.analysis?.offerScore}
+              Analysis
+              {selected.analysis?.offerScore !== undefined &&
+                ` · Score ${selected.analysis.offerScore}`}
               {selected.analysis?.internalDataUsed && (
                 <span className="ml-2 text-xs font-sans font-semibold uppercase tracking-wide text-navy-600 bg-navy-50 px-2 py-0.5 rounded">
                   used internal data
@@ -730,13 +811,14 @@ export default function AdminPage() {
           <div className="flex items-center gap-3 text-sm">
             <a
               className="py-2 font-medium text-navy-600 hover:text-navy-900 transition underline"
-              href={buildAdminUrl(range, { export: "full" })}
+              href={buildAdminUrl(range, { export: "full" }, flow)}
             >
               Export all (CSV)
             </a>
             <a
               className="py-2 font-medium text-navy-600 hover:text-navy-900 transition underline"
-              href={buildAdminUrl(range, { export: "salary" })}
+              href={buildAdminUrl(range, { export: "salary" }, flow)}
+              title="Offer-flow rows only — apply-stage targets aren't real offers"
             >
               Salary data (CSV)
             </a>
@@ -751,6 +833,8 @@ export default function AdminPage() {
         </div>
 
         <RangeControls applied={range} onApply={setRange} />
+
+        <FlowFilter value={flow} onChange={setFlow} />
 
         <FunnelVisual funnel={funnel} range={shownRange} />
 

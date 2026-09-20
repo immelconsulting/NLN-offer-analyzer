@@ -10,9 +10,19 @@ import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
 // kept in localStorage; we confirm the session is actually paid before
 // calling the model.
 
-function loadSystemPrompt() {
+// One prompt file per flow. The offer flow writes a counter-offer script;
+// the applying flow writes a recruiter screening call script.
+const PROMPT_FILES = {
+  offer: "script-generator-prompt.md",
+  apply: "apply-script-generator-prompt.md",
+};
+
+function loadSystemPrompt(flow = "offer") {
   try {
-    const filePath = path.join(process.cwd(), "script-generator-prompt.md");
+    const filePath = path.join(
+      process.cwd(),
+      PROMPT_FILES[flow] || PROMPT_FILES.offer
+    );
     const content = fs.readFileSync(filePath, "utf-8").trim();
     // The prompt's sign-off links out to the paid strategy session. That URL
     // stays in src/lib/config.js rather than being duplicated in the prompt,
@@ -26,6 +36,68 @@ function loadSystemPrompt() {
     // fall through to placeholder
   }
   return "You are a salary negotiation coach for Next Level Negotiation. Write a complete, word-for-word counter-offer script tailored to the candidate's offer details and negotiation analysis, covering the opening, the counter itself, objection handling, and the close.";
+}
+
+const STAGE_LABELS = {
+  no_call: "No recruiter call yet",
+  call_scheduled: "A call is scheduled or coming up",
+  dodged: "A recruiter asked and I dodged it",
+  gave_number: "I already gave a number",
+};
+
+const parseMoney = (value) => {
+  const n = Number(String(value ?? "").replace(/[^0-9.]/g, ""));
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+// Applying flow. The walk-away floor is the low end of the researched range,
+// raised to current salary when that is higher — a candidate should never be
+// scripted to accept less than they already earn. The current figure itself
+// is deliberately NOT passed through to the model.
+function buildApplyUserMessage(form, analysis) {
+  const range = analysis.market_range;
+  const current = parseMoney(form.currentSalary);
+  let floor = range?.base?.low ?? null;
+  let floorNote = "";
+  if (floor !== null && current !== null && current > floor) {
+    floor = current;
+    floorNote =
+      " (raised above the researched low end because it would otherwise sit below what they already earn; do not state why, and never reveal the current salary)";
+  }
+
+  const lines = [
+    `Target role: ${form.targetRole}`,
+    form.targetCompany ? `Target company: ${form.targetCompany}` : null,
+    `Location: ${form.location}`,
+    `Years of experience: ${form.yearsExperience}`,
+    `Where they are with the salary question: ${STAGE_LABELS[form.salaryStage] || form.salaryStage}`,
+    form.salaryStage === "gave_number" && form.sharedNumber
+      ? `Number they already shared: $${form.sharedNumber} — include the recovery section`
+      : null,
+    floor !== null
+      ? `WALK-AWAY FLOOR: $${Math.round(floor).toLocaleString("en-US")}${floorNote}`
+      : "WALK-AWAY FLOOR: unavailable — no researched range, use fill-in blanks",
+    form.additionalContext
+      ? `Additional context from the candidate: ${form.additionalContext}`
+      : null,
+  ].filter(Boolean);
+
+  const strategyName =
+    { Cautious: "cautious", Balanced: "balanced", Aggressive: "aggressive" }[
+      form.riskTolerance
+    ] || "balanced";
+
+  return [
+    "Write the recruiter screening call script for this candidate.",
+    "",
+    "CANDIDATE DETAILS:",
+    lines.join("\n"),
+    "",
+    `RECOMMENDED STRATEGY: ${strategyName} (from their stated risk tolerance${form.riskTolerance ? `: "${form.riskTolerance}"` : ""}) — use it to set the width of the wide-range answer`,
+    "",
+    "APPLYING-STAGE ANALYSIS THEY RECEIVED:",
+    JSON.stringify(analysis, null, 2),
+  ].join("\n");
 }
 
 function buildUserMessage(form, analysis) {
@@ -82,11 +154,19 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server is misconfigured (missing API key)." });
   }
 
-  const { sessionId, form, analysis } = req.body || {};
+  const { sessionId, form, analysis, flow: rawFlow } = req.body || {};
+  const flow = rawFlow === "apply" ? "apply" : "offer";
   if (!sessionId) {
     return res.status(400).json({ error: "Missing payment session." });
   }
-  if (!form || !form.role || !form.location || !form.offerBaseSalary || !analysis) {
+  if (!form || !analysis) {
+    return res.status(400).json({ error: "Missing offer details." });
+  }
+  if (flow === "apply") {
+    if (!form.targetRole || !form.location) {
+      return res.status(400).json({ error: "Missing candidate details." });
+    }
+  } else if (!form.role || !form.location || !form.offerBaseSalary) {
     return res.status(400).json({ error: "Missing offer details." });
   }
 
@@ -101,7 +181,10 @@ export default async function handler(req, res) {
     // Optional resume/JD context was extracted and stored at analysis time
     // (files can't travel through the URL-encoded results). Missing record
     // or storage trouble simply means the script goes without it.
-    let userMessage = buildUserMessage(form, analysis);
+    let userMessage =
+      flow === "apply"
+        ? buildApplyUserMessage(form, analysis)
+        : buildUserMessage(form, analysis);
     if (analysis.submissionId) {
       try {
         const redis = getRedis();
@@ -109,7 +192,10 @@ export default async function handler(req, res) {
           ? await getSubmission(redis, analysis.submissionId)
           : null;
         if (record?.resumeText) {
-          userMessage += `\n\nCANDIDATE RESUME (optional context — use it to make the value headline and counter specific to their background):\n${record.resumeText}`;
+          userMessage +=
+            flow === "apply"
+              ? `\n\nCANDIDATE RESUME (optional context — use it to make the closing questions specific to their background):\n${record.resumeText}`
+              : `\n\nCANDIDATE RESUME (optional context — use it to make the value headline and counter specific to their background):\n${record.resumeText}`;
         }
         if (record?.jobDescriptionText) {
           userMessage += `\n\nJOB DESCRIPTION (optional context):\n${record.jobDescriptionText}`;
@@ -122,7 +208,7 @@ export default async function handler(req, res) {
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 8192,
-      system: loadSystemPrompt(),
+      system: loadSystemPrompt(flow),
       messages: [{ role: "user", content: userMessage }],
     });
 

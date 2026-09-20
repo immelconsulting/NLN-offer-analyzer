@@ -9,19 +9,49 @@ import {
   FREE_TEST_MODE,
 } from "../lib/config.js";
 
-const PROOF_POINTS = [
-  "100% 5-star reviews on Trustpilot — 20 verified reviews",
-  "Real outcomes: an average 8% salary increase, with one client offer increasing by as much as $30,000",
-  "5+ years and 200+ negotiations behind every script — not a generic AI template",
-  "Delivered instantly — a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
-];
+// Copy differs per flow; everything structural below is shared. The offer
+// flow is the default so its behavior is untouched by the apply path.
+const FLOW_COPY = {
+  offer: {
+    heading: "You're not the only one who wondered if this actually works.",
+    proofPoints: [
+      "100% 5-star reviews on Trustpilot — 20 verified reviews",
+      "Real outcomes: an average 8% salary increase, with one client offer increasing by as much as $30,000",
+      "5+ years and 200+ negotiations behind every script — not a generic AI template",
+      "Delivered instantly — a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
+    ],
+    ctaLabel: "Get my instant script — $47",
+    // Specific to the counter-offer script product. Deliberately not reused
+    // on the apply page, which sells a different script.
+    testimonial: {
+      quote:
+        "His high-level script provided me with immense confidence during my negotiation call.",
+      attribution: "— VP of Finance, June 2024",
+    },
+  },
+  apply: {
+    heading: "The call that decides your salary happens before the offer.",
+    proofPoints: [
+      "100% 5-star reviews on Trustpilot — 20 verified reviews",
+      "Word-for-word answers to the two questions that cost people the most: what are your expectations, and what do you make now",
+      "5+ years and 200+ negotiations behind every script — not a generic AI template",
+      "Delivered instantly — a fully customized script ready in under 5 minutes, because recruiter calls don't wait for a good time",
+    ],
+    ctaLabel: "Get my screening call script — $47",
+    // TODO: drop in a real quote from someone who used the screening call
+    // script. Never reuse the counter-offer testimonial here — it's about a
+    // different product and a different moment in the process.
+    testimonial: null,
+  },
+};
 
 // Trust-building step between the results page and Stripe checkout.
-// Reached via /proof?d=<encoded offer data> from the results page.
-export default function ProofPage() {
+// Reached via /proof?d=… (offer) or /apply/proof?d=… (applying).
+export default function ProofPage({ flow = "offer" }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const encoded = searchParams.get("d");
+  const copy = FLOW_COPY[flow] || FLOW_COPY.offer;
 
   useEffect(() => {
     track("proof_viewed");
@@ -55,11 +85,11 @@ export default function ProofPage() {
       <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
           <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-navy-900 text-center">
-            You're not the only one who wondered if this actually works.
+            {copy.heading}
           </h1>
 
           <ul className="mt-8 space-y-4">
-            {PROOF_POINTS.map((point, i) => (
+            {copy.proofPoints.map((point, i) => (
               <li key={i} className="flex gap-3">
                 <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-navy-50 text-navy-600 text-sm font-semibold flex items-center justify-center">
                   ✓
@@ -69,15 +99,16 @@ export default function ProofPage() {
             ))}
           </ul>
 
-          <blockquote className="mt-8 bg-navy-50 rounded-lg px-6 py-5 text-center">
-            <p className="text-navy-900 font-medium">
-              "His high-level script provided me with immense confidence
-              during my negotiation call."
-            </p>
-            <cite className="block text-sm text-slate-600 not-italic mt-2">
-              — VP of Finance, June 2024
-            </cite>
-          </blockquote>
+          {copy.testimonial && (
+            <blockquote className="mt-8 bg-navy-50 rounded-lg px-6 py-5 text-center">
+              <p className="text-navy-900 font-medium">
+                "{copy.testimonial.quote}"
+              </p>
+              <cite className="block text-sm text-slate-600 not-italic mt-2">
+                {copy.testimonial.attribution}
+              </cite>
+            </blockquote>
+          )}
 
           <div className="mt-6 text-center">
             <a
@@ -108,7 +139,7 @@ export default function ProofPage() {
               onClick={handleCheckout}
               className="w-full bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-6 py-4 transition shadow-sm"
             >
-              Get my instant script — $47
+              {copy.ctaLabel}
             </button>
             <Link
               to="/session"

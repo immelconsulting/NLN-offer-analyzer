@@ -26,9 +26,12 @@ const STAGES = [
   },
 ];
 
-// Only an offer in hand can be analyzed; everyone else gets the
-// stage-matched prep resources on /thanks.
-const HAS_OFFER_STAGES = ["Received an offer"];
+// Each stage that has a real flow of its own routes to it; the rest still
+// get the stage-matched prep resources on /thanks.
+const STAGE_ROUTES = {
+  "Received an offer": "/offer",
+  Applying: "/apply",
+};
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -65,11 +68,7 @@ export default function LandingPage() {
       // Ignore — the visitor continues either way.
     }
 
-    if (HAS_OFFER_STAGES.includes(stage)) {
-      navigate("/offer");
-    } else {
-      navigate("/thanks");
-    }
+    navigate(STAGE_ROUTES[stage] || "/thanks");
   }
 
   return (
