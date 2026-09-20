@@ -153,6 +153,12 @@ Script** instead of a score and a counter-offer script.
   user's real numbers and a recovery section only when they already gave a number. Voice rules
   there add **no em dashes and no double dashes**. Sign-off links back to `/offer` for when the
   offer arrives, plus the usual `{{strategy_session_url}}`.
+- **Scope: the salary question only.** No elevator pitch, "tell me about yourself" answer,
+  background summary, or rapport scripting — those belong to a different conversation. The
+  earlier part of the call gets a short prose orientation ("How the call usually opens") whose
+  whole job is telling them not to raise compensation first; it carries no 🗣️ lines. **The
+  scripted dialogue begins at "What are your salary expectations?" and nowhere earlier**, so no
+  scripted line ever brings up money before the recruiter does.
 
 Shared search loop lives in `api/_lib/analysis.js` (`runSearchAnalysis` + `SOURCES_SCHEMA`),
 used by both analyzers — the `tool_choice: auto` / `pause_turn` / single-nudge behavior and

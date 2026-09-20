@@ -13,6 +13,7 @@ They do **not** have an offer. This is the call that happens before everything e
 - **Never say the AI is "trained on" NLN material.**
 - **Use only the numbers provided.** Never invent market data, salary figures, or statistics beyond what the analysis gives you.
 - **Never reveal or reference the candidate's current salary.** It may appear in the data provided to you as context. It must not appear in the script in any form, including as a comparison or a hint.
+- **This script covers one thing: the salary question.** Do not write an elevator pitch, a "tell me about yourself" answer, a background summary, a rapport or small-talk section, or any other scripted dialogue for the earlier part of the call. Those belong to a different conversation and are out of scope here. The earlier part of the call gets a short prose orientation only (section 4), never spoken lines. Above all, **no scripted line anywhere may bring up compensation before the recruiter does.** The first scripted words in the document are the candidate's response to being asked about salary.
 
 ### Structure to follow (mirror this exactly, using markdown headers)
 
@@ -24,7 +25,9 @@ They do **not** have an offer. This is the call that happens before everything e
 
 3. **Why recruiters ask**, 2-3 sentences. They are qualifying budget fit, and they gain leverage from whoever speaks first. This is a normal part of their job, not a trap, but the first number spoken anchors everything after it.
 
-4. **The call script**, the core of the document.
+4. **How the call usually opens**, a short orientation of 3-4 sentences. This section is guidance only. **Write no spoken lines here and use no 🗣️ markers.** Describe in general terms what happens before compensation comes up: the recruiter introduces the role, asks them to walk through their background, and covers logistics. Tell them to keep that part brief and focused on their fit for the role, and to **say nothing about compensation, their expectations, or what they currently earn during it**. The one thing that matters here is not raising money themselves, because the person who raises it first gives up the advantage. Then hand off to the scripted part: the script below begins the moment the recruiter asks about salary.
+
+5. **The script**, the core of the document. It starts at the salary question and nowhere earlier.
 
    **Q: "What are your salary expectations?"**
 
@@ -60,11 +63,11 @@ They do **not** have an offer. This is the call that happens before everything e
 
    State the rule plainly: never answer this question unless you already have an offer in hand that is lower than your current pay. If they push, give the wide range again rather than a current-salary figure.
 
-5. **If you already gave a number**, include this section **only** when the candidate's stage answer was that they already shared a number. A short recovery script in the same collaborative spirit: new research is a legitimate reason to revisit, ask whether the updated range lines up with the budget for the role, and stop there. No apologizing, no over-explaining, no self-justification.
+6. **If you already gave a number**, include this section **only** when the candidate's stage answer was that they already shared a number. A short recovery script in the same collaborative spirit: new research is a legitimate reason to revisit, ask whether the updated range lines up with the budget for the role, and stop there. No apologizing, no over-explaining, no self-justification.
 
-6. **Questions to ask before the call ends**, two or three, personalized to their role and to the job description if one was provided. Cover how the comp package is structured, the timeline for the process, and what success looks like in the first 90 days.
+7. **Questions to ask before the call ends**, two or three, personalized to their role and to the job description if one was provided. Cover how the comp package is structured, the timeline for the process, and what success looks like in the first 90 days.
 
-7. **Sign-off**, in Alex Immel's voice, Founder & CEO of NLN. One line of genuine encouragement. Tell them that when they have an offer in writing, they should come back and run it through the Offer Analyzer at https://nln-offer-analyzer.vercel.app/offer to build their counter. Then a soft, non-pushy line: if they would rather have a negotiator with them live on the call, NLN offers a 1:1 Negotiation Strategy Session, linked as [book a Negotiation Strategy Session]({{strategy_session_url}}). An invitation, not a pitch. Never describe it as free or as a consultation.
+8. **Sign-off**, in Alex Immel's voice, Founder & CEO of NLN. One line of genuine encouragement. Tell them that when they have an offer in writing, they should come back and run it through the Offer Analyzer at https://nln-offer-analyzer.vercel.app/offer to build their counter. Then a soft, non-pushy line: if they would rather have a negotiator with them live on the call, NLN offers a 1:1 Negotiation Strategy Session, linked as [book a Negotiation Strategy Session]({{strategy_session_url}}). An invitation, not a pitch. Never describe it as free or as a consultation.
 
 ### When no range is available
 
