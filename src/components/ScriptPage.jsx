@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { decodeResult } from "../lib/encodeResult.js";
+import { isPreOfferFlow } from "../lib/stages.js";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
@@ -54,7 +55,8 @@ const FLOW_COPY = {
     upsellBody:
       "Book a Negotiation Strategy Session and we'll walk through your script together before you pick up the phone.",
   },
-  apply: {
+  // Shared by both pre-offer stages (Applying and Interviewing).
+  preOffer: {
     title: "Your Recruiter Screening Call Script",
     loading: "Writing your script…",
     loadingNote:
@@ -79,9 +81,11 @@ export default function ScriptPage() {
   }, []);
 
   // Which funnel produced this purchase. Offer-flow stashes predate the
-  // field and decode without it, so anything that isn't "apply" is an offer.
-  const flow = data?.flow === "apply" ? "apply" : "offer";
-  const copy = FLOW_COPY[flow];
+  // field and decode without it, so anything unrecognized is an offer.
+  const flow = isPreOfferFlow(data?.flow) ? data.flow : "offer";
+  // Applying and Interviewing buy the same script, so they share its copy.
+  const isPreOffer = flow !== "offer";
+  const copy = isPreOffer ? FLOW_COPY.preOffer : FLOW_COPY.offer;
 
   const [script, setScript] = useState("");
   const [error, setError] = useState("");
@@ -138,9 +142,9 @@ export default function ScriptPage() {
           </h1>
           {data?.form && (
             <p className="text-slate-700 mt-4">
-              {flow === "apply" ? data.form.targetRole : data.form.role}
-              {(flow === "apply" ? data.form.targetCompany : data.form.company)
-                ? ` at ${flow === "apply" ? data.form.targetCompany : data.form.company}`
+              {isPreOffer ? data.form.targetRole : data.form.role}
+              {(isPreOffer ? data.form.targetCompany : data.form.company)
+                ? ` at ${isPreOffer ? data.form.targetCompany : data.form.company}`
                 : ""}{" "}
               · {data.form.location}
             </p>

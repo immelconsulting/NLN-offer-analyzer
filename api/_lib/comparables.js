@@ -99,11 +99,12 @@ export function buildComparablesSummary(submissions, { role, location, excludeEm
   const city = normalizeCity(location);
   const matches = submissions.filter((s) => {
     if (!s?.form?.role || !s?.form?.location) return false;
-    // Apply-stage submissions are aspirational targets, not real offers, so
-    // they must never become market data for someone else's analysis. They
-    // lack offerBaseSalary today and would fall out below anyway; this is
-    // explicit so a later field addition can't quietly let them in.
-    if (s.flow === "apply") return false;
+    // Pre-offer submissions (applying, interviewing) are aspirational targets,
+    // not real offers, so they must never become market data for someone
+    // else's analysis. They lack offerBaseSalary today and would fall out
+    // below anyway; this is explicit so a later field addition can't quietly
+    // let them in, and covers any future non-offer flow by default.
+    if (s.flow && s.flow !== "offer") return false;
     if (excludeEmail && s.email && s.email === excludeEmail.trim().toLowerCase()) return false;
     return (
       titlesMatch(s.form.role, role) &&

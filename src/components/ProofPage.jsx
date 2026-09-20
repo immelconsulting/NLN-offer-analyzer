@@ -29,6 +29,9 @@ const FLOW_COPY = {
       attribution: "— VP of Finance, June 2024",
     },
   },
+  // Applying and Interviewing sell the same script; only the heading changes
+  // to match where the reader is. The `interview` entry is filled in below
+  // from this one so the two can never drift apart by accident.
   apply: {
     heading: "The call that decides your salary happens before the offer.",
     proofPoints: [
@@ -45,8 +48,15 @@ const FLOW_COPY = {
   },
 };
 
-// Trust-building step between the results page and Stripe checkout.
-// Reached via /proof?d=… (offer) or /apply/proof?d=… (applying).
+// Interviewing sells the identical script, so it inherits the apply copy
+// wholesale and overrides only the heading.
+FLOW_COPY.interview = {
+  ...FLOW_COPY.apply,
+  heading: "You're in the process. The salary question is coming.",
+};
+
+// Trust-building step between the results page and Stripe checkout. Reached
+// via /proof?d=… (offer), /apply/proof?d=… or /interview/proof?d=… (pre-offer).
 export default function ProofPage({ flow = "offer" }) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();

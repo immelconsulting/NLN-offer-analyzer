@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { encodeResult } from "../lib/encodeResult.js";
 import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
+import { getStage } from "../lib/stages.js";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import icon from "../assets/nln-icon.png";
 
-// Applying-stage form. Deliberately much shorter than OfferForm — people at
-// this stage have no offer numbers to enter, and a long form here would cost
-// more completions than the extra context is worth.
+// Pre-offer form, shared by the Applying and Interviewing stages (see
+// src/lib/stages.js). Deliberately much shorter than OfferForm — people at
+// these stages have no offer numbers to enter, and a long form here would
+// cost more completions than the extra context is worth.
 
 const EXPERIENCE_BANDS = ["0-2", "3-5", "6-9", "10-15", "15+"];
 
@@ -76,8 +78,9 @@ function formatSalary(value) {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-export default function ApplyForm() {
+export default function ApplyForm({ flow = "apply" }) {
   const navigate = useNavigate();
+  const stage = getStage(flow);
   const [form, setForm] = useState(() => withDraft(initialState, DRAFT_ALIASES));
   // Optional context uploads live outside `form` so they never end up in
   // the URL-encoded results — only their extracted text is used server-side.
@@ -133,6 +136,7 @@ export default function ApplyForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          flow: stage.id,
           leadEmail,
           resumeFile,
           jobDescriptionFile,
@@ -146,8 +150,8 @@ export default function ApplyForm() {
       const analysis = await res.json();
       // flow rides inside the encoded payload so the results, proof, and
       // script pages all know which path they're on.
-      const encoded = encodeResult({ flow: "apply", form, analysis });
-      navigate(`/apply/results?d=${encoded}`);
+      const encoded = encodeResult({ flow: stage.id, form, analysis });
+      navigate(`${stage.basePath}/results?d=${encoded}`);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
     } finally {
@@ -164,11 +168,7 @@ export default function ApplyForm() {
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
             Know Your Number
           </h1>
-          <p className="text-slate-700 mt-4 max-w-xl">
-            Before a recruiter asks what you're looking for, know exactly what
-            to say. Answer five quick questions and we'll research your market
-            rate.
-          </p>
+          <p className="text-slate-700 mt-4 max-w-xl">{stage.formIntro}</p>
         </div>
       </header>
 

@@ -31,6 +31,7 @@ const STAGES = [
 const STAGE_ROUTES = {
   "Received an offer": "/offer",
   Applying: "/apply",
+  Interviewing: "/interview",
 };
 
 export default function LandingPage() {

@@ -292,6 +292,7 @@ function FlowFilter({ value, onChange }) {
     ["All flows", "all"],
     ["Offer", "offer"],
     ["Apply", "apply"],
+    ["Interview", "interview"],
   ];
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -313,6 +314,26 @@ function FlowFilter({ value, onChange }) {
         </button>
       ))}
     </div>
+  );
+}
+
+// Offer / Apply / Interview marker, used in the table and the detail view.
+const FLOW_LABELS = { apply: "Apply", interview: "Interview", offer: "Offer" };
+
+function FlowBadge({ flow }) {
+  const label = FLOW_LABELS[flow] || FLOW_LABELS.offer;
+  return (
+    <span
+      className={`text-xs font-sans font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
+        flow === "apply"
+          ? "bg-navy-100 text-navy-900"
+          : flow === "interview"
+            ? "bg-navy-50 text-navy-700 ring-1 ring-navy-200"
+            : "bg-slate-100 text-slate-600"
+      }`}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -473,15 +494,7 @@ function SubmissionsTable({ rows, sort, onSort, onOpen }) {
                   {new Date(s.timestamp).toLocaleDateString()}
                 </td>
                 <td className={cell}>
-                  <span
-                    className={`text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
-                      s.flow === "apply"
-                        ? "bg-navy-100 text-navy-900"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {s.flow === "apply" ? "Apply" : "Offer"}
-                  </span>
+                  <FlowBadge flow={s.flow} />
                 </td>
                 <td className={`${cell} text-navy-900 font-medium`}>
                   {s.email || "—"}
@@ -685,9 +698,11 @@ export default function AdminPage() {
 
   if (selected) {
     const f = selected.form || {};
-    const isApply = selected.flow === "apply";
-    const displayRole = isApply ? f.targetRole : f.role;
-    const displayCompany = isApply ? f.targetCompany : f.company;
+    // Pre-offer records (apply, interview) name the role and company
+    // differently from offer records.
+    const isPreOffer = selected.flow && selected.flow !== "offer";
+    const displayRole = isPreOffer ? f.targetRole : f.role;
+    const displayCompany = isPreOffer ? f.targetCompany : f.company;
     const base = selected.analysis?.market_range?.base;
     return (
       <div className="min-h-screen bg-navy-50">
@@ -704,14 +719,8 @@ export default function AdminPage() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
             <h1 className="text-xl font-serif font-semibold text-navy-900 mb-1">
               {displayRole} {displayCompany ? `at ${displayCompany}` : ""}
-              <span
-                className={`ml-2 align-middle text-xs font-sans font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
-                  isApply
-                    ? "bg-navy-100 text-navy-900"
-                    : "bg-slate-100 text-slate-600"
-                }`}
-              >
-                {isApply ? "Apply" : "Offer"}
+              <span className="ml-2 align-middle">
+                <FlowBadge flow={selected.flow} />
               </span>
             </h1>
             <p className="text-sm text-slate-500 mb-5">

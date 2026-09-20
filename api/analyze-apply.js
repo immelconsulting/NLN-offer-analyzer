@@ -5,13 +5,26 @@ import { getRedis, newSubmissionId, saveSubmission } from "./_lib/store.js";
 import { extractTextFromUpload } from "./_lib/extract.js";
 import { runSearchAnalysis, SOURCES_SCHEMA } from "./_lib/analysis.js";
 
-// Applying-stage analysis: no offer exists yet, so instead of scoring an
-// offer this returns a researched target range and coaching for the recruiter
-// screening call.
+// Pre-offer analysis, shared by the Applying and Interviewing stages. No
+// offer exists yet, so instead of scoring one this returns a researched
+// target range and coaching for the recruiter screening call.
 //
-// Deliberately does NOT use api/_lib/comparables.js. Apply submissions are
+// Both stages face the identical negotiation moment (being asked what you
+// want), so they share this endpoint and prompt rather than duplicating them.
+// The stage is carried through as `flow` so the coaching and the admin view
+// can still tell them apart.
+//
+// Deliberately does NOT use api/_lib/comparables.js. These submissions are
 // aspirational targets rather than real offers, so they neither consume nor
 // contribute internal comparables.
+
+// Where the candidate is in the process, described for the prompt.
+const STAGE_SITUATIONS = {
+  apply: "actively applying to roles, so the recruiter screening call is the next compensation moment ahead of them",
+  interview:
+    "already interviewing, so the salary question is either imminent or has already come up at least once in the process",
+};
+const normalizeFlow = (flow) => (flow === "interview" ? "interview" : "apply");
 
 function loadSystemPrompt() {
   try {
@@ -124,7 +137,9 @@ const STAGE_LABELS = {
 };
 
 function buildUserMessage(form) {
+  const flow = normalizeFlow(form.flow);
   const lines = [
+    `Job-search stage: ${flow === "interview" ? "Interviewing" : "Applying"} — this candidate is ${STAGE_SITUATIONS[flow]}. Tailor biggest_risk and call_status_note to that.`,
     `Target role: ${form.targetRole}`,
     form.targetCompany ? `Target company: ${form.targetCompany}` : null,
     `Location: ${form.location}`,
@@ -230,7 +245,7 @@ export default async function handler(req, res) {
         } = form;
         await saveSubmission(redis, {
           id,
-          flow: "apply",
+          flow: normalizeFlow(form.flow),
           email: (leadEmail || "").trim().toLowerCase(),
           timestamp: new Date().toISOString(),
           form: formFields,

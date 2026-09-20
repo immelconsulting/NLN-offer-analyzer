@@ -22,11 +22,17 @@ export default function App() {
       <Route path="/results" element={<ResultsPage />} />
       <Route path="/proof" element={<ProofPage />} />
 
-      {/* Applying flow: no offer yet, preparing for the recruiter call.
-          Both flows converge on /script, which branches on the stashed flow. */}
-      <Route path="/apply" element={<ApplyForm />} />
-      <Route path="/apply/results" element={<ApplyResultsPage />} />
+      {/* Pre-offer flows: no offer yet, preparing for the salary question.
+          Applying and Interviewing share every component and differ only in
+          copy (src/lib/stages.js). All flows converge on /script, which
+          branches on the stashed flow. */}
+      <Route path="/apply" element={<ApplyForm flow="apply" />} />
+      <Route path="/apply/results" element={<ApplyResultsPage flow="apply" />} />
       <Route path="/apply/proof" element={<ProofPage flow="apply" />} />
+
+      <Route path="/interview" element={<ApplyForm flow="interview" />} />
+      <Route path="/interview/results" element={<ApplyResultsPage flow="interview" />} />
+      <Route path="/interview/proof" element={<ProofPage flow="interview" />} />
 
       <Route path="/thanks" element={<ThankYou />} />
       <Route path="/session" element={<SessionProofPage />} />

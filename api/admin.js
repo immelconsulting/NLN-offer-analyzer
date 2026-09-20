@@ -97,7 +97,8 @@ function toRow(values) {
 }
 
 // Records predate the flow field, so anything unmarked is an offer.
-const flowOf = (sub) => (sub.flow === "apply" ? "apply" : "offer");
+const FLOWS = ["offer", "apply", "interview"];
+const flowOf = (sub) => (FLOWS.includes(sub.flow) ? sub.flow : "offer");
 
 // The two flows name the role and company differently.
 const roleOf = (sub) => sub.form?.role || sub.form?.targetRole || "";
@@ -134,9 +135,7 @@ export default async function handler(req, res) {
 
     const range = resolveRange(req.query);
     const all = await listRecentSubmissions(redis, LIST_LIMIT);
-    const flowFilter = ["offer", "apply"].includes(req.query.flow)
-      ? req.query.flow
-      : null;
+    const flowFilter = FLOWS.includes(req.query.flow) ? req.query.flow : null;
     const subs = all.filter(
       (s) => inRange(s, range) && (!flowFilter || flowOf(s) === flowFilter)
     );

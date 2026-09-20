@@ -10,12 +10,16 @@ import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
 // kept in localStorage; we confirm the session is actually paid before
 // calling the model.
 
-// One prompt file per flow. The offer flow writes a counter-offer script;
-// the applying flow writes a recruiter screening call script.
+// The offer flow writes a counter-offer script. Both pre-offer stages
+// (Applying and Interviewing) face the same moment and share one screening
+// call prompt, so a voice change is a single edit rather than two.
 const PROMPT_FILES = {
   offer: "script-generator-prompt.md",
   apply: "apply-script-generator-prompt.md",
+  interview: "apply-script-generator-prompt.md",
 };
+
+const PRE_OFFER_FLOWS = ["apply", "interview"];
 
 function loadSystemPrompt(flow = "offer") {
   try {
@@ -82,10 +86,17 @@ function applyFloors(form, analysis) {
   return { baseFloor, totalFloor, note };
 }
 
-function buildApplyUserMessage(form, analysis) {
+const STAGE_SITUATIONS = {
+  apply: "Applying: actively applying to roles, so the recruiter screening call is the next compensation moment ahead of them.",
+  interview:
+    "Interviewing: already in the process, so the salary question is either imminent or has already come up at least once.",
+};
+
+function buildApplyUserMessage(form, analysis, flow = "apply") {
   const { baseFloor, totalFloor, note } = applyFloors(form, analysis);
 
   const lines = [
+    `Job-search stage: ${STAGE_SITUATIONS[flow] || STAGE_SITUATIONS.apply} Reference this naturally in the intro.`,
     `Target role: ${form.targetRole}`,
     form.targetCompany ? `Target company: ${form.targetCompany}` : null,
     `Location: ${form.location}`,
@@ -118,7 +129,7 @@ function buildApplyUserMessage(form, analysis) {
     "",
     `RECOMMENDED STRATEGY: ${strategyName} (from their stated risk tolerance${form.riskTolerance ? `: "${form.riskTolerance}"` : ""}) — use it to set the width of the wide-range answer`,
     "",
-    "APPLYING-STAGE ANALYSIS THEY RECEIVED:",
+    "PRE-OFFER ANALYSIS THEY RECEIVED:",
     JSON.stringify(analysis, null, 2),
   ].join("\n");
 }
@@ -178,14 +189,15 @@ export default async function handler(req, res) {
   }
 
   const { sessionId, form, analysis, flow: rawFlow } = req.body || {};
-  const flow = rawFlow === "apply" ? "apply" : "offer";
+  const flow = PRE_OFFER_FLOWS.includes(rawFlow) ? rawFlow : "offer";
+  const isPreOffer = flow !== "offer";
   if (!sessionId) {
     return res.status(400).json({ error: "Missing payment session." });
   }
   if (!form || !analysis) {
     return res.status(400).json({ error: "Missing offer details." });
   }
-  if (flow === "apply") {
+  if (isPreOffer) {
     if (!form.targetRole || !form.location) {
       return res.status(400).json({ error: "Missing candidate details." });
     }
@@ -204,10 +216,9 @@ export default async function handler(req, res) {
     // Optional resume/JD context was extracted and stored at analysis time
     // (files can't travel through the URL-encoded results). Missing record
     // or storage trouble simply means the script goes without it.
-    let userMessage =
-      flow === "apply"
-        ? buildApplyUserMessage(form, analysis)
-        : buildUserMessage(form, analysis);
+    let userMessage = isPreOffer
+      ? buildApplyUserMessage(form, analysis, flow)
+      : buildUserMessage(form, analysis);
     if (analysis.submissionId) {
       try {
         const redis = getRedis();
@@ -216,7 +227,7 @@ export default async function handler(req, res) {
           : null;
         if (record?.resumeText) {
           userMessage +=
-            flow === "apply"
+            isPreOffer
               ? `\n\nCANDIDATE RESUME (optional context — use it to make the closing questions specific to their background):\n${record.resumeText}`
               : `\n\nCANDIDATE RESUME (optional context — use it to make the value headline and counter specific to their background):\n${record.resumeText}`;
         }

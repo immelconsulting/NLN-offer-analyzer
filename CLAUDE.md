@@ -38,8 +38,9 @@ paid tier.
    (pre-checkbox leads export as opt-in "no"). Privacy Policy lives at `/privacy`
    (`src/components/PrivacyPolicy.jsx`), linked near the email field.
 2. Branch (`STAGE_ROUTES` in LandingPage): **"Received an offer"** → `/offer`, **"Applying"** →
-   `/apply` (see the Applying flow below). Interviewing / Expecting-soon → `/thanks`, a
-   stage-matched resource page (PDF guides in `public/resources/`) + Strategy Session CTA.
+   `/apply`, **"Interviewing"** → `/interview` (both pre-offer stages share one flow, below).
+   Expecting-soon → `/thanks`, a stage-matched resource page (PDF guides in
+   `public/resources/`) + Strategy Session CTA.
 3. `/offer` **OfferForm** — analyzer form. Required: role, location, base salary, top priority,
    **risk tolerance** (Cautious/Balanced/Aggressive). Optional: "Anything else we should know?"
    context textarea, plus an "Extra Context" section — resume upload and job-description
@@ -105,14 +106,23 @@ paid tier.
    Gating it server-side is deliberate — Stripe *could* redirect straight to the calendar, but
    then anyone who saw the URL could book a paid session for free.
 
-## Applying flow (added Sept 20, 2026)
+## Pre-offer flow: Applying + Interviewing (added Sept 20, 2026)
 
-The first of the three dead-end stages to become a real flow. Same shape as the offer path
+Two of the three dead-end stages, now one real flow. Same shape as the offer path
 (short form → free researched analysis → $47 script → Strategy Session CTA), but there is no
 offer yet, so the product is a **researched target range** and a **Recruiter Screening Call
 Script** instead of a score and a counter-offer script.
 
-- `/apply` **ApplyForm** — deliberately short. Required: target role, location, years of
+**Applying and Interviewing share everything.** They face the identical negotiation moment
+(a recruiter asking what you want), so they use one form, one analyzer, one prompt pair, one
+results page, one proof page, and one script — parameterized by stage in `src/lib/stages.js`.
+They stay separate `flow` values so the admin can tell them apart and the copy can diverge
+later, but nothing is duplicated: a voice change is one edit, not two, and the two can't drift.
+Routes are `/apply`, `/apply/results`, `/apply/proof` and `/interview`, `/interview/results`,
+`/interview/proof`. Only the form intro and the proof heading differ; the stage is also passed
+into both prompts so the coaching lands in the right place in the process.
+
+- `/apply` and `/interview` **ApplyForm** — deliberately short. Required: target role, location, years of
   experience (0-2 / 3-5 / 6-9 / 10-15 / 15+), risk tolerance (same component and copy as the
   offer form), and "Where are you with the salary question?" (no call yet / call scheduled /
   asked and dodged / already gave a number), which carries a short blurb explaining what that
@@ -136,14 +146,15 @@ Script** instead of a score and a counter-offer script.
   total_comp range** — comparing it to base would inflate the base floor, since total comp sits
   well above base. A total floor that lands below the base floor is dropped as incoherent.
   The figure appears in the script only as a floor, never labelled as their current pay.
-- **Apply submissions never feed `comparables.js`** — they are aspirational targets, not real
-  offers. They're excluded there and from the admin salary CSV for the same reason.
+- **Pre-offer submissions never feed `comparables.js`** — they are aspirational targets, not
+  real offers. `comparables.js` excludes any `flow` other than `"offer"`, which also covers
+  future non-offer stages; the admin salary CSV does the same.
 - `/apply/results` **ApplyResultsPage** — range is the hero; also shows sources, biggest risk,
   and the call-status note. Stateless via the same base64 `?d=` param, with `flow: "apply"`
   inside the payload. **The three strategies are deliberately NOT rendered here** — they are
   effectively the script, and giving them away free removes the reason to buy it. They stay in
   the payload because the script generator builds from them.
-- `/apply/proof` — ProofPage with `flow="apply"` (copy differs, structure shared, offer flow
+- `/apply/proof` and `/interview/proof` — ProofPage with the stage as `flow` (copy differs, structure shared, offer flow
   untouched). Reuses the **same $47 Stripe Payment Link and the same `/script?session_id=`
   redirect**, so nothing new exists in Stripe. No testimonial yet: the counter-offer quote is
   about a different product and must not be reused here.
@@ -184,16 +195,16 @@ Append-only history; email comes from the landing-page session (`leadEmail` in t
 payload). `analysis.submissionId` rides inside the encoded `?d=` data so `/api/generate-script`
 can attach the script to the same record. Storage failures never block users.
 
-Apply submissions store the same way with `flow: "apply"`; offer records predate the field, so
-anything unmarked is an offer.
+Pre-offer submissions store the same way with `flow: "apply"` or `flow: "interview"`; offer
+records predate the field, so anything unmarked is an offer.
 
 `/admin` (route, not linked anywhere) — password login (`ADMIN_PASSWORD`, falling back to
 `LEADS_EXPORT_TOKEN`) exchanged for an httpOnly session cookie by `/api/login`; `/api/admin`
 requires that cookie and no longer accepts a `?token=` parameter, so no URL grants access.
 Date-range filter (today / 7d / 30d / 3m / 4m / 6m / 1yr / custom) drives the funnel rollup, the
 submissions table, and both CSV exports together. Sortable spreadsheet table with a Flow column
-and an All / Offer / Apply filter; visual funnel with per-step percentages. **The salary CSV is
-offer-rows only** — apply rows carry target ranges, not real offers.
+and an All / Offer / Apply / Interview filter; visual funnel with per-step percentages. **The salary CSV is
+offer-rows only** — pre-offer rows carry target ranges, not real offers.
 
 The analyzer feeds anonymized aggregates of similar past submissions into the prompt
 (`api/_lib/comparables.js`: synonym+token title matching, city match, IQR outlier filtering;
