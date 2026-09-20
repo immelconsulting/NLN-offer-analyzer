@@ -50,20 +50,40 @@ const parseMoney = (value) => {
   return Number.isFinite(n) && n > 0 ? n : null;
 };
 
+const fmtMoney = (n) => `$${Math.round(n).toLocaleString("en-US")}`;
+
 // Applying flow. The walk-away floor is the low end of the researched range,
-// raised to current salary when that is higher — a candidate should never be
-// scripted to accept less than they already earn. The current figure itself
-// is deliberately NOT passed through to the model.
-function buildApplyUserMessage(form, analysis) {
+// raised to what the candidate already earns so nobody is scripted to accept
+// a pay cut. The current figure itself is never passed to the model as such.
+//
+// The form asks for TOTAL annual compensation, so it may only be compared
+// against the total_comp range. Comparing it to base would silently inflate
+// the base floor, since total comp normally sits well above base.
+function applyFloors(form, analysis) {
   const range = analysis.market_range;
-  const current = parseMoney(form.currentSalary);
-  let floor = range?.base?.low ?? null;
-  let floorNote = "";
-  if (floor !== null && current !== null && current > floor) {
-    floor = current;
-    floorNote =
-      " (raised above the researched low end because it would otherwise sit below what they already earn; do not state why, and never reveal the current salary)";
+  const currentTotal = parseMoney(form.currentTotalComp);
+  const baseFloor = range?.base?.low ?? null;
+  let totalFloor = range?.total_comp?.low ?? null;
+  let note = "";
+
+  if (currentTotal !== null && (totalFloor === null || currentTotal > totalFloor)) {
+    totalFloor = currentTotal;
+    note =
+      " (set by what they already earn in total, which is above the researched low end; state it only as their floor, never as their current pay)";
   }
+  // Total compensation is always at least base, so a total floor below the
+  // base floor is incoherent — it would appear when someone's current total
+  // comp sits under the researched base low, which is itself a sign they're
+  // underpaid. The base floor already protects them, so drop the total one.
+  if (totalFloor !== null && baseFloor !== null && totalFloor < baseFloor) {
+    totalFloor = null;
+    note = "";
+  }
+  return { baseFloor, totalFloor, note };
+}
+
+function buildApplyUserMessage(form, analysis) {
+  const { baseFloor, totalFloor, note } = applyFloors(form, analysis);
 
   const lines = [
     `Target role: ${form.targetRole}`,
@@ -74,9 +94,12 @@ function buildApplyUserMessage(form, analysis) {
     form.salaryStage === "gave_number" && form.sharedNumber
       ? `Number they already shared: $${form.sharedNumber} — include the recovery section`
       : null,
-    floor !== null
-      ? `WALK-AWAY FLOOR: $${Math.round(floor).toLocaleString("en-US")}${floorNote}`
-      : "WALK-AWAY FLOOR: unavailable — no researched range, use fill-in blanks",
+    baseFloor !== null
+      ? `WALK-AWAY FLOOR (base): ${fmtMoney(baseFloor)}`
+      : "WALK-AWAY FLOOR (base): unavailable — no researched range, use fill-in blanks",
+    totalFloor !== null
+      ? `WALK-AWAY FLOOR (total compensation): ${fmtMoney(totalFloor)}${note}`
+      : null,
     form.additionalContext
       ? `Additional context from the candidate: ${form.additionalContext}`
       : null,

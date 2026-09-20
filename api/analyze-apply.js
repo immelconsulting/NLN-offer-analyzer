@@ -135,10 +135,12 @@ function buildUserMessage(form) {
       ? `Number they already shared: $${form.sharedNumber} — treat this as an anchor already on the table and write the recovery note around it`
       : null,
     // Context for sanity-checking only. The prompt forbids echoing it, and
-    // the script generator is told the same.
-    form.currentSalary
-      ? `Current base salary (CONTEXT ONLY — never state this figure in your output, and never let it drag the range below what the market supports): $${form.currentSalary}`
-      : "Current base salary: not provided",
+    // the script generator is told the same. This is TOTAL annual comp (base
+    // plus bonus, commission, and annualized equity), so it is comparable to
+    // the total_comp range, not to base.
+    form.currentTotalComp
+      ? `Current TOTAL annual compensation, base plus bonus/commission/equity (CONTEXT ONLY — never state this figure in your output, and never let it drag the range below what the market supports): $${form.currentTotalComp}`
+      : "Current total annual compensation: not provided",
     form.additionalContext
       ? `Additional context from the candidate: ${form.additionalContext}`
       : null,

@@ -62,7 +62,6 @@ export default function ApplyResultsPage() {
   }
 
   const { form, analysis } = data;
-  const recommendedKey = analysis.recommended_strategy || "balanced";
 
   return (
     <div className="min-h-screen bg-navy-50">
@@ -107,10 +106,10 @@ export default function ApplyResultsPage() {
           {analysis.call_status_note}
         </Callout>
 
-        <StrategyList
-          strategies={analysis.three_strategies}
-          recommendedKey={recommendedKey}
-        />
+        {/* The three strategies are deliberately NOT shown here. They are
+            effectively the script — the actual words to say — and giving them
+            away free removes the reason to buy it. They stay in the analysis
+            payload because the script generator builds from them. */}
 
         <NextStepChoice encoded={encoded} />
 
@@ -237,49 +236,6 @@ function Callout({ title, children, tone = "dark" }) {
         {title}
       </p>
       <p className="text-lg">{children}</p>
-    </div>
-  );
-}
-
-function StrategyList({ strategies, recommendedKey }) {
-  if (!Array.isArray(strategies) || strategies.length === 0) return null;
-
-  return (
-    <div>
-      <h2 className="text-xl font-serif font-semibold text-navy-900 mb-4">
-        Three ways to answer the question
-      </h2>
-      <div className="space-y-4">
-        {strategies.map((s) => {
-          const recommended = s.id === recommendedKey;
-          return (
-            <div
-              key={s.id}
-              className={`rounded-xl border bg-white p-5 sm:p-6 shadow-sm transition ${
-                recommended
-                  ? "border-navy-600 ring-1 ring-navy-600"
-                  : "border-slate-200"
-              }`}
-            >
-              <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-                <h3 className="font-serif font-semibold text-navy-900 text-lg">
-                  {s.style}
-                </h3>
-                {recommended && (
-                  <span className="text-xs font-semibold uppercase tracking-wide text-white bg-navy-600 px-2.5 py-1 rounded-full">
-                    Recommended for you
-                  </span>
-                )}
-              </div>
-              <p className="text-slate-700">{s.summary}</p>
-              <p className="text-sm text-slate-500 mt-2">
-                <span className="font-medium text-slate-600">When to use:</span>{" "}
-                {s.when_to_use}
-              </p>
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }

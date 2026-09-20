@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { encodeResult } from "../lib/encodeResult.js";
+import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import icon from "../assets/nln-icon.png";
@@ -46,8 +47,15 @@ const initialState = {
   riskTolerance: "",
   salaryStage: "",
   sharedNumber: "",
-  currentSalary: "",
+  currentTotalComp: "",
   additionalContext: "",
+};
+
+// Fields this form shares with the offer form under a different name, so
+// someone who switches paths doesn't retype them.
+const DRAFT_ALIASES = {
+  targetRole: "role",
+  targetCompany: "company",
 };
 
 function FieldLabel({ children, required }) {
@@ -70,17 +78,25 @@ function formatSalary(value) {
 
 export default function ApplyForm() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(initialState);
+  const [form, setForm] = useState(() => withDraft(initialState, DRAFT_ALIASES));
   // Optional context uploads live outside `form` so they never end up in
   // the URL-encoded results — only their extracted text is used server-side.
   const [resumeFile, setResumeFile] = useState(null);
   const [jobDescriptionFile, setJobDescriptionFile] = useState(null);
-  const [jobDescriptionText, setJobDescriptionText] = useState("");
+  const [jobDescriptionText, setJobDescriptionText] = useState(
+    () => loadDraft().jobDescriptionText || ""
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    saveDraft({ [field]: value });
+  }
+
+  function updateJobDescription(value) {
+    setJobDescriptionText(value);
+    saveDraft({ jobDescriptionText: value });
   }
 
   function validate() {
@@ -223,6 +239,13 @@ export default function ApplyForm() {
               <FieldLabel required>
                 Where are you with the salary question?
               </FieldLabel>
+              <p className="text-sm text-slate-500 -mt-1 mb-2">
+                Somewhere early in the process, a recruiter almost always asks
+                what you're looking for, or what you make now. It usually comes
+                up on the first screening call. How you answer sets the ceiling
+                for every number that follows, so tell us where you are with
+                that conversation and we'll tailor your script to it.
+              </p>
               <select
                 className={inputClass}
                 value={form.salaryStage}
@@ -282,15 +305,17 @@ export default function ApplyForm() {
             </div>
 
             <div>
-              <FieldLabel>Current Base Salary</FieldLabel>
+              <FieldLabel>Current Total Annual Compensation</FieldLabel>
               <SalaryInput
-                value={form.currentSalary}
-                onChange={(v) => update("currentSalary", v)}
+                value={form.currentTotalComp}
+                onChange={(v) => update("currentTotalComp", v)}
                 placeholder="Optional"
               />
               <p className="text-sm text-slate-500 mt-1.5">
-                Used only to sanity-check your range. It is never put in your
-                script, and you should never share it with a recruiter.
+                Everything you earn in a year combined: base, bonuses, commission,
+                and the annual value of any equity. Used only to sanity-check your
+                range. It is never put in your script, and you should never share
+                it with a recruiter.
               </p>
             </div>
 
@@ -329,13 +354,13 @@ export default function ApplyForm() {
             </div>
 
             <div>
-              <FieldLabel>Job description</FieldLabel>
+              <FieldLabel>Example Job Description</FieldLabel>
               <textarea
                 className={inputClass}
                 rows={4}
                 value={jobDescriptionText}
-                onChange={(e) => setJobDescriptionText(e.target.value)}
-                placeholder="Paste the job description here…"
+                onChange={(e) => updateJobDescription(e.target.value)}
+                placeholder="Paste an example job description here…"
               />
               <div className="mt-2">
                 <FileUpload
@@ -346,8 +371,9 @@ export default function ApplyForm() {
                 />
               </div>
               <p className="text-sm text-slate-500 mt-1.5">
-                Pasting works best — links to job boards often can't be read,
-                so copy the text instead.
+                A posting for the kind of role you're going after — it doesn't
+                have to be one you've applied to. Pasting works best, since
+                links to job boards often can't be read.
               </p>
             </div>
           </section>

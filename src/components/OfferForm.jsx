@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { encodeResult } from "../lib/encodeResult.js";
+import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 
@@ -70,6 +71,13 @@ const initialState = {
   additionalContext: "",
 };
 
+// Fields this form shares with the apply form under a different name, so
+// someone who switches paths doesn't retype them.
+const DRAFT_ALIASES = {
+  role: "targetRole",
+  company: "targetCompany",
+};
+
 function FieldLabel({ children, required }) {
   return (
     <label className="block text-sm font-medium text-navy-800 mb-1.5">
@@ -103,17 +111,20 @@ function formatNumbersInText(value) {
 
 export default function OfferForm() {
   const navigate = useNavigate();
-  const [form, setForm] = useState(initialState);
+  const [form, setForm] = useState(() => withDraft(initialState, DRAFT_ALIASES));
   // Optional context uploads live outside `form` so they never end up in
   // the URL-encoded results — only their extracted text is used server-side.
   const [resumeFile, setResumeFile] = useState(null);
   const [jobDescriptionFile, setJobDescriptionFile] = useState(null);
-  const [jobDescriptionText, setJobDescriptionText] = useState("");
+  const [jobDescriptionText, setJobDescriptionText] = useState(
+    () => loadDraft().jobDescriptionText || ""
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   function update(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
+    saveDraft({ [field]: value });
   }
 
   function validate() {
@@ -457,7 +468,10 @@ export default function OfferForm() {
                 className={inputClass}
                 rows={4}
                 value={jobDescriptionText}
-                onChange={(e) => setJobDescriptionText(e.target.value)}
+                onChange={(e) => {
+                  setJobDescriptionText(e.target.value);
+                  saveDraft({ jobDescriptionText: e.target.value });
+                }}
                 placeholder="Paste the job description here…"
               />
               <div className="mt-2">

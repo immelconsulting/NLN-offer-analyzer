@@ -115,9 +115,12 @@ Script** instead of a score and a counter-offer script.
 - `/apply` **ApplyForm** — deliberately short. Required: target role, location, years of
   experience (0-2 / 3-5 / 6-9 / 10-15 / 15+), risk tolerance (same component and copy as the
   offer form), and "Where are you with the salary question?" (no call yet / call scheduled /
-  asked and dodged / already gave a number). Picking "already gave a number" reveals an optional
-  "What number did you share?" field. Optional: target company, current base salary, free-text
-  context, and the same resume + job-description upload section.
+  asked and dodged / already gave a number), which carries a short blurb explaining what that
+  question refers to. Picking "already gave a number" reveals an optional "What number did you
+  share?" field. Optional: target company, **current total annual compensation**
+  (`currentTotalComp` — base + bonus + commission + annualized equity, NOT base alone), free-text
+  context, and a resume + **"Example Job Description"** upload section (a posting for the kind of
+  role they're targeting, not necessarily one they applied to).
 - `/api/analyze-apply` + `apply-analyze-prompt.md` — same search architecture as `/api/analyze`
   (see below), returning `submit_apply_analysis`: `market_range` (base + optional total_comp,
   each low/target/stretch), `confidence`, `range_rationale`, `biggest_risk`, `call_status_note`,
@@ -125,16 +128,21 @@ Script** instead of a score and a counter-offer script.
   **No score.** `market_range` is null when `sources` is empty, and the page says so rather than
   inventing numbers. `recommended_strategy` is set server-side from risk tolerance, not trusted
   from the model.
-- **Current salary is context only.** It is passed to the analyzer purely to sanity-check the
-  range, is never echoed into the analysis or the script, and never drags the range below what
-  the market supports. The script generator computes a **walk-away floor** = max(range low,
-  current salary) so a script can't tell someone to accept less than they already earn, without
-  revealing why.
+- **Current total comp is context only.** It is passed to the analyzer purely to sanity-check
+  the range, is never echoed into the analysis or the script, and never drags the range below
+  what the market supports. The script generator computes **two walk-away floors** (`applyFloors`
+  in `generate-script.js`): a base floor (= base range low) and a total-comp floor
+  (= max(total_comp low, current total comp)). **Total comp may only be compared against the
+  total_comp range** — comparing it to base would inflate the base floor, since total comp sits
+  well above base. A total floor that lands below the base floor is dropped as incoherent.
+  The figure appears in the script only as a floor, never labelled as their current pay.
 - **Apply submissions never feed `comparables.js`** — they are aspirational targets, not real
   offers. They're excluded there and from the admin salary CSV for the same reason.
 - `/apply/results` **ApplyResultsPage** — range is the hero; also shows sources, biggest risk,
-  call-status note, and the three strategies with the Recommended badge. Stateless via the same
-  base64 `?d=` param, with `flow: "apply"` inside the payload.
+  and the call-status note. Stateless via the same base64 `?d=` param, with `flow: "apply"`
+  inside the payload. **The three strategies are deliberately NOT rendered here** — they are
+  effectively the script, and giving them away free removes the reason to buy it. They stay in
+  the payload because the script generator builds from them.
 - `/apply/proof` — ProofPage with `flow="apply"` (copy differs, structure shared, offer flow
   untouched). Reuses the **same $47 Stripe Payment Link and the same `/script?session_id=`
   redirect**, so nothing new exists in Stripe. No testimonial yet: the counter-offer quote is
@@ -149,6 +157,18 @@ Script** instead of a score and a counter-offer script.
 Shared search loop lives in `api/_lib/analysis.js` (`runSearchAnalysis` + `SOURCES_SCHEMA`),
 used by both analyzers — the `tool_choice: auto` / `pause_turn` / single-nudge behavior and
 `max_uses: 3` are defined once there.
+
+**Form drafts** (`src/lib/formDraft.js`): both forms save every text field to sessionStorage as
+you type and prefill from it, so switching between Applying and Received-an-offer doesn't mean
+retyping. Role/company mirror across the two names (`role` ↔ `targetRole`) so the most recent
+edit wins in both directions. `currentSalary` (offer: base) and `currentTotalComp` (apply:
+total) are deliberately **not** shared — different questions, and crossing them would corrupt
+the floor math. Uploaded files are excluded: a 2MB upload is ~2.7MB of base64 and two would
+exceed the ~5MB quota, so files must be re-picked.
+
+**Note on prompt style:** `apply-script-generator-prompt.md` forbids em dashes in its output,
+and the prompt file itself contains none. That's load-bearing — when the instructions used em
+dashes in their own prose, the model mirrored the style and produced 7 of them in a script.
 
 ## Submission storage & admin (added July 26, 2026)
 
