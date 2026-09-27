@@ -7,26 +7,24 @@ import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import icon from "../assets/nln-icon.png";
 
-// Pre-offer form, shared by the Applying and Interviewing stages (see
-// src/lib/flows.js). Deliberately much shorter than OfferForm — people at
-// these stages have no offer numbers to enter, and a long form here would
-// cost more completions than the extra context is worth.
+// Expecting-an-offer-soon form. Field names match ApplyForm wherever the
+// question is the same, so formDraft.js prefill carries across flows.
+//
+// Company is required here, unlike the screening-call form: at this stage the
+// candidate knows exactly who is calling, and naming the company lets the
+// analyzer spend one of its three searches on company-specific pay data.
 
 const EXPERIENCE_BANDS = ["0-2", "3-5", "6-9", "10-15", "15+"];
 
-// Same component and copy as the offer form, so the question reads
-// identically in both flows.
+// Same component and copy as the other forms, so the question reads
+// identically everywhere.
 const RISK_OPTIONS = [
   {
     value: "Cautious",
     label: "Cautious",
     description: "I don't want to risk the offer",
   },
-  {
-    value: "Balanced",
-    label: "Balanced",
-    description: "Some risk is fine",
-  },
+  { value: "Balanced", label: "Balanced", description: "Some risk is fine" },
   {
     value: "Aggressive",
     label: "Aggressive",
@@ -34,12 +32,44 @@ const RISK_OPTIONS = [
   },
 ];
 
-const SALARY_STAGES = [
-  { value: "no_call", label: "No recruiter call yet" },
-  { value: "call_scheduled", label: "A call is scheduled or coming up" },
-  { value: "dodged", label: "A recruiter asked and I dodged it" },
-  { value: "gave_number", label: "I already gave a number" },
+const COMP_STATUSES = [
+  { value: "not_discussed", label: "We haven't talked numbers yet" },
+  { value: "recruiter_shared_range", label: "The recruiter shared a range" },
+  { value: "i_shared_number", label: "I already shared a number or range" },
+  { value: "both_shared", label: "We've both shared numbers" },
 ];
+
+const OTHER_PROCESSES = [
+  { value: "none", label: "No, this is my only active process" },
+  { value: "interviewing_elsewhere", label: "I'm interviewing elsewhere" },
+  {
+    value: "expecting_offer",
+    label: "I expect another offer in the next 1-2 weeks",
+  },
+  { value: "have_offer", label: "I already have another offer" },
+];
+
+const CALL_TIMINGS = [
+  { value: "scheduled", label: "It's scheduled" },
+  { value: "any_day", label: "Any day now" },
+  { value: "not_sure", label: "Not sure yet" },
+];
+
+const PRIORITY_OPTIONS = [
+  "Remote or hybrid",
+  "Start date",
+  "Title",
+  "Sign-on bonus",
+  "Equity",
+  "Annual bonus",
+  "PTO",
+  "Growth path",
+];
+
+// Which comp-status answers reveal which conditional field.
+const SHOWS_RECRUITER_RANGE = ["recruiter_shared_range", "both_shared"];
+const SHOWS_SHARED_NUMBER = ["i_shared_number", "both_shared"];
+const SHOWS_OTHER_COMP = ["expecting_offer", "have_offer"];
 
 const initialState = {
   targetRole: "",
@@ -47,14 +77,18 @@ const initialState = {
   location: "",
   yearsExperience: "",
   riskTolerance: "",
-  salaryStage: "",
+  compStatus: "",
+  recruiterRangeLow: "",
+  recruiterRangeHigh: "",
   sharedNumber: "",
+  otherProcesses: "",
+  otherCompExpected: "",
+  callTiming: "",
   currentTotalComp: "",
   additionalContext: "",
 };
 
-// Fields this form shares with the offer form under a different name, so
-// someone who switches paths doesn't retype them.
+// Fields this form shares with the offer form under a different name.
 const DRAFT_ALIASES = {
   targetRole: "role",
   targetCompany: "company",
@@ -78,12 +112,14 @@ function formatSalary(value) {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-export default function ApplyForm({ flow = "apply" }) {
+export default function OfferSoonForm() {
   const navigate = useNavigate();
-  const stage = getFlow(flow);
+  const stage = getFlow("offer_soon");
   const [form, setForm] = useState(() => withDraft(initialState, DRAFT_ALIASES));
-  // Optional context uploads live outside `form` so they never end up in
-  // the URL-encoded results — only their extracted text is used server-side.
+  // Priorities are a multi-select, so they live outside the string-only draft.
+  const [priorities, setPriorities] = useState([]);
+  // Optional context uploads live outside `form` so they never end up in the
+  // URL-encoded results — only their extracted text is used server-side.
   const [resumeFile, setResumeFile] = useState(null);
   const [jobDescriptionFile, setJobDescriptionFile] = useState(null);
   const [jobDescriptionText, setJobDescriptionText] = useState(
@@ -102,12 +138,21 @@ export default function ApplyForm({ flow = "apply" }) {
     saveDraft({ jobDescriptionText: value });
   }
 
+  function togglePriority(value) {
+    setPriorities((prev) =>
+      prev.includes(value) ? prev.filter((p) => p !== value) : [...prev, value]
+    );
+  }
+
   function validate() {
     if (!form.targetRole.trim()) return "Target role is required.";
+    if (!form.targetCompany.trim()) return "Company is required.";
     if (!form.location.trim()) return "Location is required.";
     if (!form.yearsExperience) return "Please select your years of experience.";
-    if (!form.salaryStage)
-      return "Please tell us where you are with the salary question.";
+    if (!form.compStatus)
+      return "Please tell us where things stand on compensation.";
+    if (!form.otherProcesses)
+      return "Please tell us whether you have other opportunities in play.";
     if (!form.riskTolerance)
       return "Please choose how much risk you're comfortable with.";
     return "";
@@ -131,12 +176,12 @@ export default function ApplyForm({ flow = "apply" }) {
       } catch {
         // no lead in this session — store anonymously
       }
-      const res = await fetch("/api/analyze-apply", {
+      const payload = { ...form, priorities };
+      const res = await fetch("/api/analyze-offer-soon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          flow: stage.id,
+          ...payload,
           leadEmail,
           resumeFile,
           jobDescriptionFile,
@@ -150,7 +195,11 @@ export default function ApplyForm({ flow = "apply" }) {
       const analysis = await res.json();
       // flow rides inside the encoded payload so the results, proof, and
       // script pages all know which path they're on.
-      const encoded = encodeResult({ flow: stage.id, form, analysis });
+      const encoded = encodeResult({
+        flow: "offer_soon",
+        form: payload,
+        analysis,
+      });
       navigate(`${stage.resultsPath}?d=${encoded}`);
     } catch (err) {
       setError(err.message || "Something went wrong. Please try again.");
@@ -166,7 +215,7 @@ export default function ApplyForm({ flow = "apply" }) {
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
-            Know Your Number
+            Be Ready for the Offer Call
           </h1>
           <p className="text-slate-700 mt-4 max-w-xl">{stage.formIntro}</p>
         </div>
@@ -179,11 +228,11 @@ export default function ApplyForm({ flow = "apply" }) {
         >
           <section className="space-y-5">
             <h2 className="text-lg font-serif font-semibold text-navy-900 border-b border-slate-200 pb-2">
-              The Role You're Targeting
+              The Role
             </h2>
             <div className="grid sm:grid-cols-2 gap-5">
               <div>
-                <FieldLabel required>Target Role / Job Title</FieldLabel>
+                <FieldLabel required>Role / Job Title</FieldLabel>
                 <input
                   type="text"
                   className={inputClass}
@@ -193,13 +242,13 @@ export default function ApplyForm({ flow = "apply" }) {
                 />
               </div>
               <div>
-                <FieldLabel>Target Company</FieldLabel>
+                <FieldLabel required>Company</FieldLabel>
                 <input
                   type="text"
                   className={inputClass}
                   value={form.targetCompany}
                   onChange={(e) => update("targetCompany", e.target.value)}
-                  placeholder="Optional"
+                  placeholder="Who's making the offer?"
                 />
               </div>
               <div>
@@ -228,48 +277,104 @@ export default function ApplyForm({ flow = "apply" }) {
                 </select>
               </div>
             </div>
+            <p className="text-sm text-slate-500">
+              Naming the company lets us research what they actually pay for
+              this role, not just the broader market.
+            </p>
           </section>
 
           <section className="space-y-5">
             <h2 className="text-lg font-serif font-semibold text-navy-900 border-b border-slate-200 pb-2">
-              Where You Are Right Now
+              Where Things Stand
             </h2>
 
             <div>
               <FieldLabel required>
-                Where are you with the salary question?
+                Where do things stand on compensation so far?
               </FieldLabel>
-              <p className="text-sm text-slate-500 -mt-1 mb-2">
-                Somewhere early in the process, a recruiter almost always asks
-                what you're looking for, or what you make now. It usually comes
-                up on the first screening call. How you answer sets the ceiling
-                for every number that follows, so tell us where you are with
-                that conversation and we'll tailor your script to it.
-              </p>
               <select
                 className={inputClass}
-                value={form.salaryStage}
-                onChange={(e) => update("salaryStage", e.target.value)}
+                value={form.compStatus}
+                onChange={(e) => update("compStatus", e.target.value)}
               >
                 <option value="">Select…</option>
-                {SALARY_STAGES.map((s) => (
+                {COMP_STATUSES.map((s) => (
                   <option key={s.value} value={s.value}>
                     {s.label}
                   </option>
                 ))}
               </select>
-              {form.salaryStage === "gave_number" && (
+
+              {SHOWS_RECRUITER_RANGE.includes(form.compStatus) && (
                 <div className="mt-4">
-                  <FieldLabel>What number did you share?</FieldLabel>
-                  <SalaryInput
+                  <FieldLabel>What range did they share?</FieldLabel>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SalaryInput
+                      value={form.recruiterRangeLow}
+                      onChange={(v) => update("recruiterRangeLow", v)}
+                      placeholder="Low"
+                    />
+                    <SalaryInput
+                      value={form.recruiterRangeHigh}
+                      onChange={(v) => update("recruiterRangeHigh", v)}
+                      placeholder="High"
+                    />
+                  </div>
+                  <p className="text-sm text-slate-500 mt-1.5">
+                    Optional. We'll compare their band to the market so you know
+                    whether it's a fair opening or a low one.
+                  </p>
+                </div>
+              )}
+
+              {SHOWS_SHARED_NUMBER.includes(form.compStatus) && (
+                <div className="mt-4">
+                  <FieldLabel>What did you share?</FieldLabel>
+                  <input
+                    type="text"
+                    className={inputClass}
                     value={form.sharedNumber}
-                    onChange={(v) => update("sharedNumber", v)}
-                    placeholder="Optional — helps us write your recovery script"
+                    onChange={(e) => update("sharedNumber", e.target.value)}
+                    placeholder='Optional — e.g. "around $140k" or "$130k to $150k"'
                   />
                   <p className="text-sm text-slate-500 mt-1.5">
-                    Giving a number early is common and recoverable. Knowing it
-                    lets us write the exact language to reset the conversation.
+                    Sharing a number early is common and recoverable. Knowing it
+                    lets us write the language to revisit it later.
                   </p>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <FieldLabel required>Any other opportunities in play?</FieldLabel>
+              <select
+                className={inputClass}
+                value={form.otherProcesses}
+                onChange={(e) => update("otherProcesses", e.target.value)}
+              >
+                <option value="">Select…</option>
+                {OTHER_PROCESSES.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-sm text-slate-500 mt-1.5">
+                We only ever write lines about opportunities you actually have.
+                If this is your only process, your script says nothing about
+                competing offers.
+              </p>
+
+              {SHOWS_OTHER_COMP.includes(form.otherProcesses) && (
+                <div className="mt-4">
+                  <FieldLabel>
+                    Roughly what total comp do you expect there?
+                  </FieldLabel>
+                  <SalaryInput
+                    value={form.otherCompExpected}
+                    onChange={(v) => update("otherCompExpected", v)}
+                    placeholder="Optional"
+                  />
                 </div>
               )}
             </div>
@@ -305,6 +410,50 @@ export default function ApplyForm({ flow = "apply" }) {
             </div>
 
             <div>
+              <FieldLabel>When do you expect the offer call?</FieldLabel>
+              <select
+                className={inputClass}
+                value={form.callTiming}
+                onChange={(e) => update("callTiming", e.target.value)}
+              >
+                <option value="">Optional — select…</option>
+                {CALL_TIMINGS.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <FieldLabel>What matters beyond base salary?</FieldLabel>
+              <div className="flex flex-wrap gap-2">
+                {PRIORITY_OPTIONS.map((p) => {
+                  const active = priorities.includes(p);
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => togglePriority(p)}
+                      aria-pressed={active}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition border ${
+                        active
+                          ? "bg-navy-900 border-navy-900 text-white"
+                          : "bg-white border-slate-300 text-slate-700 hover:border-navy-600 hover:text-navy-900"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-sm text-slate-500 mt-1.5">
+                Optional. Pick any that apply, and we'll prioritize the
+                questions you ask on the call around them.
+              </p>
+            </div>
+
+            <div>
               <FieldLabel>Current Total Annual Compensation</FieldLabel>
               <SalaryInput
                 value={form.currentTotalComp}
@@ -312,10 +461,10 @@ export default function ApplyForm({ flow = "apply" }) {
                 placeholder="Optional"
               />
               <p className="text-sm text-slate-500 mt-1.5">
-                Everything you earn in a year combined: base, bonuses, commission,
-                and the annual value of any equity. Used only to sanity-check your
-                range. It is never put in your script, and you should never share
-                it with a recruiter.
+                Everything you earn in a year combined: base, bonuses,
+                commission, and the annual value of any equity. Used only to
+                sanity-check your range. It is never put in your script, and you
+                should never share it with a recruiter.
               </p>
             </div>
 
@@ -326,7 +475,7 @@ export default function ApplyForm({ flow = "apply" }) {
                 rows={4}
                 value={form.additionalContext}
                 onChange={(e) => update("additionalContext", e.target.value)}
-                placeholder="Optional — what you're targeting, how the search is going, anything a recruiter has already said to you, or anything else that feels relevant."
+                placeholder="Optional — how the interviews went, anything the recruiter has said, your timeline, or anything else that feels relevant."
               />
             </div>
           </section>
@@ -334,7 +483,10 @@ export default function ApplyForm({ flow = "apply" }) {
           {/* Optional context uploads */}
           <section className="space-y-5">
             <h2 className="text-lg font-serif font-semibold text-navy-900 border-b border-slate-200 pb-2">
-              Extra Context <span className="text-sm font-sans font-normal text-slate-500">(optional)</span>
+              Extra Context{" "}
+              <span className="text-sm font-sans font-normal text-slate-500">
+                (optional)
+              </span>
             </h2>
             <p className="text-sm text-slate-500 -mt-2">
               These are used only to add context to your analysis and script —
@@ -354,13 +506,13 @@ export default function ApplyForm({ flow = "apply" }) {
             </div>
 
             <div>
-              <FieldLabel>Example Job Description</FieldLabel>
+              <FieldLabel>Job Description</FieldLabel>
               <textarea
                 className={inputClass}
                 rows={4}
                 value={jobDescriptionText}
                 onChange={(e) => updateJobDescription(e.target.value)}
-                placeholder="Paste an example job description here…"
+                placeholder="Paste the job description here…"
               />
               <div className="mt-2">
                 <FileUpload
@@ -371,9 +523,8 @@ export default function ApplyForm({ flow = "apply" }) {
                 />
               </div>
               <p className="text-sm text-slate-500 mt-1.5">
-                A posting for the kind of role you're going after — it doesn't
-                have to be one you've applied to. Pasting works best, since
-                links to job boards often can't be read.
+                The posting for the role you're interviewing for. Pasting works
+                best, since links to job boards often can't be read.
               </p>
             </div>
           </section>
@@ -389,7 +540,7 @@ export default function ApplyForm({ flow = "apply" }) {
             disabled={loading}
             className="w-full bg-navy-900 hover:bg-navy-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-md px-6 py-3.5 transition shadow-sm"
           >
-            {loading ? "Researching your market rate…" : "Find My Number"}
+            {loading ? "Researching your market rate…" : "Show Me My Range"}
           </button>
         </form>
 
@@ -424,9 +575,9 @@ function LoadingOverlay() {
         Researching your market rate…
       </p>
       <p className="text-slate-600 text-sm mt-2 max-w-xs">
-        We're pulling current compensation data for your role and location,
-        then building your target range. This takes up to two minutes — worth
-        the wait for real numbers.
+        We're pulling current compensation data for this role and company, then
+        building what a strong offer looks like. This takes up to two minutes —
+        worth the wait for real numbers.
       </p>
     </div>
   );
@@ -457,7 +608,8 @@ function FileUpload({ file, onChange, onError, label }) {
       onChange({ name: picked.name, type: picked.type, data: base64 });
       onError("");
     };
-    reader.onerror = () => onError("We couldn't read that file — please try again.");
+    reader.onerror = () =>
+      onError("We couldn't read that file — please try again.");
     reader.readAsDataURL(picked);
   }
 

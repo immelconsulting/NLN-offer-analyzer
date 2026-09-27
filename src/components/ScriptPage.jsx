@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { decodeResult } from "../lib/encodeResult.js";
-import { isPreOfferFlow } from "../lib/stages.js";
+import { isKnownFlow, usesTargetFields } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
@@ -55,8 +55,8 @@ const FLOW_COPY = {
     upsellBody:
       "Book a Negotiation Strategy Session and we'll walk through your script together before you pick up the phone.",
   },
-  // Shared by both pre-offer stages (Applying and Interviewing).
-  preOffer: {
+  // Applying and Interviewing buy the same screening-call script.
+  apply: {
     title: "Your Recruiter Screening Call Script",
     loading: "Writing your script…",
     loadingNote:
@@ -65,7 +65,19 @@ const FLOW_COPY = {
     upsellBody:
       "Book a Negotiation Strategy Session and we'll practice your answers together before the recruiter calls.",
   },
+  offer_soon: {
+    title: "Your Offer Call Script",
+    loading: "Writing your script…",
+    loadingNote:
+      "We're turning your range into word-for-word lines for the offer call. This usually takes under a minute.",
+    upsellHeading: "Want a negotiator in your corner for the real call?",
+    upsellBody:
+      "Book a Negotiation Strategy Session and we'll rehearse the offer call together before your recruiter reaches out.",
+  },
 };
+
+// Interviewing buys the identical screening-call script.
+FLOW_COPY.interview = FLOW_COPY.apply;
 
 export default function ScriptPage() {
   const [searchParams] = useSearchParams();
@@ -82,10 +94,9 @@ export default function ScriptPage() {
 
   // Which funnel produced this purchase. Offer-flow stashes predate the
   // field and decode without it, so anything unrecognized is an offer.
-  const flow = isPreOfferFlow(data?.flow) ? data.flow : "offer";
-  // Applying and Interviewing buy the same script, so they share its copy.
-  const isPreOffer = flow !== "offer";
-  const copy = isPreOffer ? FLOW_COPY.preOffer : FLOW_COPY.offer;
+  const flow = isKnownFlow(data?.flow) ? data.flow : "offer";
+  const isPreOffer = usesTargetFields(flow);
+  const copy = FLOW_COPY[flow] || FLOW_COPY.offer;
 
   const [script, setScript] = useState("");
   const [error, setError] = useState("");

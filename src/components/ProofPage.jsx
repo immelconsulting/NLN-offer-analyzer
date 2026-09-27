@@ -55,6 +55,23 @@ FLOW_COPY.interview = {
   heading: "You're in the process. The salary question is coming.",
 };
 
+// Expecting an offer soon sells a different script (the offer call), so this
+// entry stands on its own rather than inheriting.
+FLOW_COPY.offer_soon = {
+  heading: "The offer call is where most people leave money on the table.",
+  proofPoints: [
+    "100% 5-star reviews on Trustpilot — 20 verified reviews",
+    "Word-for-word lines for the moment the number lands: how to respond, what to ask, and how to buy time without losing momentum",
+    "5+ years and 200+ negotiations behind every script, not a generic AI template",
+    "Delivered instantly: a fully customized script in under 5 minutes, because offer calls don't wait for a good time",
+  ],
+  ctaLabel: "Get my offer call script — $47",
+  // TODO: drop in a real quote from someone who used the offer call script.
+  // Never reuse the counter-offer testimonial here — it's about a different
+  // product and a different moment in the process.
+  testimonial: null,
+};
+
 // Trust-building step between the results page and Stripe checkout. Reached
 // via /proof?d=… (offer), /apply/proof?d=… or /interview/proof?d=… (pre-offer).
 export default function ProofPage({ flow = "offer" }) {

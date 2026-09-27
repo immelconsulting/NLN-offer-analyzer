@@ -1,8 +1,22 @@
 {
   "functions": {
-    "api/analyze.js": { "maxDuration": 300 },
-    "api/analyze-apply.js": { "maxDuration": 300 },
-    "api/generate-script.js": { "maxDuration": 120 }
+    "api/analyze.js": {
+      "maxDuration": 300
+    },
+    "api/analyze-apply.js": {
+      "maxDuration": 300
+    },
+    "api/generate-script.js": {
+      "maxDuration": 120
+    },
+    "api/analyze-offer-soon.js": {
+      "maxDuration": 300
+    }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

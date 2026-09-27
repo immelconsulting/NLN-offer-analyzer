@@ -38,9 +38,10 @@ paid tier.
    (pre-checkbox leads export as opt-in "no"). Privacy Policy lives at `/privacy`
    (`src/components/PrivacyPolicy.jsx`), linked near the email field.
 2. Branch (`STAGE_ROUTES` in LandingPage): **"Received an offer"** → `/offer`, **"Applying"** →
-   `/apply`, **"Interviewing"** → `/interview` (both pre-offer stages share one flow, below).
-   Expecting-soon → `/thanks`, a stage-matched resource page (PDF guides in
-   `public/resources/`) + Strategy Session CTA.
+   `/apply`, **"Interviewing"** → `/interview` (those two share one flow, below), **"Expecting
+   an offer soon"** → `/offer-soon` (its own flow, below). All four stages now have a real
+   path; `/thanks` still renders for any old link but is no longer reachable from the landing
+   page.
 3. `/offer` **OfferForm** — analyzer form. Required: role, location, base salary, top priority,
    **risk tolerance** (Cautious/Balanced/Aggressive). Optional: "Anything else we should know?"
    context textarea, plus an "Extra Context" section — resume upload and job-description
@@ -171,21 +172,99 @@ into both prompts so the coaching lands in the right place in the process.
   scripted dialogue begins at "What are your salary expectations?" and nowhere earlier**, so no
   scripted line ever brings up money before the recruiter does.
 
-Shared search loop lives in `api/_lib/analysis.js` (`runSearchAnalysis` + `SOURCES_SCHEMA`),
-used by both analyzers — the `tool_choice: auto` / `pause_turn` / single-nudge behavior and
-`max_uses: 3` are defined once there.
+Shared search loop lives in `api/_lib/analysis.js` (`runSearchAnalysis` + `SOURCES_SCHEMA` +
+`RANGE_POINTS` + `STRATEGY_SCHEMA` + `RISK_TO_STRATEGY` + `normalizeRange`), used by all three
+analyzers — the `tool_choice: auto` / `pause_turn` / single-nudge behavior and `max_uses: 3`
+are defined once there.
 
-**Form drafts** (`src/lib/formDraft.js`): both forms save every text field to sessionStorage as
-you type and prefill from it, so switching between Applying and Received-an-offer doesn't mean
-retyping. Role/company mirror across the two names (`role` ↔ `targetRole`) so the most recent
-edit wins in both directions. `currentSalary` (offer: base) and `currentTotalComp` (apply:
-total) are deliberately **not** shared — different questions, and crossing them would corrupt
-the floor math. Uploaded files are excluded: a 2MB upload is ~2.7MB of base64 and two would
-exceed the ~5MB quota, so files must be re-picked.
+**Flow registry:** `src/lib/flows.js` declares all four flows explicitly (id, label, paths,
+whether the form uses `targetRole`/`targetCompany`). It replaced an older "pre-offer stages"
+grouping that meant two things at once — "has no offer yet" and "uses the screening-call form
+and prompts" — which came apart when offer-soon arrived. `SCREENING_FLOWS` is the explicit
+`["apply","interview"]` pair; everything else is per-flow. Adding a stage means adding a row
+there plus a prompt file, not editing a chain of booleans.
 
-**Note on prompt style:** `apply-script-generator-prompt.md` forbids em dashes in its output,
-and the prompt file itself contains none. That's load-bearing — when the instructions used em
-dashes in their own prose, the model mirrored the style and produced 7 of them in a script.
+## Expecting-an-offer-soon flow (added Sept 27, 2026)
+
+The last dead-end stage, now a real flow. Same shape as the others (short form → free
+researched analysis → $47 script → Strategy Session CTA), but it faces a **different moment**
+from Applying/Interviewing: not the screening call where a recruiter asks what you want, but
+**the offer call** where a recruiter tells you a number. So it gets its own prompt pair,
+endpoint, form, and results content, while riding the same plumbing (search loop, floor math,
+proof page, $47 Stripe link, `/script`, storage, admin).
+
+Flow id `offer_soon`. Routes: `/offer-soon`, `/offer-soon/results`, `/offer-soon/proof`.
+
+- **The rule that drives everything:** do not accept the offer and do not counter on the spot,
+  on that call. The offer call is for gathering, not deciding: appreciate it, understand it,
+  learn how they built it, ask for time, and get it in writing. The counter happens later, off
+  this call, through `/offer`. Every scripted line must obey this; the prompt forbids any line
+  that accepts a number or proposes a counter.
+- `/offer-soon` **OfferSoonForm** — Required: target role, **company** (required here unlike
+  the screening-call form, because it buys company-specific salary research), location, years
+  of experience, risk tolerance, "Where do things stand on compensation so far?" (`compStatus`:
+  not_discussed / recruiter_shared_range / i_shared_number / both_shared) and "Any other
+  opportunities in play?" (`otherProcesses`: none / interviewing_elsewhere / expecting_offer /
+  have_offer). Conditionals, all optional: recruiter range low/high, what they shared
+  (free text so a range fits), and expected comp elsewhere. Optional: call timing, a
+  `priorities` multi-select, `currentTotalComp` (same label and rules as the apply form),
+  context textarea, resume + job description upload (labelled "Job Description" here, not
+  "Example", since the role is specific).
+- `/api/analyze-offer-soon` + `offer-soon-analyze-prompt.md` — same search architecture as the
+  other analyzers, returning `submit_offer_soon_analysis`: `market_range`, `confidence`,
+  `range_rationale`, **`offer_benchmark_note`** (how to read the number when they hear it),
+  `biggest_risk`, **`leverage_read`**, `call_status_note`, three strategies,
+  `recommended_strategy` (set server-side from risk tolerance), `sources`. **No score.** One of
+  the three searches is spent on the named company's pay for the role.
+- **Leverage honesty rule:** the analysis and the script may only reference competing
+  opportunities the candidate actually reported. `otherProcesses: none` means the script
+  contains **no** line about other offers or interviews anywhere — the prompt says so
+  explicitly, and the generator passes that instruction through. Never invent leverage.
+- **Floors** reuse `applyFloors()` from the apply flow, with the same rule that
+  `currentTotalComp` is TOTAL comp and may only be compared against the `total_comp` range,
+  never base.
+- **Recruiter range check** (`recruiterRangeCheck()` in `generate-script.js`): when the
+  recruiter shared a range, the generator compares its high end to the researched range and
+  passes one computed line — below the walk-away floor, or below the market target, or nothing.
+  The script turns that into a sentence explaining their band is an opening position, not the
+  market.
+- `/offer-soon/results` **OfferSoonResultsPage** — range hero, then `offer_benchmark_note`, a
+  **static** "don't accept, don't counter" callout (static so it can never be dropped or
+  reworded by the model), `biggest_risk`, `leverage_read`, `call_status_note`, sources, CTAs.
+  **The three strategies are deliberately NOT rendered**, same reasoning as the apply flow:
+  they're effectively the script. They stay in the payload for the generator.
+- `/offer-soon/proof` — ProofPage with `flow="offer_soon"`; its own heading and proof points
+  (it sells a different script), same $47 link and `/script?session_id=` redirect. No
+  testimonial; never reuse the counter-offer one.
+- `/script` uses `offer-soon-script-generator-prompt.md`. Structure is built from Alex's
+  existing Offer Call script kept close to verbatim: Scenario A (they ask first), Scenario B
+  (they share a number — two approaches, one recommended by strategy, plus an accusation audit
+  and the "range of offers" question), Scenario C (they push for a number — four escalating
+  steps ending in the wide-range answer), the current-salary refusal, timeline pushback, a
+  recovery section only when they already shared a number, and a blank offer-notes table to
+  fill in live. Voice rules match the apply prompt: **no em dashes, no double hyphens**, and
+  additionally **no named weekdays** for the follow-up (bracketed placeholders instead).
+- Shared results building blocks live in `src/components/RangeBlocks.jsx`
+  (`RangeCard`, `RangeRow`, `SourceList`, `Callout`, `NextStepChoice`, `BrokenResultNotice`),
+  used by both range pages so neither forks the other.
+- Storage and admin: `flow: "offer_soon"`, same record shape. `comparables.js` already excludes
+  anything that isn't `"offer"`, and the admin salary CSV is still offer-rows only.
+
+## Cross-cutting notes on the forms and prompts
+
+**Form drafts** (`src/lib/formDraft.js`): all three forms (offer, screening-call, offer-soon)
+save every text field to sessionStorage as you type and prefill from it, so switching stages
+doesn't mean retyping. Role/company mirror across the two names (`role` ↔ `targetRole`) so the
+most recent edit wins in both directions. `currentSalary` (offer: base) and `currentTotalComp`
+(pre-offer: total) are deliberately **not** shared — different questions, and crossing them
+would corrupt the floor math. Uploaded files are excluded: a 2MB upload is ~2.7MB of base64 and
+two would exceed the ~5MB quota, so files must be re-picked. The offer-soon `priorities`
+multi-select is also excluded, since the draft store keeps strings only.
+
+**Note on prompt style:** both script-generator prompts for the pre-offer flows forbid em
+dashes in their output, and the prompt files themselves contain none. That's load-bearing —
+when the instructions used em dashes in their own prose, the model mirrored the style and
+produced 7 of them in a script.
 
 ## Submission storage & admin (added July 26, 2026)
 
@@ -195,7 +274,7 @@ Append-only history; email comes from the landing-page session (`leadEmail` in t
 payload). `analysis.submissionId` rides inside the encoded `?d=` data so `/api/generate-script`
 can attach the script to the same record. Storage failures never block users.
 
-Pre-offer submissions store the same way with `flow: "apply"` or `flow: "interview"`; offer
+Pre-offer submissions store the same way with `flow: "apply"`, `"interview"` or `"offer_soon"`; offer
 records predate the field, so anything unmarked is an offer.
 
 `/admin` (route, not linked anywhere) — password login (`ADMIN_PASSWORD`, falling back to
@@ -203,7 +282,7 @@ records predate the field, so anything unmarked is an offer.
 requires that cookie and no longer accepts a `?token=` parameter, so no URL grants access.
 Date-range filter (today / 7d / 30d / 3m / 4m / 6m / 1yr / custom) drives the funnel rollup, the
 submissions table, and both CSV exports together. Sortable spreadsheet table with a Flow column
-and an All / Offer / Apply / Interview filter; visual funnel with per-step percentages. **The salary CSV is
+and an All / Offer / Apply / Interview / Offer-soon filter; visual funnel with per-step percentages. **The salary CSV is
 offer-rows only** — pre-offer rows carry target ranges, not real offers.
 
 The analyzer feeds anonymized aggregates of similar past submissions into the prompt
@@ -213,16 +292,18 @@ median-only at 3-4 samples, range at 5+; requester's own email excluded). The se
 identifying details into another user's analysis — aggregates only.
 
 - `system-prompt.md` / `script-generator-prompt.md` / `apply-analyze-prompt.md` /
-  `apply-script-generator-prompt.md` — all four prompts are file-based, read at request time.
+  `apply-script-generator-prompt.md` / `offer-soon-analyze-prompt.md` /
+  `offer-soon-script-generator-prompt.md` — all six prompts are file-based, read at request
+  time.
 - `src/lib/config.js` — every external URL and price label in one place: the $47 script Stripe
   link, the two session-tier Stripe links, `THRIVE_BOOKING_URL`, `STRATEGY_SESSION_URL` (the
   absolute `/session` URL used by generated script PDFs — absolute because a relative link is
   dead once the PDF leaves the site), price labels, Trustpilot URL, contact email, and the
   `FREE_TEST_MODE` flag.
-- `api/analyze.js`, `api/analyze-apply.js`, `api/generate-script.js`, `api/verify-payment.js`,
-  `api/lead.js`, `api/leads.js`, `api/admin.js`, `api/login.js`, `api/event.js` — **9 Vercel
-  functions; the Hobby plan caps at 12**, so there's room for about three more before the plan
-  matters. Shared helpers live in `api/_lib/` (underscore = not deployed as functions):
+- `api/analyze.js`, `api/analyze-apply.js`, `api/analyze-offer-soon.js`,
+  `api/generate-script.js`, `api/verify-payment.js`, `api/lead.js`, `api/leads.js`,
+  `api/admin.js`, `api/login.js`, `api/event.js` — **10 Vercel functions; the Hobby plan caps
+  at 12**, so only two slots remain before the plan matters. Shared helpers live in `api/_lib/` (underscore = not deployed as functions):
   `store.js` (Upstash), `comparables.js`, `extract.js`, `analysis.js` (the shared web-search
   loop), `auth.js` (admin sessions), and `payment.js` (one Stripe checkout verifier, used by
   both the script and the session booking gate).

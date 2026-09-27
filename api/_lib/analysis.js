@@ -1,6 +1,7 @@
-// Shared web-search analysis loop, used by both /api/analyze (offer stage)
-// and /api/analyze-apply (applying stage). Files under api/_lib are not
-// deployed as serverless functions (underscore prefix), just imported.
+// Shared web-search analysis loop, used by /api/analyze (offer stage),
+// /api/analyze-apply (screening-call stages) and /api/analyze-offer-soon.
+// Files under api/_lib are not deployed as serverless functions (underscore
+// prefix), just imported.
 //
 // The behavior here is load-bearing and was arrived at by measurement — see
 // CLAUDE.md. Two things must not be "optimized":
@@ -102,3 +103,66 @@ export const SOURCES_SCHEMA = {
     required: ["name", "url", "note"],
   },
 };
+
+// Low / target / stretch, in whole dollars. Shared by every researched-range
+// flow so the three points always mean the same thing.
+export const RANGE_POINTS = {
+  type: "object",
+  properties: {
+    low: {
+      type: "integer",
+      description: "Bottom of the defensible range; the walk-away floor.",
+    },
+    target: {
+      type: "integer",
+      description: "Realistic, well-supported number to aim at.",
+    },
+    stretch: {
+      type: "integer",
+      description: "Top of the band for a strong candidate.",
+    },
+  },
+  required: ["low", "target", "stretch"],
+};
+
+// One of the three approaches offered by a pre-offer analysis. The ids are
+// fixed because the script generator maps the recommended one to how wide a
+// range the candidate quotes out loud.
+export const STRATEGY_SCHEMA = {
+  type: "object",
+  properties: {
+    id: { type: "string", enum: ["cautious", "balanced", "aggressive"] },
+    style: {
+      type: "string",
+      description: "Short label, e.g. 'Deflect and redirect'.",
+    },
+    when_to_use: { type: "string" },
+    summary: {
+      type: "string",
+      description: "What they actually do, 1-2 sentences.",
+    },
+  },
+  required: ["id", "style", "when_to_use", "summary"],
+};
+
+// Maps the form's risk-tolerance answer onto a strategy id. Set server-side
+// in every flow rather than trusted from the model.
+export const RISK_TO_STRATEGY = {
+  Cautious: "cautious",
+  Balanced: "balanced",
+  Aggressive: "aggressive",
+};
+
+// The tool omits market_range when there's no usable data. Normalizing here
+// means every client only has to check for null.
+export function normalizeRange(analysis) {
+  if (!Array.isArray(analysis.sources)) {
+    analysis.sources = [];
+  }
+  if (!analysis.market_range?.base) {
+    analysis.market_range = null;
+  } else if (!analysis.market_range.total_comp) {
+    analysis.market_range.total_comp = null;
+  }
+  return analysis;
+}

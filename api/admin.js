@@ -97,10 +97,10 @@ function toRow(values) {
 }
 
 // Records predate the flow field, so anything unmarked is an offer.
-const FLOWS = ["offer", "apply", "interview"];
+const FLOWS = ["offer", "apply", "interview", "offer_soon"];
 const flowOf = (sub) => (FLOWS.includes(sub.flow) ? sub.flow : "offer");
 
-// The two flows name the role and company differently.
+// The pre-offer flows name the role and company differently.
 const roleOf = (sub) => sub.form?.role || sub.form?.targetRole || "";
 const companyOf = (sub) => sub.form?.company || sub.form?.targetCompany || "";
 
@@ -142,7 +142,7 @@ export default async function handler(req, res) {
 
     if (req.query.export === "full") {
       const lines = [
-        "timestamp,flow,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script,has_resume,has_job_description,years_experience,salary_stage,shared_number,range_low,range_target,range_stretch,range_confidence",
+        "timestamp,flow,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script,has_resume,has_job_description,years_experience,salary_stage,shared_number,range_low,range_target,range_stretch,range_confidence,comp_status,recruiter_range_low,recruiter_range_high,other_processes,other_comp_expected,call_timing,priorities",
       ];
       for (const s of subs) {
         const f = s.form || {};
@@ -161,9 +161,13 @@ export default async function handler(req, res) {
             s.script ? "yes" : "no",
             s.resumeText ? "yes" : "no",
             s.jobDescriptionText ? "yes" : "no",
-            // Apply-flow only; blank on offer rows.
+            // Pre-offer flows only; blank on offer rows.
             f.yearsExperience, f.salaryStage, f.sharedNumber,
             base.low, base.target, base.stretch, s.analysis?.confidence,
+            // Offer-soon only; blank everywhere else.
+            f.compStatus, f.recruiterRangeLow, f.recruiterRangeHigh,
+            f.otherProcesses, f.otherCompExpected, f.callTiming,
+            Array.isArray(f.priorities) ? f.priorities.join("; ") : "",
           ])
         );
       }
@@ -176,7 +180,7 @@ export default async function handler(req, res) {
       const lines = [
         "timestamp,role,location,industry,offer_base_salary,bonus,sign_on,equity",
       ];
-      // Offer rows only. Apply-stage submissions carry target ranges rather
+      // Offer rows only. Every pre-offer stage carries target ranges rather
       // than real offers, so mixing them in would quietly corrupt this as a
       // market-data export — the same reason they're excluded from
       // comparables.

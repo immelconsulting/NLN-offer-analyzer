@@ -32,6 +32,7 @@ const STAGE_ROUTES = {
   "Received an offer": "/offer",
   Applying: "/apply",
   Interviewing: "/interview",
+  "Expecting an offer soon": "/offer-soon",
 };
 
 export default function LandingPage() {

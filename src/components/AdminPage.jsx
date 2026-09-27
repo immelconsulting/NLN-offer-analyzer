@@ -293,6 +293,7 @@ function FlowFilter({ value, onChange }) {
     ["Offer", "offer"],
     ["Apply", "apply"],
     ["Interview", "interview"],
+    ["Offer soon", "offer_soon"],
   ];
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -317,20 +318,27 @@ function FlowFilter({ value, onChange }) {
   );
 }
 
-// Offer / Apply / Interview marker, used in the table and the detail view.
-const FLOW_LABELS = { apply: "Apply", interview: "Interview", offer: "Offer" };
+// Flow marker, used in the table and the detail view.
+const FLOW_LABELS = {
+  apply: "Apply",
+  interview: "Interview",
+  offer_soon: "Offer soon",
+  offer: "Offer",
+};
+
+const FLOW_BADGE_STYLES = {
+  apply: "bg-navy-100 text-navy-900",
+  interview: "bg-navy-50 text-navy-700 ring-1 ring-navy-200",
+  offer_soon: "bg-navy-300/40 text-navy-900 ring-1 ring-navy-300",
+  offer: "bg-slate-100 text-slate-600",
+};
 
 function FlowBadge({ flow }) {
   const label = FLOW_LABELS[flow] || FLOW_LABELS.offer;
+  const style = FLOW_BADGE_STYLES[flow] || FLOW_BADGE_STYLES.offer;
   return (
     <span
-      className={`text-xs font-sans font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${
-        flow === "apply"
-          ? "bg-navy-100 text-navy-900"
-          : flow === "interview"
-            ? "bg-navy-50 text-navy-700 ring-1 ring-navy-200"
-            : "bg-slate-100 text-slate-600"
-      }`}
+      className={`text-xs font-sans font-semibold uppercase tracking-wide px-2 py-0.5 rounded ${style}`}
     >
       {label}
     </span>
@@ -698,8 +706,8 @@ export default function AdminPage() {
 
   if (selected) {
     const f = selected.form || {};
-    // Pre-offer records (apply, interview) name the role and company
-    // differently from offer records.
+    // Pre-offer records (apply, interview, offer_soon) name the role and
+    // company differently from offer records.
     const isPreOffer = selected.flow && selected.flow !== "offer";
     const displayRole = isPreOffer ? f.targetRole : f.role;
     const displayCompany = isPreOffer ? f.targetCompany : f.company;
@@ -733,6 +741,27 @@ export default function AdminPage() {
               <Field label="Years of experience" value={f.yearsExperience} />
               <Field label="Salary question stage" value={f.salaryStage} />
               <Field label="Number already shared" value={f.sharedNumber} />
+              {/* Offer-soon fields */}
+              <Field label="Compensation status" value={f.compStatus} />
+              <Field
+                label="Recruiter's range"
+                value={
+                  f.recruiterRangeLow || f.recruiterRangeHigh
+                    ? `$${f.recruiterRangeLow || "?"} to $${f.recruiterRangeHigh || "?"}`
+                    : ""
+                }
+              />
+              <Field label="Other opportunities" value={f.otherProcesses} />
+              <Field label="Other comp expected" value={f.otherCompExpected} />
+              <Field label="Offer call timing" value={f.callTiming} />
+              <Field
+                label="Priorities beyond base"
+                value={
+                  Array.isArray(f.priorities) && f.priorities.length
+                    ? f.priorities.join(", ")
+                    : ""
+                }
+              />
               {base && (
                 <Field
                   label="Researched range (base)"

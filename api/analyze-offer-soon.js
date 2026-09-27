@@ -12,42 +12,34 @@ import {
   normalizeRange,
 } from "./_lib/analysis.js";
 
-// Pre-offer analysis, shared by the Applying and Interviewing stages. No
-// offer exists yet, so instead of scoring one this returns a researched
-// target range and coaching for the recruiter screening call.
+// Expecting-an-offer-soon analysis. No offer exists yet, but one is coming
+// from a named company, so this returns a researched picture of what a strong
+// offer looks like plus a read on how to handle the offer call.
 //
-// Both stages face the identical negotiation moment (being asked what you
-// want), so they share this endpoint and prompt rather than duplicating them.
-// The stage is carried through as `flow` so the coaching and the admin view
-// can still tell them apart.
+// Separate from /api/analyze-apply on purpose: that endpoint coaches the
+// screening call (a recruiter asking what you want), this one coaches the
+// offer call (a recruiter telling you a number). Different moment, different
+// prompt, different output fields.
 //
-// Deliberately does NOT use api/_lib/comparables.js. These submissions are
-// aspirational targets rather than real offers, so they neither consume nor
-// contribute internal comparables.
-
-// Where the candidate is in the process, described for the prompt.
-const STAGE_SITUATIONS = {
-  apply: "actively applying to roles, so the recruiter screening call is the next compensation moment ahead of them",
-  interview:
-    "already interviewing, so the salary question is either imminent or has already come up at least once in the process",
-};
-const normalizeFlow = (flow) => (flow === "interview" ? "interview" : "apply");
+// Deliberately does NOT use api/_lib/comparables.js. Like the other pre-offer
+// flows, these are targets rather than real offers, so they neither consume
+// nor contribute internal comparables.
 
 function loadSystemPrompt() {
   try {
-    const filePath = path.join(process.cwd(), "apply-analyze-prompt.md");
+    const filePath = path.join(process.cwd(), "offer-soon-analyze-prompt.md");
     const content = fs.readFileSync(filePath, "utf-8").trim();
     if (content) return content;
   } catch {
     // fall through to placeholder
   }
-  return `You are a salary negotiation coach for Next Level Negotiation. The candidate is still applying and has no offer. Research current market compensation for their role and location, then return a target salary range adjusted for their seniority and market, the biggest way they could undercut themselves on a recruiter screening call, a note tailored to where they are with the salary question, and three approaches to answering it.`;
+  return `You are a salary negotiation coach for Next Level Negotiation. The candidate expects a job offer soon from a specific company. Research current market compensation for their role, company, and location, then return what a strong offer looks like, how to read the number when they hear it, the biggest way they could give away leverage on the offer call, an honest read of their leverage, and three approaches. They must never accept or counter on the call itself.`;
 }
 
-const APPLY_TOOL = {
-  name: "submit_apply_analysis",
+const OFFER_SOON_TOOL = {
+  name: "submit_offer_soon_analysis",
   description:
-    "Submit the structured applying-stage analysis: a researched target range and recruiter-call coaching.",
+    "Submit the structured expecting-an-offer-soon analysis: a researched range and offer-call coaching.",
   input_schema: {
     type: "object",
     properties: {
@@ -73,15 +65,25 @@ const APPLY_TOOL = {
         description:
           "1-2 sentences citing the underlying numbers and how they were adjusted for seniority and location.",
       },
+      offer_benchmark_note: {
+        type: "string",
+        description:
+          "How to read the number the moment they hear it, using the range thresholds.",
+      },
       biggest_risk: {
         type: "string",
         description:
-          "The single most likely way THIS candidate undercuts themselves on the call, using their stage answer.",
+          "The single most likely way THIS candidate gives away leverage on the offer call.",
+      },
+      leverage_read: {
+        type: "string",
+        description:
+          "An honest read of their leverage, based only on opportunities they actually reported.",
       },
       call_status_note: {
         type: "string",
         description:
-          "Personalized to their salary-question stage, including a recovery note if they already gave a number.",
+          "Personalized to where compensation stands, including a recovery note if they already shared a number.",
       },
       three_strategies: {
         type: "array",
@@ -98,7 +100,9 @@ const APPLY_TOOL = {
     required: [
       "confidence",
       "range_rationale",
+      "offer_benchmark_note",
       "biggest_risk",
+      "leverage_read",
       "call_status_note",
       "three_strategies",
       "recommended_strategy",
@@ -107,26 +111,55 @@ const APPLY_TOOL = {
   },
 };
 
-const STAGE_LABELS = {
-  no_call: "No recruiter call yet",
-  call_scheduled: "A call is scheduled or coming up",
-  dodged: "A recruiter asked and I dodged it",
-  gave_number: "I already gave a number",
+const COMP_STATUS_LABELS = {
+  not_discussed: "We haven't talked numbers yet",
+  recruiter_shared_range: "The recruiter shared a range",
+  i_shared_number: "I already shared a number or range",
+  both_shared: "We've both shared numbers",
+};
+
+const OTHER_PROCESS_LABELS = {
+  none: "No other active processes — this is their only one",
+  interviewing_elsewhere: "Interviewing elsewhere, no offer yet",
+  expecting_offer: "Expecting another offer in the next 1-2 weeks",
+  have_offer: "Already has another offer in hand",
+};
+
+const CALL_TIMING_LABELS = {
+  scheduled: "The offer call is scheduled",
+  any_day: "Expecting the call any day now",
+  not_sure: "Not sure when the call will come",
 };
 
 function buildUserMessage(form) {
-  const flow = normalizeFlow(form.flow);
+  const recruiterRange =
+    form.recruiterRangeLow || form.recruiterRangeHigh
+      ? `Recruiter's stated range: $${form.recruiterRangeLow || "?"} to $${form.recruiterRangeHigh || "?"} — compare this to the market honestly; it is their opening position, not the market`
+      : null;
+
+  const priorities =
+    Array.isArray(form.priorities) && form.priorities.length
+      ? `What matters to them beyond base salary: ${form.priorities.join(", ")}`
+      : null;
+
   const lines = [
-    `Job-search stage: ${flow === "interview" ? "Interviewing" : "Applying"} — this candidate is ${STAGE_SITUATIONS[flow]}. Tailor biggest_risk and call_status_note to that.`,
-    `Target role: ${form.targetRole}`,
-    form.targetCompany ? `Target company: ${form.targetCompany}` : null,
+    "Job-search stage: Expecting an offer soon — they are at or near the end of the process with this company, and the offer call is the next compensation moment.",
+    `Role: ${form.targetRole}`,
+    `Company: ${form.targetCompany}`,
     `Location: ${form.location}`,
     `Years of experience: ${form.yearsExperience}`,
     `Risk tolerance: ${form.riskTolerance} — set recommended_strategy from this`,
-    `Where they are with the salary question: ${STAGE_LABELS[form.salaryStage] || form.salaryStage}`,
-    form.salaryStage === "gave_number" && form.sharedNumber
-      ? `Number they already shared: $${form.sharedNumber} — treat this as an anchor already on the table and write the recovery note around it`
+    `Where compensation stands: ${COMP_STATUS_LABELS[form.compStatus] || form.compStatus}`,
+    recruiterRange,
+    form.sharedNumber
+      ? `Number or range they already shared: ${form.sharedNumber} — treat it as an anchor already on the table and write the recovery note around it; do not let it pull the range down`
       : null,
+    `Other opportunities: ${OTHER_PROCESS_LABELS[form.otherProcesses] || form.otherProcesses}`,
+    form.otherCompExpected
+      ? `Total comp they expect from the other opportunity: $${form.otherCompExpected}`
+      : null,
+    form.callTiming ? CALL_TIMING_LABELS[form.callTiming] : null,
+    priorities,
     // Context for sanity-checking only. The prompt forbids echoing it, and
     // the script generator is told the same. This is TOTAL annual comp (base
     // plus bonus, commission, and annualized equity), so it is comparable to
@@ -139,7 +172,7 @@ function buildUserMessage(form) {
       : null,
   ].filter(Boolean);
 
-  return `Research the market for this candidate and return the applying-stage analysis.\n\n${lines.join("\n")}`;
+  return `Research the market for this candidate and return the expecting-an-offer-soon analysis.\n\n${lines.join("\n")}`;
 }
 
 export default async function handler(req, res) {
@@ -157,10 +190,12 @@ export default async function handler(req, res) {
   if (
     !form ||
     !form.targetRole ||
+    !form.targetCompany ||
     !form.location ||
     !form.yearsExperience ||
     !form.riskTolerance ||
-    !form.salaryStage
+    !form.compStatus ||
+    !form.otherProcesses
   ) {
     return res.status(400).json({ error: "Missing required details." });
   }
@@ -191,12 +226,12 @@ export default async function handler(req, res) {
       client,
       system: loadSystemPrompt(),
       userMessage,
-      submitTool: APPLY_TOOL,
+      submitTool: OFFER_SOON_TOOL,
     });
 
     normalizeRange(analysis);
     // Set server-side from the form rather than trusting the model, the same
-    // way the offer flow derives its recommended strategy from risk tolerance.
+    // way every other flow derives its recommended strategy.
     analysis.recommended_strategy =
       RISK_TO_STRATEGY[form.riskTolerance] || "balanced";
 
@@ -214,7 +249,7 @@ export default async function handler(req, res) {
         } = form;
         await saveSubmission(redis, {
           id,
-          flow: normalizeFlow(form.flow),
+          flow: "offer_soon",
           email: (leadEmail || "").trim().toLowerCase(),
           timestamp: new Date().toISOString(),
           form: formFields,
@@ -227,13 +262,13 @@ export default async function handler(req, res) {
         });
         analysis.submissionId = id;
       } catch (err) {
-        console.error("Failed to store apply submission:", err);
+        console.error("Failed to store offer-soon submission:", err);
       }
     }
 
     return res.status(200).json(analysis);
   } catch (err) {
-    console.error("Apply analysis failed:", err);
+    console.error("Offer-soon analysis failed:", err);
     return res.status(502).json({
       error: "We couldn't build your range right now. Please try again.",
     });

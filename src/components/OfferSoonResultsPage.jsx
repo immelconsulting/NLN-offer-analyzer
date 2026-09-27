@@ -13,15 +13,15 @@ import {
   SourceList,
 } from "./RangeBlocks.jsx";
 
-// Screening-call results, shared by the Applying and Interviewing stages.
-// Mirrors ResultsPage's visual language and stateless ?d= encoding, but the
-// researched range is the hero rather than a score.
+// Expecting-an-offer-soon results. Same building blocks as the screening-call
+// results page, but the content is about the offer call: how to read the
+// number when it lands, and the one rule that governs the whole conversation.
 
-export default function ApplyResultsPage({ flow = "apply" }) {
+export default function OfferSoonResultsPage() {
   const [searchParams] = useSearchParams();
   const encoded = searchParams.get("d");
   const navigate = useNavigate();
-  const stage = getFlow(flow);
+  const stage = getFlow("offer_soon");
 
   const data = useMemo(() => {
     if (!encoded) return null;
@@ -50,7 +50,7 @@ export default function ApplyResultsPage({ flow = "apply" }) {
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
-            Your Target Range
+            What a Strong Offer Looks Like
           </h1>
           <p className="text-slate-700 mt-4">
             {form.targetRole}
@@ -58,8 +58,8 @@ export default function ApplyResultsPage({ flow = "apply" }) {
             {form.location} · {form.yearsExperience} years
           </p>
           <p className="text-navy-800 mt-4 font-medium max-w-xl">
-            Negotiation doesn't start at the offer. It starts the moment a
-            recruiter asks what you make.
+            The worst thing you can do on the offer call is say yes, or say a
+            number, on the spot. Here's what to do instead.
           </p>
         </div>
       </header>
@@ -77,27 +77,46 @@ export default function ApplyResultsPage({ flow = "apply" }) {
 
         <RangeCard
           analysis={analysis}
-          noDataNote="Rather than show you a number we can't stand behind, we've left this open. Everything below still applies, and your script will include instructions for building a range from your own research."
-          floorNote="Below that, the role isn't worth your time — and knowing that before the call is what keeps you from drifting down during it."
+          noDataNote="Rather than show you a number we can't stand behind, we've left this open. Everything below still applies, and your script will include instructions for building a range from your own research before the call."
+          floorNote="An offer below that is a real gap worth addressing in your counter — and knowing the number before the call is what lets you recognize it instantly."
         />
 
-        <SourceList sources={analysis.sources} />
+        <Callout title="How to read the offer when you hear it" tone="light">
+          {analysis.offer_benchmark_note}
+        </Callout>
 
-        <Callout title="The biggest way you could undercut yourself">
+        {/* Static, not model-generated: this is the rule the whole flow
+            exists to deliver, so it must never vary or be dropped. */}
+        <div className="bg-navy-950 text-white rounded-xl p-6 sm:p-8">
+          <p className="text-xs font-semibold uppercase tracking-wide text-navy-300 mb-2">
+            Your one rule for the call
+          </p>
+          <p className="text-lg">
+            Don't accept and don't counter on the spot. Appreciate it,
+            understand it, and ask for time.
+          </p>
+        </div>
+
+        <Callout title="The biggest way you could give away leverage">
           {analysis.biggest_risk}
         </Callout>
 
-        <Callout title="Where you are right now" tone="light">
+        <Callout title="Your leverage going into this call" tone="light">
+          {analysis.leverage_read}
+        </Callout>
+
+        <Callout title="Where things stand on compensation" tone="light">
           {analysis.call_status_note}
         </Callout>
 
-        {/* The three strategies are deliberately NOT shown here. They are
-            effectively the script — the actual words to say — and giving them
-            away free removes the reason to buy it. They stay in the analysis
-            payload because the script generator builds from them. */}
+        <SourceList sources={analysis.sources} />
+
+        {/* The three strategies are deliberately NOT shown here, same reason
+            as the screening-call results page: they are effectively the
+            script. They stay in the payload for the script generator. */}
 
         <NextStepChoice
-          scriptBlurb="Word-for-word answers for your recruiter screening call"
+          scriptBlurb="Word-for-word lines for the moment the number lands"
           onGetScript={() => {
             track("script_cta_clicked");
             navigate(`${stage.proofPath}${encoded ? `?d=${encoded}` : ""}`);

@@ -5,6 +5,8 @@ import ApplyForm from "./components/ApplyForm.jsx";
 import ThankYou from "./components/ThankYou.jsx";
 import ResultsPage from "./components/ResultsPage.jsx";
 import ApplyResultsPage from "./components/ApplyResultsPage.jsx";
+import OfferSoonForm from "./components/OfferSoonForm.jsx";
+import OfferSoonResultsPage from "./components/OfferSoonResultsPage.jsx";
 import ProofPage from "./components/ProofPage.jsx";
 import SessionProofPage from "./components/SessionProofPage.jsx";
 import BookingPage from "./components/BookingPage.jsx";
@@ -24,7 +26,7 @@ export default function App() {
 
       {/* Pre-offer flows: no offer yet, preparing for the salary question.
           Applying and Interviewing share every component and differ only in
-          copy (src/lib/stages.js). All flows converge on /script, which
+          copy (src/lib/flows.js). All flows converge on /script, which
           branches on the stashed flow. */}
       <Route path="/apply" element={<ApplyForm flow="apply" />} />
       <Route path="/apply/results" element={<ApplyResultsPage flow="apply" />} />
@@ -33,6 +35,12 @@ export default function App() {
       <Route path="/interview" element={<ApplyForm flow="interview" />} />
       <Route path="/interview/results" element={<ApplyResultsPage flow="interview" />} />
       <Route path="/interview/proof" element={<ProofPage flow="interview" />} />
+
+      {/* Expecting an offer soon: no offer yet either, but the next call is
+          the offer call, so this has its own form, analyzer, and prompts. */}
+      <Route path="/offer-soon" element={<OfferSoonForm />} />
+      <Route path="/offer-soon/results" element={<OfferSoonResultsPage />} />
+      <Route path="/offer-soon/proof" element={<ProofPage flow="offer_soon" />} />
 
       <Route path="/thanks" element={<ThankYou />} />
       <Route path="/session" element={<SessionProofPage />} />
