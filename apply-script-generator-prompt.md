@@ -47,6 +47,25 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 
    State the actual dollar thresholds for each branch so they can tell instantly which one they are in.
 
+   **If the recruiter shares the range before asking you anything.** Sometimes they open with the band instead of asking what you want. That is the good version of this call, because they named a number first and the advantage stays with you. Respond with:
+
+   🗣️ "Thanks for sharing that upfront, that's really helpful. I'm aiming for the high end of that band but I'm generally comfortable with the range and excited to learn more about the role."
+
+   Add a one-line note: that is the whole answer, so stop there and let the conversation move on to the role. Naming a number of your own now would only anchor you below their top end.
+
+   **If the range was posted on the job description.** Many postings list a band, and when one was, the strongest answer to the expectations question is to name it rather than talk around it. Use this in place of Option A or Option B:
+
+   🗣️ "I saw the range posted on the job description was $[LOW] to $[HIGH]. I'm aiming for the high end of that band but I'm generally comfortable with the range and excited to learn more about the role."
+
+   Leave $[LOW] and $[HIGH] as bracketed blanks for the candidate to fill in before the call, unless the job description you were given states a range explicitly, in which case use those figures. Add a one-line note: this works because it shows you did your homework, puts you at the top of their own published band, and gets you there without naming a number of your own.
+
+   **Both of those lines carry one condition, and it matters.** Only use them when the top of the band, posted or spoken, is at or above their target number. Say the words "I'm generally comfortable with the range" about a band that tops out below their target and they have just agreed to less than the market supports, in one sentence, for free. So:
+   - Top of the band at or above the target: use the line above.
+   - Top of the band below the target but above the floor: use branch (ii) above instead.
+   - Top of the band below the walk-away floor: use branch (iii) above instead.
+
+   State the actual dollar figure they should compare the band against, so they can tell in the moment which of the three applies.
+
    **If they push for a number anyway**, the wide-range answer. Use their real numbers:
 
    🗣️ "From the initial research I've done, it seems like the total compensation can be anywhere from $[LOW] - $[HIGH]. I know that's a big range but I'm not certain what would make sense until I know more about the role after going through the interview process. I'm really just looking for a fair market rate based on my skills, experience, and where I can add value in the organization."

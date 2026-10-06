@@ -79,6 +79,20 @@ const FLOW_COPY = {
 // Interviewing buys the identical screening-call script.
 FLOW_COPY.interview = FLOW_COPY.apply;
 
+// Rendered both above and below the script. window.print() is the whole
+// mechanism; the browser's own dialog does the saving.
+function DownloadPdfButton() {
+  return (
+    <button
+      type="button"
+      onClick={() => window.print()}
+      className="inline-flex items-center gap-2 rounded-md border border-navy-700 text-navy-800 font-medium px-5 py-2.5 hover:bg-navy-50 transition"
+    >
+      ⤓ Download as PDF
+    </button>
+  );
+}
+
 export default function ScriptPage() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
@@ -213,19 +227,18 @@ export default function ScriptPage() {
 
         {script && !loading && (
           <>
+            {/* Also offered above the script: these run long, and someone who
+                wants the PDF shouldn't have to scroll the whole thing first. */}
+            <div className="flex justify-end -mb-4 print:hidden">
+              <DownloadPdfButton />
+            </div>
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:border-0 print:shadow-none print:p-0">
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
                 {script}
               </ReactMarkdown>
             </div>
             <div className="text-center print:hidden">
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-2 rounded-md border border-navy-700 text-navy-800 font-medium px-5 py-2.5 hover:bg-navy-50 transition"
-              >
-                ⤓ Download as PDF
-              </button>
+              <DownloadPdfButton />
               <p className="text-xs text-slate-500 mt-2">
                 Choose "Save as PDF" in the print dialog.
               </p>
