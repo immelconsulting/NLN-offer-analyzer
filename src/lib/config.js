@@ -21,21 +21,31 @@ export const STRATEGY_SESSION_URL = "https://nln-offer-analyzer.vercel.app/sessi
 // Stripe Payment Links for the two session tiers, one per price.
 //
 // ⚠️ BOTH ARE PLACEHOLDERS — checkout is dead until these are real.
-// Create them on NLN's Stripe account (acct_1MRh0gKjxEB5kBDn — same account
-// gotchas as STRIPE_PAYMENT_LINK_URL above), and set the after-payment
-// redirect on BOTH to:
+// Create them with scripts/create-session-payment-links.js, which checks it's
+// on NLN's Stripe account (acct_1MRh0gKjxEB5kBDn), tags each Price with the
+// lookup key /booking uses to pick the right calendar (SESSION_TIERS below),
+// and sets the after-payment redirect on BOTH to:
 //   https://<your-domain>/booking?session_id={CHECKOUT_SESSION_ID}
-// so the buyer lands back in the app and /booking can confirm the payment
-// before revealing the calendar.
 export const STRATEGY_SESSION_30MIN_CHECKOUT_URL = "https://buy.stripe.com/REPLACE_ME_30MIN";
 export const STRATEGY_SESSION_60MIN_CHECKOUT_URL = "https://buy.stripe.com/REPLACE_ME_60MIN";
 
-// JobJenny's Thrive calendar. Revealed on /booking only after Stripe confirms
-// the session was paid for — never linked anywhere public, or people could
-// book a paid session without paying.
-//
-// ⚠️ PLACEHOLDER — get this from JobJenny (Jenny/Alisa).
-export const THRIVE_BOOKING_URL = "https://REPLACE_ME_THRIVE_BOOKING_LINK";
+// JobJenny's Thryv calendar, one direct link per tier, so someone who paid for
+// 30 minutes can't land on the full service list and pick the hour by mistake.
+// Only the server reads these: /api/verify-payment works out which tier the
+// Stripe session bought and returns the matching link, so neither URL ships
+// in the browser bundle.
+export const THRIVE_30MIN_BOOKING_URL =
+  "https://go.thryv.com/site/JobJenny/online-scheduling?service=uc1jg8nykyxc12fg";
+export const THRIVE_60MIN_BOOKING_URL =
+  "https://go.thryv.com/site/JobJenny/online-scheduling?service=zlah96bvp0955skx";
+
+// How /api/verify-payment tells the tiers apart: each session Price carries
+// one of these lookup keys (set by scripts/create-session-payment-links.js).
+// Lookup keys survive a Payment Link being recreated, unlike link/price IDs.
+export const SESSION_TIERS = {
+  nln_strategy_session_30min: { label: "30 minutes", bookingUrl: THRIVE_30MIN_BOOKING_URL },
+  nln_strategy_session_60min: { label: "60 minutes", bookingUrl: THRIVE_60MIN_BOOKING_URL },
+};
 
 // Display-only price labels used in CTA captions and the session proof page.
 // Centralized so a price change is a one-line edit here instead of a copy

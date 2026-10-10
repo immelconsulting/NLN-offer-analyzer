@@ -21,8 +21,12 @@ import {
 // choice over the script; for most visitors here the script isn't the thing
 // they're weighing it against.
 //
+// Sessions are run by Jenny Foss personally, and the page names her up
+// front: nobody should land here unsure who they're booking with.
+//
 // Flow: pick a tier here → Stripe checkout for that tier → /booking, which
-// confirms the payment and only then reveals JobJenny's Thrive calendar.
+// confirms the payment and only then reveals Jenny's Thryv calendar for the
+// tier that was bought.
 //
 // NOTE for Alex: the four points below are deliberately generic and don't
 // claim any number that isn't verified (client count, win rate, years in
@@ -32,9 +36,9 @@ import {
 // from ProofPage, since that quote is about the script product, not a live
 // session.
 const PROOF_POINTS = [
-  "One-on-one time with a JobJenny negotiation coach, working from your actual target role, your numbers, and the specific conversation ahead of you, not generic advice.",
+  "One-on-one time with Jenny Foss, working from your actual target role, your numbers, and the specific conversation ahead of you, not generic advice.",
   "You don't need an offer in hand to book this. The earlier you prep, the more room you have to shape how the conversation goes.",
-  "Real conversations rarely go the way you rehearsed. Your coach can adjust in real time to whatever the recruiter or hiring manager actually says back.",
+  "Real conversations rarely go the way you rehearsed. Jenny can help you adjust to whatever the recruiter or hiring manager actually says back.",
   "Built on Next Level Negotiation's methodology, the same approach behind hundreds of real negotiations, applied to your specific situation.",
 ];
 
@@ -46,7 +50,8 @@ const TIERS = [
     detail:
       "Best if you know your number and want a second set of eyes before you pick up the phone.",
     checkoutUrl: STRATEGY_SESSION_30MIN_CHECKOUT_URL,
-    cta: `Book 30 minutes — ${STRATEGY_SESSION_PRICE_LABEL}`,
+    cta: `Book 30 minutes with Jenny — ${STRATEGY_SESSION_PRICE_LABEL}`,
+    testTier: "30",
     featured: false,
   },
   {
@@ -56,7 +61,8 @@ const TIERS = [
     detail:
       "Best if there's real money on the table, the package is complicated, or you want to rehearse the call itself.",
     checkoutUrl: STRATEGY_SESSION_60MIN_CHECKOUT_URL,
-    cta: `Book a full hour — ${STRATEGY_SESSION_PRICE_LABEL_60MIN}`,
+    cta: `Book a full hour with Jenny — ${STRATEGY_SESSION_PRICE_LABEL_60MIN}`,
+    testTier: "60",
     featured: true,
   },
 ];
@@ -75,11 +81,13 @@ export default function SessionProofPage() {
           <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-navy-900 text-center">
             Your resume is polished. Let's make sure your negotiation is too.
           </h1>
+          <p className="text-center mt-3 text-lg font-serif font-semibold text-navy-600">
+            Get Jenny Foss in your corner.
+          </p>
           <p className="text-slate-700 text-center mt-3 max-w-xl mx-auto">
             You've already put in the work on your resume and LinkedIn. A
-            Negotiation Strategy Session with your JobJenny coach makes sure
-            that work actually pays off, literally, when it's time to talk
-            numbers.
+            Negotiation Strategy Session with Jenny makes sure that work
+            actually pays off, literally, when it's time to talk numbers.
           </p>
 
           <ul className="mt-8 space-y-4">
@@ -107,7 +115,7 @@ export default function SessionProofPage() {
           */}
 
           <h2 className="mt-10 text-lg font-serif font-semibold text-navy-900 text-center">
-            Choose your session
+            Choose your session with Jenny
           </h2>
 
           <div className="mt-5 grid sm:grid-cols-2 gap-4">
@@ -155,17 +163,20 @@ export default function SessionProofPage() {
           </div>
 
           <p className="text-center text-xs text-slate-500 mt-5">
-            You'll pay first, then pick a time on your strategist's calendar.
+            You'll pay first, then pick a time on Jenny's calendar.
           </p>
 
           {FREE_TEST_MODE && (
-            <p className="text-center mt-3">
-              <a
-                href="/booking?session_id=test_skip_payment"
-                className="text-sm text-slate-400 underline hover:text-navy-600 transition"
-              >
-                [Testing] Skip payment and preview the booking step
-              </a>
+            <p className="text-center mt-3 space-x-4">
+              {TIERS.map((tier) => (
+                <a
+                  key={tier.testTier}
+                  href={`/booking?session_id=test_skip_payment&tier=${tier.testTier}`}
+                  className="text-sm text-slate-400 underline hover:text-navy-600 transition"
+                >
+                  [Testing] Skip payment ({tier.testTier} min booking step)
+                </a>
+              ))}
             </p>
           )}
         </div>

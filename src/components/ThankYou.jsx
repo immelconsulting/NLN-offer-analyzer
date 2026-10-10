@@ -111,8 +111,8 @@ export default function ThankYou() {
             Want a negotiator in your corner from day one?
           </h2>
           <p className="text-navy-200 text-sm mt-2 max-w-md mx-auto">
-            It's never too early to start strategizing your negotiation — the
-            earlier we talk, the more options you have.
+            It's never too early to start strategizing your negotiation. A
+            session with Jenny Foss now gives you more options later.
           </p>
           <Link
             to="/session"

@@ -188,7 +188,7 @@ function NextStepChoice({ encoded }) {
         >
           <span className="block font-semibold">Book a Strategy Session</span>
           <span className="block text-sm text-slate-600 mt-1">
-            Get a negotiator in your corner for the actual call
+            Get Jenny Foss in your corner for the actual call
           </span>
         </button>
       </div>

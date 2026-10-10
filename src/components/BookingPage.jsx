@@ -2,20 +2,24 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
-import { CONTACT_EMAIL, THRIVE_BOOKING_URL } from "../lib/config.js";
+import { CONTACT_EMAIL } from "../lib/config.js";
 import { track } from "../lib/track.js";
 
 // Post-payment destination for the Negotiation Strategy Session. Both Stripe
 // Payment Links (30 min and 60 min) redirect here with
-// ?session_id={CHECKOUT_SESSION_ID}. We confirm the payment server-side
-// before showing the calendar link, so the booking URL isn't reachable by
-// anyone who simply guesses this route.
+// ?session_id={CHECKOUT_SESSION_ID}. We confirm the payment server-side,
+// and the server hands back the calendar link for the tier that was bought,
+// so the booking URLs aren't reachable by anyone who simply guesses this
+// route and a 30-minute buyer can't pick the hour by mistake.
+// `tier` is only honoured with the test_skip_payment bypass.
 export default function BookingPage() {
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const testTier = searchParams.get("tier");
 
   const [status, setStatus] = useState("checking"); // checking | paid | error
   const [error, setError] = useState("");
+  const [booking, setBooking] = useState(null); // { tier, bookingUrl }
 
   useEffect(() => {
     if (!sessionId) {
@@ -32,13 +36,14 @@ export default function BookingPage() {
         const res = await fetch("/api/verify-payment", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
+          body: JSON.stringify({ sessionId, testTier }),
         });
         const body = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(body.error || "We couldn't verify your payment.");
         if (!cancelled) {
+          setBooking({ tier: body.tier, bookingUrl: body.bookingUrl });
           setStatus("paid");
-          track("booking_confirmed");
+          track("booking_confirmed", { tier: body.tier });
         }
       } catch (err) {
         if (!cancelled) {
@@ -51,7 +56,7 @@ export default function BookingPage() {
     return () => {
       cancelled = true;
     };
-  }, [sessionId]);
+  }, [sessionId, testTier]);
 
   return (
     <div className="min-h-screen bg-navy-50">
@@ -74,17 +79,17 @@ export default function BookingPage() {
               You're all set — now pick your time.
             </h1>
             <p className="text-slate-700 mt-3 max-w-md mx-auto">
-              Your Negotiation Strategy Session is paid for. Choose a slot on
-              your strategist's calendar and you'll get a confirmation by
-              email.
+              Your {booking.tier} Negotiation Strategy Session with Jenny
+              Foss is paid for. Choose a slot on Jenny's calendar and you'll
+              get a confirmation by email.
             </p>
             <a
-              href={THRIVE_BOOKING_URL}
+              href={booking.bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block mt-6 bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-6 py-4 transition shadow-sm"
             >
-              Book my session time →
+              Pick my time with Jenny →
             </a>
             <p className="text-xs text-slate-500 mt-4">
               Bookmark this page — you can come back to it if you need to

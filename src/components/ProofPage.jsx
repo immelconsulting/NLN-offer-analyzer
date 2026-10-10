@@ -175,8 +175,8 @@ export default function ProofPage({ flow = "offer" }) {
               Book a Negotiation Strategy Session instead
             </Link>
             <p className="text-center text-xs text-slate-500">
-              1:1 support from a Next Level Negotiation strategist — sessions
-              start at {STRATEGY_SESSION_PRICE_LABEL}.
+              1:1 with Jenny Foss of JobJenny — sessions start at{" "}
+              {STRATEGY_SESSION_PRICE_LABEL}.
             </p>
             {FREE_TEST_MODE && (
               <button

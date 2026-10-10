@@ -13,15 +13,17 @@ Two products ship from this funnel:
 1. **$47 self-serve counter-offer script** — fully live and working end-to-end, including real
    Stripe payments. Nothing outstanding.
 2. **Paid Negotiation Strategy Session** ($199 / 30 min, $329 / hour) — pages are built and
-   deployed, but **three URLs are still `REPLACE_ME` placeholders in `src/lib/config.js`**, so
-   checkout and booking are non-functional until they're filled in:
+   deployed, but **two URLs are still `REPLACE_ME` placeholders in `src/lib/config.js`**, so
+   checkout is non-functional until they're filled in:
    - `STRATEGY_SESSION_30MIN_CHECKOUT_URL` — Stripe Payment Link, $199 tier
    - `STRATEGY_SESSION_60MIN_CHECKOUT_URL` — Stripe Payment Link, $329 tier
-   - `THRIVE_BOOKING_URL` — JobJenny's Thrive calendar, revealed after payment on `/booking`
 
-   The two Stripe links must be created on `acct_1MRh0gKjxEB5kBDn` with their after-payment
-   redirect set to `https://<domain>/booking?session_id={CHECKOUT_SESSION_ID}`. Until then the
-   tier buttons lead to dead Stripe URLs — safe only because the site currently gets no traffic.
+   Create them with `scripts/create-session-payment-links.js` (Alex runs it locally with his
+   own key; it checks the account is `acct_1MRh0gKjxEB5kBDn`, tags each Price with a lookup
+   key, and sets the redirect to `https://<domain>/booking?session_id={CHECKOUT_SESSION_ID}`).
+   Until then the tier buttons lead to dead Stripe URLs. Sessions are run by **Jenny Foss**,
+   named on every session CTA. The Thryv calendars are real: `THRIVE_30MIN_BOOKING_URL` and
+   `THRIVE_60MIN_BOOKING_URL`, one direct link per tier.
 
 **JobJenny pilot:** strategy sessions are delivered by the JobJenny team (Jenny/Alisa), not
 Alex. Most `/session` visitors are JobJenny coaching clients sent there straight after their
@@ -102,8 +104,12 @@ paid tier.
    placeholder — a real quote from Jenny/Alisa's practice can fill it, but never reuse
    ProofPage's script testimonial, which is about the script product.
 9. `/booking` **BookingPage** — post-payment destination for both session tiers. Stripe redirects
-   here with `?session_id={CHECKOUT_SESSION_ID}`; the page POSTs to `/api/verify-payment`, and
-   only on a confirmed-paid session does it reveal `THRIVE_BOOKING_URL` (JobJenny's calendar).
+   here with `?session_id={CHECKOUT_SESSION_ID}`; the page POSTs to `/api/verify-payment`,
+   which expands the session's line items, maps the Price's `lookup_key` through
+   `SESSION_TIERS` in config.js, and returns that tier's Thryv link. A paid session with no
+   session tier (e.g. a $47 script purchase) gets no calendar. The Thryv URLs are only read
+   server-side, so they don't ship in the browser bundle. Test with
+   `/booking?session_id=test_skip_payment&tier=30` (or `60`).
    Gating it server-side is deliberate — Stripe *could* redirect straight to the calendar, but
    then anyone who saw the URL could book a paid session for free.
 
@@ -296,7 +302,7 @@ identifying details into another user's analysis — aggregates only.
   `offer-soon-script-generator-prompt.md` — all six prompts are file-based, read at request
   time.
 - `src/lib/config.js` — every external URL and price label in one place: the $47 script Stripe
-  link, the two session-tier Stripe links, `THRIVE_BOOKING_URL`, `STRATEGY_SESSION_URL` (the
+  link, the two session-tier Stripe links, the two per-tier Thryv links (`SESSION_TIERS`), `STRATEGY_SESSION_URL` (the
   absolute `/session` URL used by generated script PDFs — absolute because a relative link is
   dead once the PDF leaves the site), price labels, Trustpilot URL, contact email, and the
   `FREE_TEST_MODE` flag.

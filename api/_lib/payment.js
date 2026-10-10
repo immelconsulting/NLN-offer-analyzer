@@ -6,7 +6,9 @@ import Stripe from "stripe";
 // (api/verify-payment.js). Files under api/_lib are not deployed as
 // serverless functions (underscore prefix), just imported.
 
-export async function verifyPayment(sessionId) {
+// Pass `expand` (e.g. ["line_items"]) when the caller needs to know what was
+// bought; the retrieved session comes back as `session` on success.
+export async function verifyPayment(sessionId, { expand } = {}) {
   // Escape hatch for testing without a real payment. Always available off
   // production; in production only while ALLOW_TEST_BYPASS=true is set
   // (temporary free-test mode — see FREE_TEST_MODE in src/lib/config.js).
@@ -25,12 +27,15 @@ export async function verifyPayment(sessionId) {
 
   try {
     const stripe = new Stripe(stripeKey);
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await stripe.checkout.sessions.retrieve(
+      sessionId,
+      expand ? { expand } : undefined
+    );
     // "no_payment_required" covers $0 checkouts (e.g. a 100%-off promo code).
     if (!["paid", "no_payment_required"].includes(session.payment_status)) {
       return { paid: false, error: "This payment hasn't been completed.", status: 402 };
     }
-    return { paid: true };
+    return { paid: true, session };
   } catch (err) {
     console.error("Stripe session lookup failed:", err);
     return { paid: false, error: "We couldn't verify your payment.", status: 402 };
