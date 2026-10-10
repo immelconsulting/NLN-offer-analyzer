@@ -23,7 +23,7 @@ export const STRATEGY_SESSION_URL = "https://nln-offer-analyzer.vercel.app/sessi
 // Live links on NLN's Stripe account (acct_1MRh0gKjxEB5kBDn), created in the
 // dashboard Oct 2026. /booking tells the tiers apart by the Price's amount
 // ($199 / $329) since dashboard-made Prices have no lookup key, so keep those
-// amounts in sync with PRICE_AMOUNT_KEYS in api/verify-payment.js. The
+// amounts in sync with PRICE_AMOUNT_KEYS in api/_lib/payment.js. The
 // after-payment redirect on BOTH is:
 //   https://<your-domain>/booking?session_id={CHECKOUT_SESSION_ID}
 export const STRATEGY_SESSION_30MIN_CHECKOUT_URL = "https://buy.stripe.com/cNi28sglZbEdaCc7tGbwk02";

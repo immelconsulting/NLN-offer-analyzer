@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { SESSION_TIERS } from "../../src/lib/config.js";
 
 // Shared Stripe checkout verification. Used by anything that gates a paid
 // deliverable behind a completed payment — the counter-offer script
@@ -40,4 +41,19 @@ export async function verifyPayment(sessionId, { expand } = {}) {
     console.error("Stripe session lookup failed:", err);
     return { paid: false, error: "We couldn't verify your payment.", status: 402 };
   }
+}
+
+// Which strategy-session tier a Checkout Session bought, or null for anything
+// else (e.g. the $47 script). Needs the session retrieved with
+// expand: ["line_items"]. Prices made by scripts/create-session-payment-links.js
+// carry a lookup key; the live ones were made in the dashboard and have none,
+// so the Price's list amount (unaffected by promo codes) is the fallback.
+const PRICE_AMOUNT_KEYS = {
+  19900: "nln_strategy_session_30min",
+  32900: "nln_strategy_session_60min",
+};
+
+export function strategySessionTier(session) {
+  const price = session?.line_items?.data?.[0]?.price;
+  return SESSION_TIERS[price?.lookup_key || PRICE_AMOUNT_KEYS[price?.unit_amount]] || null;
 }

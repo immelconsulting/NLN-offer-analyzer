@@ -112,6 +112,13 @@ paid tier.
    `/booking?session_id=test_skip_payment&tier=30` (or `60`).
    Gating it server-side is deliberate — Stripe *could* redirect straight to the calendar, but
    then anyone who saw the URL could book a paid session for free.
+10. **Session purchase alert** — `api/stripe-webhook.js` emails `info@jobjenny.com` (cc Alex)
+   via Resend when a session tier is paid, so Alisa can send a welcome within hours. Stripe
+   can't do this natively (receipts go to the buyer only). It listens for
+   `checkout.session.completed` + `checkout.session.async_payment_succeeded`, re-fetches the
+   event from Stripe by id instead of checking a signature, ignores anything that isn't a
+   session tier (`strategySessionTier()` in `api/_lib/payment.js`, shared with
+   `/api/verify-payment`), and dedupes per checkout in Redis.
 
 ## Pre-offer flow: Applying + Interviewing (added Sept 20, 2026)
 
@@ -308,8 +315,8 @@ identifying details into another user's analysis — aggregates only.
   `FREE_TEST_MODE` flag.
 - `api/analyze.js`, `api/analyze-apply.js`, `api/analyze-offer-soon.js`,
   `api/generate-script.js`, `api/verify-payment.js`, `api/lead.js`, `api/leads.js`,
-  `api/admin.js`, `api/login.js`, `api/event.js` — **10 Vercel functions; the Hobby plan caps
-  at 12**, so only two slots remain before the plan matters. Shared helpers live in `api/_lib/` (underscore = not deployed as functions):
+  `api/admin.js`, `api/login.js`, `api/event.js`, `api/stripe-webhook.js` — **11 Vercel
+  functions; the Hobby plan caps at 12**, so only one slot remains before the plan matters. Shared helpers live in `api/_lib/` (underscore = not deployed as functions):
   `store.js` (Upstash), `comparables.js`, `extract.js`, `analysis.js` (the shared web-search
   loop), `auth.js` (admin sessions), and `payment.js` (one Stripe checkout verifier, used by
   both the script and the session booking gate).
@@ -320,7 +327,8 @@ identifying details into another user's analysis — aggregates only.
 
 `ANTHROPIC_API_KEY`, `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Upstash marketplace integration;
 code also accepts `UPSTASH_*` names), `STRIPE_SECRET_KEY`, `LEADS_EXPORT_TOKEN`,
-`ALLOW_TEST_BYPASS` (temporary, see below).
+`ALLOW_TEST_BYPASS` (temporary, see below), `RESEND_API_KEY` + optional `SESSION_ALERT_TO` /
+`SESSION_ALERT_FROM` (session purchase alerts, below).
 
 ## Testing without paying
 
