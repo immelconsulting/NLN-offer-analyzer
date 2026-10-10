@@ -51,9 +51,9 @@ const FLOW_COPY = {
     loading: "Writing your script…",
     loadingNote:
       "We're turning your analysis into a word-for-word counter-offer script. This usually takes under a minute.",
-    upsellHeading: "Want a negotiator in your corner for the real call?",
+    upsellHeading: "Want Jenny Foss in your corner for the real call?",
     upsellBody:
-      "Book a Negotiation Strategy Session and we'll walk through your script together before you pick up the phone.",
+      "Book a Negotiation Strategy Session with Jenny Foss and walk through your script together before you pick up the phone.",
   },
   // Applying and Interviewing buy the same screening-call script.
   apply: {
@@ -61,18 +61,18 @@ const FLOW_COPY = {
     loading: "Writing your script…",
     loadingNote:
       "We're turning your range into word-for-word answers for the recruiter call. This usually takes under a minute.",
-    upsellHeading: "Want a negotiator in your corner for the real call?",
+    upsellHeading: "Want Jenny Foss in your corner for the real call?",
     upsellBody:
-      "Book a Negotiation Strategy Session and we'll practice your answers together before the recruiter calls.",
+      "Book a Negotiation Strategy Session with Jenny Foss and practice your answers together before the recruiter calls.",
   },
   offer_soon: {
     title: "Your Offer Call Script",
     loading: "Writing your script…",
     loadingNote:
       "We're turning your range into word-for-word lines for the offer call. This usually takes under a minute.",
-    upsellHeading: "Want a negotiator in your corner for the real call?",
+    upsellHeading: "Want Jenny Foss in your corner for the real call?",
     upsellBody:
-      "Book a Negotiation Strategy Session and we'll rehearse the offer call together before your recruiter reaches out.",
+      "Book a Negotiation Strategy Session with Jenny Foss and rehearse the offer call together before your recruiter reaches out.",
   },
 };
 

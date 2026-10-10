@@ -12,6 +12,7 @@ import { SESSION_TIERS } from "../src/lib/config.js";
 // rejected rather than shown a calendar.
 
 const TIER_KEYS = { "30": "nln_strategy_session_30min", "60": "nln_strategy_session_60min" };
+const PRICE_AMOUNT_KEYS = { 19900: TIER_KEYS["30"], 32900: TIER_KEYS["60"] };
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -31,8 +32,11 @@ export default async function handler(req, res) {
 
   // The test bypass has no Stripe session to read, so the testing links on
   // /session pass the tier explicitly.
+  // Fallback for links made in the Stripe dashboard without a lookup key: the
+  // Price's list amount (unaffected by promo codes) identifies the tier.
+  const price = payment.session?.line_items?.data?.[0]?.price;
   const lookupKey = payment.session
-    ? payment.session.line_items?.data?.[0]?.price?.lookup_key
+    ? price?.lookup_key || PRICE_AMOUNT_KEYS[price?.unit_amount]
     : TIER_KEYS[testTier] || TIER_KEYS["30"];
 
   const tier = SESSION_TIERS[lookupKey];
