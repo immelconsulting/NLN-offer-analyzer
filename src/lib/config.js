@@ -20,14 +20,14 @@ export const STRATEGY_SESSION_URL = "https://nln-offer-analyzer.vercel.app/sessi
 
 // Stripe Payment Links for the two session tiers, one per price.
 //
-// ⚠️ BOTH ARE PLACEHOLDERS — checkout is dead until these are real.
-// Create them with scripts/create-session-payment-links.js, which checks it's
-// on NLN's Stripe account (acct_1MRh0gKjxEB5kBDn), tags each Price with the
-// lookup key /booking uses to pick the right calendar (SESSION_TIERS below),
-// and sets the after-payment redirect on BOTH to:
+// Live links on NLN's Stripe account (acct_1MRh0gKjxEB5kBDn), created in the
+// dashboard Oct 2026. /booking tells the tiers apart by the Price's amount
+// ($199 / $329) since dashboard-made Prices have no lookup key, so keep those
+// amounts in sync with PRICE_AMOUNT_KEYS in api/verify-payment.js. The
+// after-payment redirect on BOTH is:
 //   https://<your-domain>/booking?session_id={CHECKOUT_SESSION_ID}
-export const STRATEGY_SESSION_30MIN_CHECKOUT_URL = "https://buy.stripe.com/REPLACE_ME_30MIN";
-export const STRATEGY_SESSION_60MIN_CHECKOUT_URL = "https://buy.stripe.com/REPLACE_ME_60MIN";
+export const STRATEGY_SESSION_30MIN_CHECKOUT_URL = "https://buy.stripe.com/cNi28sglZbEdaCc7tGbwk02";
+export const STRATEGY_SESSION_60MIN_CHECKOUT_URL = "https://buy.stripe.com/5kQbJ2d9N37HeSsbJWbwk03";
 
 // JobJenny's Thryv calendar, one direct link per tier, so someone who paid for
 // 30 minutes can't land on the full service list and pick the hour by mistake.
