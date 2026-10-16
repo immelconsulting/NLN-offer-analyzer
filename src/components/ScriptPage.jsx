@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import { decodeResult } from "../lib/encodeResult.js";
 import { isKnownFlow, usesTargetFields } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
+import MeetJennyLink from "./MeetJennyLink.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import { track } from "../lib/track.js";
@@ -328,6 +329,9 @@ export default function ScriptPage() {
               >
                 Learn About Strategy Sessions
               </Link>
+              <p className="mt-3 text-sm">
+                <MeetJennyLink className="text-navy-100 hover:text-white" />
+              </p>
             </div>
           </>
         )}

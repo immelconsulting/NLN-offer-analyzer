@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
+import MeetJennyLink from "./MeetJennyLink.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
 const RESOURCES = {
@@ -112,7 +113,11 @@ export default function ThankYou() {
           </h2>
           <p className="text-navy-200 text-sm mt-2 max-w-md mx-auto">
             It's never too early to start strategizing your negotiation. A
-            session with Jenny Foss now gives you more options later.
+            session with{" "}
+            <MeetJennyLink className="text-white hover:text-navy-100">
+              Jenny Foss
+            </MeetJennyLink>{" "}
+            now gives you more options later.
           </p>
           <Link
             to="/session"

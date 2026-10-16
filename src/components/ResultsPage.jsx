@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { track } from "../lib/track.js";
+import MeetJennyLink from "./MeetJennyLink.jsx";
 import { decodeResult } from "../lib/encodeResult.js";
 import ScoreCard from "./ScoreCard.jsx";
 import OpportunityList from "./OpportunityList.jsx";
@@ -192,6 +193,10 @@ function NextStepChoice({ encoded }) {
           </span>
         </button>
       </div>
+      <p className="text-center text-sm text-slate-500 mt-4">
+        Who's Jenny Foss?{" "}
+        <MeetJennyLink className="text-navy-600 hover:text-navy-900" />
+      </p>
     </div>
   );
 }

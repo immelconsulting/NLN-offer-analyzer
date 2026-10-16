@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
+import MeetJennyLink from "./MeetJennyLink.jsx";
 import { track } from "../lib/track.js";
 import {
   STRIPE_PAYMENT_LINK_URL,
@@ -175,7 +176,11 @@ export default function ProofPage({ flow = "offer" }) {
               Book a Negotiation Strategy Session instead
             </Link>
             <p className="text-center text-xs text-slate-500">
-              1:1 with Jenny Foss of JobJenny — sessions start at{" "}
+              1:1 with{" "}
+              <MeetJennyLink className="text-slate-600 hover:text-navy-900">
+                Jenny Foss
+              </MeetJennyLink>{" "}
+              of JobJenny — sessions start at{" "}
               {STRATEGY_SESSION_PRICE_LABEL}.
             </p>
             {FREE_TEST_MODE && (

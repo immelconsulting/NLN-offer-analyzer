@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import SiteHeader from "./SiteHeader.jsx";
+import MeetJennyLink from "./MeetJennyLink.jsx";
 import { track } from "../lib/track.js";
 import {
   STRATEGY_SESSION_30MIN_CHECKOUT_URL,
@@ -84,6 +85,9 @@ export default function SessionProofPage() {
           <p className="text-center mt-3 text-lg font-serif font-semibold text-navy-600">
             Get Jenny Foss in your corner.
           </p>
+          <p className="text-center mt-1 text-sm">
+            <MeetJennyLink className="text-navy-600 hover:text-navy-900" />
+          </p>
           <p className="text-slate-700 text-center mt-3 max-w-xl mx-auto">
             You've already put in the work on your resume and LinkedIn. A
             Negotiation Strategy Session with Jenny makes sure that work
@@ -163,7 +167,11 @@ export default function SessionProofPage() {
           </div>
 
           <p className="text-center text-xs text-slate-500 mt-5">
-            You'll pay first, then pick a time on Jenny's calendar.
+            You'll pay first, then pick a time on Jenny's calendar. Not sure
+            yet?{" "}
+            <MeetJennyLink className="text-navy-600 hover:text-navy-900">
+              Read Jenny's bio
+            </MeetJennyLink>
           </p>
 
           {FREE_TEST_MODE && (

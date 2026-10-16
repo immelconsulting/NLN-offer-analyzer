@@ -47,6 +47,11 @@ export const SESSION_TIERS = {
   nln_strategy_session_60min: { label: "60 minutes", bookingUrl: THRIVE_60MIN_BOOKING_URL },
 };
 
+// Jenny Foss's bio, linked wherever someone decides whether to book a
+// session with her. ⚠️ Temporary: JobJenny's team page until Alex gets the
+// right link from Jenny/Alisa.
+export const JENNY_BIO_URL = "https://www.jobjenny.com/our-team";
+
 // Display-only price labels used in CTA captions and the session proof page.
 // Centralized so a price change is a one-line edit here instead of a copy
 // hunt across pages. Keep these in sync with the Stripe Payment Links above.

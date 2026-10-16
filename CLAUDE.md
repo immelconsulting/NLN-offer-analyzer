@@ -330,8 +330,9 @@ identifying details into another user's analysis — aggregates only.
 - `src/lib/config.js` — every external URL and price label in one place: the $47 script Stripe
   link, the two session-tier Stripe links, the two per-tier Thryv links (`SESSION_TIERS`), `STRATEGY_SESSION_URL` (the
   absolute `/session` URL used by generated script PDFs — absolute because a relative link is
-  dead once the PDF leaves the site), price labels, Trustpilot URL, contact email, and the
-  `FREE_TEST_MODE` flag.
+  dead once the PDF leaves the site), price labels, Trustpilot URL, contact email, `JENNY_BIO_URL` (temporary: JobJenny's
+  team page; linked via `MeetJennyLink.jsx` on every "book a session with Jenny" decision
+  point), and the `FREE_TEST_MODE` flag.
 - `api/analyze.js`, `api/analyze-apply.js`, `api/analyze-offer-soon.js`,
   `api/generate-script.js`, `api/verify-payment.js`, `api/lead.js`, `api/leads.js`,
   `api/admin.js`, `api/login.js`, `api/event.js`, `api/stripe-webhook.js` — **11 Vercel

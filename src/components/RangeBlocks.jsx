@@ -1,3 +1,5 @@
+import MeetJennyLink from "./MeetJennyLink.jsx";
+
 // Shared building blocks for the researched-range results pages
 // (ApplyResultsPage and OfferSoonResultsPage). Both show the same range hero,
 // sources list, and callouts; only the surrounding copy and ordering differ.
@@ -181,6 +183,10 @@ export function NextStepChoice({ onGetScript, onBookSession, scriptBlurb }) {
           </span>
         </button>
       </div>
+      <p className="text-center text-sm text-slate-500 mt-4">
+        Who's Jenny Foss?{" "}
+        <MeetJennyLink className="text-navy-600 hover:text-navy-900" />
+      </p>
     </div>
   );
 }
