@@ -100,7 +100,7 @@ export default function ThankYou() {
               to="/"
               className="font-medium text-navy-600 hover:text-navy-900 transition"
             >
-              free Offer Analyzer
+              free Job Offer Analyzer
             </Link>{" "}
             — we'll build your negotiation strategy from the real numbers.
           </p>

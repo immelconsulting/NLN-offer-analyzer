@@ -88,7 +88,7 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 
 7. **Questions to ask before the call ends**, two or three, personalized to their role and to the job description if one was provided. Cover how the comp package is structured, the timeline for the process, and what success looks like in the first 90 days.
 
-8. **Sign-off**, in Alex Immel's voice, Founder & CEO of NLN. One line of genuine encouragement. Tell them that when they have an offer in writing, they should come back and run it through the Offer Analyzer at https://www.jobofferanalyzer.com/offer to build their counter. Then a soft, non-pushy line: if they would rather have a negotiator with them live on the call, NLN offers a 1:1 Negotiation Strategy Session, linked as [book a Negotiation Strategy Session]({{strategy_session_url}}). An invitation, not a pitch. Never describe it as free or as a consultation.
+8. **Sign-off**, in Alex Immel's voice, Founder & CEO of NLN. One line of genuine encouragement. Tell them that when they have an offer in writing, they should come back and run it through the Job Offer Analyzer at https://www.jobofferanalyzer.com/offer to build their counter. Then a soft, non-pushy line: if they would rather have a negotiator with them live on the call, NLN offers a 1:1 Negotiation Strategy Session, linked as [book a Negotiation Strategy Session]({{strategy_session_url}}). An invitation, not a pitch. Never describe it as free or as a consultation.
 
 ### When no range is available
 

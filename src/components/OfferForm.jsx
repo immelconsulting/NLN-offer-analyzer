@@ -193,7 +193,7 @@ export default function OfferForm() {
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
-            Offer Analyzer
+            Job Offer Analyzer
           </h1>
           <p className="text-slate-700 mt-4 max-w-xl">
             Get a clear, professional read on your job offer — and a

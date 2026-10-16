@@ -79,6 +79,9 @@ export default function LandingPage() {
 
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-12 pb-2">
+          <p className="text-sm font-semibold uppercase tracking-wider text-navy-600 mb-3">
+            Job Offer Analyzer
+          </p>
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
             Only 42% of job seekers negotiate. Nearly 9 in 10 who do, win.
           </h1>
