@@ -111,8 +111,8 @@ export default function LandingPage() {
               Where are you in your job search right now?
             </h2>
             <p className="text-sm text-slate-500 mb-4">
-              No offer yet? We'll send you prep resources to get you ready for
-              one.
+              Wherever you are, we'll tailor your analysis to the conversation
+              in front of you.
             </p>
             <div className="grid sm:grid-cols-2 gap-3">
               {STAGES.map((s) => (
