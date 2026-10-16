@@ -31,6 +31,7 @@ export const TRACKED_EVENTS = [
   "script_checkout_clicked",
   "session_checkout_clicked",
   "script_generated",
+  "script_pdf_downloaded",
   "booking_confirmed",
 ];
 

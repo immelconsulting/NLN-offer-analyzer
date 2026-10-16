@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
-const EFFECTIVE_DATE = "August 21, 2026";
+const EFFECTIVE_DATE = "October 16, 2026";
 
 function SectionHeading({ children }) {
   return (
@@ -58,7 +58,10 @@ export default function PrivacyPolicy() {
           <SectionHeading>How we use your information</SectionHeading>
           <ul className="list-disc pl-6 space-y-2 text-slate-700">
             <li>To generate your offer analysis and negotiation script</li>
-            <li>To send you the results you requested</li>
+            <li>
+              To send you the results you requested, including emailing you a
+              copy of any script you purchase
+            </li>
             <li>
               If you opt in, to send you occasional negotiation tips and
               resources by email
@@ -84,10 +87,16 @@ export default function PrivacyPolicy() {
             </li>
             <li>We use Stripe to process payments for paid features</li>
             <li>
-              We send emails directly from our own email account; if we adopt
-              a third-party email service provider in the future, it will
-              process your email address on our behalf and we'll update this
-              policy
+              We use Resend, an email service provider, to send emails such as
+              your purchased script; it processes your email address and the
+              email's contents on our behalf
+            </li>
+            <li>
+              Negotiation Strategy Sessions are delivered by our partner
+              JobJenny. If you book one, we share your name, email address,
+              phone number if you gave one, and the session you purchased with
+              JobJenny so they can schedule
+              and run it
             </li>
             <li>We do not sell your personal information to third parties</li>
           </ul>

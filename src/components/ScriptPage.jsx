@@ -8,10 +8,13 @@ import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import { track } from "../lib/track.js";
+import { buildScriptPdf, scriptPdfFilename } from "../lib/scriptPdf.js";
 
 // Post-payment destination. Stripe's Payment Link redirects here with
 // ?session_id={CHECKOUT_SESSION_ID}; the offer data was stashed in
-// localStorage by the results page before checkout.
+// localStorage by the results page before checkout. The server keeps the
+// first script written for each payment, so this same link (it's also in the
+// buyer's email) reopens that script on any device, without the stash.
 
 // Brand styling for the markdown-formatted script.
 const markdownComponents = {
@@ -79,16 +82,60 @@ const FLOW_COPY = {
 // Interviewing buys the identical screening-call script.
 FLOW_COPY.interview = FLOW_COPY.apply;
 
-// Rendered both above and below the script. window.print() is the whole
-// mechanism; the browser's own dialog does the saving.
-function DownloadPdfButton() {
+// pdfmake is large, so it's only fetched once a script is on screen (the
+// page starts the fetch then, so the button is quick when clicked).
+let pdfMakePromise = null;
+const loadPdfMake = () =>
+  (pdfMakePromise ||= Promise.all([import("pdfmake/build/pdfmake"), import("pdfmake/build/vfs_fonts")]).then(
+    ([pdfMakeModule, fontsModule]) => {
+      const pdfMake = pdfMakeModule.default || pdfMakeModule;
+      pdfMake.addVirtualFileSystem(fontsModule.default || fontsModule);
+      return pdfMake;
+    }
+  ).catch((err) => {
+    pdfMakePromise = null; // let the next click retry
+    throw err;
+  }));
+
+// Rendered both above and below the script. Builds a real PDF file: it
+// downloads, and also opens in a new tab so people can see it straight away.
+// The tab has to be opened synchronously in the click, or pop-up blockers
+// stop it, so it's opened first and the PDF is poured into it when ready.
+function DownloadPdfButton({ script, title, subtitle }) {
+  const [busy, setBusy] = useState(false);
+
+  async function handleClick() {
+    track("script_pdf_downloaded");
+    const tab = window.open("", "_blank");
+    if (tab) {
+      tab.document.title = "Preparing your PDF…";
+      tab.document.body.innerHTML =
+        '<p style="font-family:sans-serif;padding:2rem;color:#334155">Preparing your PDF…</p>';
+    }
+    setBusy(true);
+    try {
+      const pdfMake = await loadPdfMake();
+      const pdf = pdfMake.createPdf(buildScriptPdf({ script, title, subtitle }));
+      await pdf.download(scriptPdfFilename(title));
+      if (tab) await pdf.open(tab);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      if (tab) tab.close();
+      // Last resort: the browser's own print-to-PDF.
+      window.print();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <button
       type="button"
-      onClick={() => window.print()}
-      className="inline-flex items-center gap-2 rounded-md border border-navy-700 text-navy-800 font-medium px-5 py-2.5 hover:bg-navy-50 transition"
+      onClick={handleClick}
+      disabled={busy}
+      className="inline-flex items-center gap-2 rounded-md bg-navy-900 hover:bg-navy-600 disabled:opacity-60 text-white font-semibold px-5 py-2.5 shadow-sm transition"
     >
-      ⤓ Download as PDF
+      {busy ? "Preparing PDF…" : "⤓ Download PDF"}
     </button>
   );
 }
@@ -109,16 +156,30 @@ export default function ScriptPage() {
   // Which funnel produced this purchase. Offer-flow stashes predate the
   // field and decode without it, so anything unrecognized is an offer.
   const flow = isKnownFlow(data?.flow) ? data.flow : "offer";
-  const isPreOffer = usesTargetFields(flow);
-  const copy = FLOW_COPY[flow] || FLOW_COPY.offer;
 
   const [script, setScript] = useState("");
+  const [saved, setSaved] = useState(null); // { flow, subtitle, emailedTo } from the server
   const [error, setError] = useState("");
+  const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
+  // A script reopened from another device knows its flow only from the server.
+  const shownFlow = isKnownFlow(saved?.flow) ? saved.flow : flow;
+  const isPreOffer = usesTargetFields(shownFlow);
+  const copy = FLOW_COPY[shownFlow] || FLOW_COPY.offer;
+  const subtitle =
+    saved?.subtitle ||
+    (data?.form
+      ? `${isPreOffer ? data.form.targetRole : data.form.role}${
+          (isPreOffer ? data.form.targetCompany : data.form.company)
+            ? ` at ${isPreOffer ? data.form.targetCompany : data.form.company}`
+            : ""
+        } · ${data.form.location}`
+      : "");
+
   useEffect(() => {
-    if (!sessionId || !data) return;
+    if (!sessionId) return;
     let cancelled = false;
 
     async function generate() {
@@ -131,17 +192,23 @@ export default function ScriptPage() {
           body: JSON.stringify({
             sessionId,
             flow,
-            form: data.form,
-            analysis: data.analysis,
+            form: data?.form,
+            analysis: data?.analysis,
           }),
         });
         const body = await res.json().catch(() => ({}));
+        if (res.status === 404) {
+          if (!cancelled) setNotFound(true);
+          return;
+        }
         if (!res.ok) {
           throw new Error(body.error || "Something went wrong generating your script.");
         }
         if (!cancelled) {
           setScript(body.script);
-          track("script_generated");
+          setSaved({ flow: body.flow, subtitle: body.subtitle, emailedTo: body.emailedTo });
+          // Reopening a saved script isn't a new delivery for the funnel.
+          if (!body.reopened) track("script_generated");
         }
       } catch (err) {
         if (!cancelled) setError(err.message || "Something went wrong. Please try again.");
@@ -156,6 +223,10 @@ export default function ScriptPage() {
     };
   }, [sessionId, data, attempt, flow]);
 
+  useEffect(() => {
+    if (script) loadPdfMake().catch(() => {});
+  }, [script]);
+
   return (
     <div className="min-h-screen bg-navy-50">
       <SiteHeader />
@@ -165,20 +236,12 @@ export default function ScriptPage() {
           <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-950">
             {copy.title}
           </h1>
-          {data?.form && (
-            <p className="text-slate-700 mt-4">
-              {isPreOffer ? data.form.targetRole : data.form.role}
-              {(isPreOffer ? data.form.targetCompany : data.form.company)
-                ? ` at ${isPreOffer ? data.form.targetCompany : data.form.company}`
-                : ""}{" "}
-              · {data.form.location}
-            </p>
-          )}
+          {subtitle && <p className="text-slate-700 mt-4">{subtitle}</p>}
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-8">
-        {(!sessionId || !data) && (
+        {(!sessionId || notFound) && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 text-center">
             <p className="text-lg font-medium text-navy-900 mb-2">
               We couldn't find your offer details.
@@ -186,7 +249,7 @@ export default function ScriptPage() {
             <p className="text-slate-600 max-w-md mx-auto mb-6">
               {!sessionId
                 ? "This page needs to be reached through the payment confirmation link."
-                : "Your script is generated in the same browser you used to analyze your offer. Re-open your results there, or contact us and we'll make it right."}
+                : "Your script is written in the same browser you used to analyze your offer. Open this link there, or contact us and we'll make it right."}
             </p>
             <Link
               to="/"
@@ -229,8 +292,13 @@ export default function ScriptPage() {
           <>
             {/* Also offered above the script: these run long, and someone who
                 wants the PDF shouldn't have to scroll the whole thing first. */}
-            <div className="flex justify-end -mb-4 print:hidden">
-              <DownloadPdfButton />
+            <div className="flex flex-wrap items-center justify-between gap-3 -mb-4 print:hidden">
+              <p className="text-sm text-slate-600">
+                {saved?.emailedTo
+                  ? `We've also emailed a copy to ${saved.emailedTo}.`
+                  : "Bookmark this page to come back to your script any time."}
+              </p>
+              <DownloadPdfButton script={script} title={copy.title} subtitle={subtitle} />
             </div>
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:border-0 print:shadow-none print:p-0">
               <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
@@ -238,10 +306,7 @@ export default function ScriptPage() {
               </ReactMarkdown>
             </div>
             <div className="text-center print:hidden">
-              <DownloadPdfButton />
-              <p className="text-xs text-slate-500 mt-2">
-                Choose "Save as PDF" in the print dialog.
-              </p>
+              <DownloadPdfButton script={script} title={copy.title} subtitle={subtitle} />
             </div>
             <p className="text-center text-sm text-slate-500 print:text-left print:mt-4">
               This script was generated by AI based on NLN's methodology and

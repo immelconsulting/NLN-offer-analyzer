@@ -87,7 +87,17 @@ paid tier.
    the stash and POSTs to `/api/generate-script`, which verifies the checkout session is paid
    (`paid` or `no_payment_required`) via `STRIPE_SECRET_KEY`, then generates the counter-offer
    script from `script-generator-prompt.md`. Output is markdown (comp table via remark-gfm),
-   rendered with react-markdown; page offers Download-as-PDF (window.print) and a feedback mailto.
+   rendered with react-markdown, plus a feedback mailto. **One payment = one script:** the first
+   script for a checkout session is saved at `nln:script:<session_id>` (2-year TTL), and any
+   later request for that session returns it (`reopened: true`) with no model call and no
+   offer data needed, so the same `/script?session_id=` link works on any device. The first
+   time, the buyer (Stripe `customer_details.email`) is emailed the script plus that link via
+   Resend (`sendScriptEmail` in `api/_lib/email.js`). `test_skip_payment` is never saved or
+   emailed. **Download PDF** builds a real PDF client-side with pdfmake (`src/lib/scriptPdf.js`,
+   markdown → pdfmake; 🗣️ becomes "Say:" since Roboto has no emoji; includes the AI
+   disclaimer), downloads it and opens it in a tab opened synchronously in the click so pop-up
+   blockers allow it; pdfmake is lazy-loaded (prefetched once a script is shown) and falls back
+   to `window.print()` on failure.
    The script's own sign-off links directly to `STRATEGY_SESSION_URL` (not `/session`), since it
    must still work when the script is downloaded/printed as a standalone PDF outside the app.
    The prompt holds a `{{strategy_session_url}}` placeholder that `api/generate-script.js`
@@ -320,7 +330,7 @@ identifying details into another user's analysis — aggregates only.
   `api/generate-script.js`, `api/verify-payment.js`, `api/lead.js`, `api/leads.js`,
   `api/admin.js`, `api/login.js`, `api/event.js`, `api/stripe-webhook.js` — **11 Vercel
   functions; the Hobby plan caps at 12**, so only one slot remains before the plan matters. Shared helpers live in `api/_lib/` (underscore = not deployed as functions):
-  `store.js` (Upstash), `comparables.js`, `extract.js`, `analysis.js` (the shared web-search
+  `store.js` (Upstash), `comparables.js`, `extract.js`, `email.js` (Resend), `analysis.js` (the shared web-search
   loop), `auth.js` (admin sessions), and `payment.js` (one Stripe checkout verifier, used by
   both the script and the session booking gate).
 - Brand: navy scale in `tailwind.config.js` (#001E34 / #16163F / #0099CC / #6BCCF7 / #D8F0F8),
@@ -331,7 +341,7 @@ identifying details into another user's analysis — aggregates only.
 `ANTHROPIC_API_KEY`, `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Upstash marketplace integration;
 code also accepts `UPSTASH_*` names), `STRIPE_SECRET_KEY`, `LEADS_EXPORT_TOKEN`,
 `ALLOW_TEST_BYPASS` (temporary, see below), `RESEND_API_KEY` + optional `SESSION_ALERT_TO` /
-`SESSION_ALERT_FROM` (session purchase alerts, below).
+`SESSION_ALERT_FROM` (session purchase alerts) / `SCRIPT_EMAIL_FROM` (buyer script emails).
 
 ## Testing without paying
 

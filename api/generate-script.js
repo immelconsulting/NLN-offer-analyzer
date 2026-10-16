@@ -3,12 +3,31 @@ import fs from "fs";
 import path from "path";
 import { getRedis, getSubmission, updateSubmission } from "./_lib/store.js";
 import { verifyPayment } from "./_lib/payment.js";
+import { sendScriptEmail } from "./_lib/email.js";
 import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
 
 // Generates the paid counter-offer script. The client sends the Stripe
 // Checkout session id from the Payment Link redirect plus the offer data it
 // kept in localStorage; we confirm the session is actually paid before
 // calling the model.
+//
+// One payment = one script. The first script for a checkout session is kept
+// under nln:script:<session id>, and every later request for that session
+// (a reload, another device, the link in the buyer's email) gets that same
+// script back without the offer data, without a new model call. The buyer is
+// emailed a copy with that link the first time it's written.
+
+const SITE_URL = new URL(STRATEGY_SESSION_URL).origin;
+const SCRIPT_TTL_SECONDS = 60 * 60 * 24 * 365 * 2;
+const scriptKey = (sessionId) => `nln:script:${sessionId}`;
+
+// Same titles the script page shows, used for the emailed copy.
+const SCRIPT_TITLES = {
+  offer: "Your Counter-Offer Script",
+  apply: "Your Recruiter Screening Call Script",
+  interview: "Your Recruiter Screening Call Script",
+  offer_soon: "Your Offer Call Script",
+};
 
 // One prompt file per flow.
 const PROMPT_FILES = {
@@ -329,8 +348,27 @@ export default async function handler(req, res) {
   if (!sessionId) {
     return res.status(400).json({ error: "Missing payment session." });
   }
+
+  // The shared test id is used by everyone, so it's never cached or emailed.
+  const isRealPayment = sessionId !== "test_skip_payment";
+  const redis = getRedis();
+  if (isRealPayment && redis) {
+    try {
+      const saved = await redis.get(scriptKey(sessionId));
+      if (saved?.script) {
+        return res.status(200).json({ script: saved.script, flow: saved.flow, subtitle: saved.subtitle, reopened: true });
+      }
+    } catch (err) {
+      console.error("Saved script lookup failed:", err);
+    }
+  }
+
   if (!form || !analysis) {
-    return res.status(400).json({ error: "Missing offer details." });
+    // Reopened somewhere without the offer details, and nothing saved yet.
+    return res.status(404).json({
+      error:
+        "We couldn't find a script for this payment yet. Open this link in the browser you used to analyze your offer, or email us and we'll sort it out.",
+    });
   }
   if (isPreOffer) {
     if (!form.targetRole || !form.location) {
@@ -366,7 +404,6 @@ export default async function handler(req, res) {
     }
     if (analysis.submissionId) {
       try {
-        const redis = getRedis();
         const record = redis
           ? await getSubmission(redis, analysis.submissionId)
           : null;
@@ -402,9 +439,44 @@ export default async function handler(req, res) {
 
     // Attach the script to the stored submission (id travels inside the
     // analysis object from /api/analyze). Never blocks the user on failure.
+    const role = isPreOffer ? form.targetRole : form.role;
+    const company = isPreOffer ? form.targetCompany : form.company;
+    const subtitle = `${role}${company ? ` at ${company}` : ""} · ${form.location}`;
+
+    let emailedTo = null;
+    if (isRealPayment && redis) {
+      try {
+        // NX: if two tabs raced, the first saved script wins and is the one
+        // everyone sees from now on.
+        const first = await redis.set(
+          scriptKey(sessionId),
+          { script, flow, subtitle, createdAt: new Date().toISOString() },
+          { nx: true, ex: SCRIPT_TTL_SECONDS }
+        );
+        if (!first) {
+          const saved = await redis.get(scriptKey(sessionId));
+          if (saved?.script) {
+            return res.status(200).json({ script: saved.script, flow: saved.flow, subtitle: saved.subtitle, reopened: true });
+          }
+        }
+        const buyerEmail = payment.session?.customer_details?.email;
+        if (first && buyerEmail) {
+          await sendScriptEmail({
+            to: buyerEmail,
+            title: SCRIPT_TITLES[flow],
+            script,
+            scriptUrl: `${SITE_URL}/script?session_id=${encodeURIComponent(sessionId)}`,
+          });
+          emailedTo = buyerEmail;
+        }
+      } catch (err) {
+        // Never block the buyer from seeing their script.
+        console.error("Saving or emailing the script failed:", err);
+      }
+    }
+
     if (analysis.submissionId) {
       try {
-        const redis = getRedis();
         if (redis) {
           await updateSubmission(redis, analysis.submissionId, {
             script,
@@ -416,7 +488,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ script });
+    return res.status(200).json({ script, flow, subtitle, emailedTo });
   } catch (err) {
     console.error("Script generation failed:", err);
     return res.status(502).json({

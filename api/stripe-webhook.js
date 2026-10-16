@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { getRedis } from "./_lib/store.js";
 import { strategySessionTier } from "./_lib/payment.js";
+import { sendEmail } from "./_lib/email.js";
 import { CONTACT_EMAIL } from "../src/lib/config.js";
 
 // Emails JobJenny the moment someone buys a strategy session, so Alisa can
@@ -84,9 +85,6 @@ export default async function handler(req, res) {
 }
 
 export async function sendAlert(session, tier) {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) throw new Error("RESEND_API_KEY is not set");
-
   const name = session.customer_details?.name || "(no name given)";
   const email = session.customer_details?.email || "(no email given)";
   const phone = session.customer_details?.phone;
@@ -111,17 +109,12 @@ export async function sendAlert(session, tier) {
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const r = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: process.env.SESSION_ALERT_FROM || "NLN Alerts <alerts@nextlevelnegotiation.com>",
-      to,
-      cc: [CONTACT_EMAIL],
-      reply_to: session.customer_details?.email || undefined,
-      subject: `New Strategy Session (${tier.label}): ${name}`,
-      text: lines.join("\n"),
-    }),
+  await sendEmail({
+    from: process.env.SESSION_ALERT_FROM || "NLN Alerts <alerts@nextlevelnegotiation.com>",
+    to,
+    cc: [CONTACT_EMAIL],
+    replyTo: session.customer_details?.email || undefined,
+    subject: `New Strategy Session (${tier.label}): ${name}`,
+    text: lines.join("\n"),
   });
-  if (!r.ok) throw new Error(`Resend ${r.status}: ${await r.text()}`);
 }
