@@ -2,7 +2,10 @@
 
 AI-powered salary negotiation funnel for Next Level Negotiation (NLN), founded by Alex Immel
 (alex@nextlevelnegotiation.com). React 18 + Vite + Tailwind, deployed on Vercel at
-https://nln-offer-analyzer.vercel.app (repo: immelconsulting/NLN-offer-analyzer, deploys from `main`).
+**https://www.jobofferanalyzer.com** (added Oct 15, 2026; GoDaddy DNS, apex redirects to www).
+The old https://nln-offer-analyzer.vercel.app still serves the same app and must keep working,
+since scripts downloaded before the switch link there (repo: immelconsulting/NLN-offer-analyzer,
+deploys from `main`).
 Alex is non-technical: explain changes in plain English and give click-by-click steps for
 dashboards (Stripe, Vercel, Trustpilot).
 

@@ -14,7 +14,7 @@ import Stripe from "stripe";
 import readline from "node:readline/promises";
 
 const EXPECTED_ACCOUNT = "acct_1MRh0gKjxEB5kBDn";
-const DOMAIN = process.env.BOOKING_DOMAIN || "nln-offer-analyzer.vercel.app";
+const DOMAIN = process.env.BOOKING_DOMAIN || "www.jobofferanalyzer.com";
 const REDIRECT_URL = `https://${DOMAIN}/booking?session_id={CHECKOUT_SESSION_ID}`;
 
 const TIERS = [

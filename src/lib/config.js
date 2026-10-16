@@ -16,7 +16,7 @@ export const STRIPE_PAYMENT_LINK_URL = "https://buy.stripe.com/00w9AU2v923D39K5l
 // absolute URL — the script is downloaded and read outside the app, so a
 // relative "/session" link would be dead there. Pointing it at the sell page
 // (rather than straight at a checkout link) lets the reader pick their tier.
-export const STRATEGY_SESSION_URL = "https://nln-offer-analyzer.vercel.app/session";
+export const STRATEGY_SESSION_URL = "https://www.jobofferanalyzer.com/session";
 
 // Stripe Payment Links for the two session tiers, one per price.
 //

@@ -26,7 +26,7 @@ const HANDLED_EVENTS = [
   "checkout.session.completed",
   "checkout.session.async_payment_succeeded",
 ];
-const ADMIN_URL = "https://nln-offer-analyzer.vercel.app/admin";
+const ADMIN_URL = "https://www.jobofferanalyzer.com/admin";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
