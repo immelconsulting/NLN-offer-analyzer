@@ -95,8 +95,11 @@ export default function PrivacyPolicy() {
               Negotiation Strategy Sessions are delivered by our partner
               JobJenny. If you book one, we share your name, email address,
               phone number if you gave one, and the session you purchased with
-              JobJenny so they can schedule
-              and run it
+              JobJenny so they can schedule and run it. To help them prepare,
+              we also share your most recent Job Offer Analyzer submission made
+              with the same email address: your answers, your analysis, the
+              text of any resume or job description you uploaded, and any
+              script you purchased
             </li>
             <li>We do not sell your personal information to third parties</li>
           </ul>

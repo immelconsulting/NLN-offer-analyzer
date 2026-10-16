@@ -131,7 +131,13 @@ paid tier.
    `checkout.session.completed` + `checkout.session.async_payment_succeeded`, re-fetches the
    event from Stripe by id instead of checking a signature, ignores anything that isn't a
    session tier (`strategySessionTier()` in `api/_lib/payment.js`, shared with
-   `/api/verify-payment`), and dedupes per checkout in Redis.
+   `/api/verify-payment`), and dedupes per checkout in Redis. The alert also carries the
+   buyer's **most recent analyzer submission** matched on their checkout email
+   (`buildClientContext()` in `api/_lib/clientContext.js`): a per-flow plain-text summary
+   (form answers incl. current salary / total comp, analysis highlights) plus `resume.txt`,
+   `job-description.txt` and `their-script.txt` attachments when present. Only extracted text
+   is ever stored, so attachments are .txt (keeping original files would need Vercel Blob;
+   deferred). No match → the alert says so. Disclosed in the privacy policy's JobJenny line.
 
 ## Pre-offer flow: Applying + Interviewing (added Sept 20, 2026)
 
