@@ -5,14 +5,14 @@ import { CONTACT_EMAIL } from "../../src/lib/config.js";
 // via Wix DNS). Used for the JobJenny session alert and for emailing buyers
 // their script. Throws on failure; callers decide whether that matters.
 
-export async function sendEmail({ from, to, cc, replyTo, subject, text, html }) {
+export async function sendEmail({ from, to, cc, replyTo, subject, text, html, attachments }) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) throw new Error("RESEND_API_KEY is not set");
 
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to, cc, reply_to: replyTo, subject, text, html }),
+    body: JSON.stringify({ from, to, cc, reply_to: replyTo, subject, text, html, attachments }),
   });
   if (!r.ok) throw new Error(`Resend ${r.status}: ${await r.text()}`);
 }

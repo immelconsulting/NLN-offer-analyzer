@@ -56,6 +56,11 @@ export async function saveSubmission(redis, record) {
   }
 }
 
+// Newest first, since saveSubmission pushes onto the front.
+export async function listSubmissionIdsByEmail(redis, email, limit = 10) {
+  return (await redis.lrange(emailKey(email), 0, limit - 1)) || [];
+}
+
 export async function getSubmission(redis, id) {
   const raw = await redis.get(subKey(id));
   if (!raw) return null;

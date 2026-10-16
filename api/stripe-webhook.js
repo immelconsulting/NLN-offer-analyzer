@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { getRedis } from "./_lib/store.js";
 import { strategySessionTier } from "./_lib/payment.js";
 import { sendEmail } from "./_lib/email.js";
+import { buildClientContext } from "./_lib/clientContext.js";
 import { CONTACT_EMAIL } from "../src/lib/config.js";
 
 // Emails JobJenny the moment someone buys a strategy session, so Alisa can
@@ -74,7 +75,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await sendAlert(session, tier);
+    await sendAlert(session, tier, await buildClientContext(redis, session.customer_details?.email));
   } catch (err) {
     console.error("Webhook: alert email failed:", session.id, err.message);
     // Release the lock so Stripe's retry gets another go.
@@ -84,7 +85,7 @@ export default async function handler(req, res) {
   return res.status(200).json({ alerted: true });
 }
 
-export async function sendAlert(session, tier) {
+export async function sendAlert(session, tier, context = { text: "", attachments: [] }) {
   const name = session.customer_details?.name || "(no name given)";
   const email = session.customer_details?.email || "(no email given)";
   const phone = session.customer_details?.phone;
@@ -101,6 +102,7 @@ export async function sendAlert(session, tier) {
     "",
     "They've been sent to the Thryv calendar for this tier to pick a time.",
     "",
+    ...(context.text ? [context.text, ""] : []),
     `NLN admin: ${ADMIN_URL}`,
   ];
 
@@ -116,5 +118,6 @@ export async function sendAlert(session, tier) {
     replyTo: session.customer_details?.email || undefined,
     subject: `New Strategy Session (${tier.label}): ${name}`,
     text: lines.join("\n"),
+    attachments: context.attachments.length ? context.attachments : undefined,
   });
 }
