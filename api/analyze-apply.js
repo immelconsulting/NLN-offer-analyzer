@@ -11,6 +11,7 @@ import {
   RISK_TO_STRATEGY,
   normalizeRange,
 } from "./_lib/analysis.js";
+import { rejectIfOverLimit } from "./_lib/rateLimit.js";
 
 // Pre-offer analysis, shared by the Applying and Interviewing stages. No
 // offer exists yet, so instead of scoring one this returns a researched
@@ -164,6 +165,8 @@ export default async function handler(req, res) {
   ) {
     return res.status(400).json({ error: "Missing required details." });
   }
+
+  if (await rejectIfOverLimit(req, res, "analysis")) return;
 
   try {
     const client = new Anthropic({ apiKey });

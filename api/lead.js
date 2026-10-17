@@ -1,4 +1,5 @@
 import { Redis } from "@upstash/redis";
+import { rejectIfOverLimit } from "./_lib/rateLimit.js";
 
 // Stores one lead per request in an Upstash Redis list. Requires
 // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN env vars
@@ -17,6 +18,7 @@ export default async function handler(req, res) {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !stage) {
     return res.status(400).json({ error: "A valid email and stage are required." });
   }
+  if (await rejectIfOverLimit(req, res, "lead")) return;
 
   // Vercel's Upstash integration names these KV_*; a manual Upstash setup
   // uses UPSTASH_*. Accept either.

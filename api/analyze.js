@@ -10,6 +10,7 @@ import {
 import { buildComparablesSummary } from "./_lib/comparables.js";
 import { extractTextFromUpload } from "./_lib/extract.js";
 import { runSearchAnalysis, SOURCES_SCHEMA } from "./_lib/analysis.js";
+import { rejectIfOverLimit } from "./_lib/rateLimit.js";
 
 // Loads the system prompt from system-prompt.md at the project root so it can
 // be edited without touching this file. Falls back to a placeholder if the
@@ -153,6 +154,8 @@ export default async function handler(req, res) {
   if (!form || !form.role || !form.location || !form.offerBaseSalary) {
     return res.status(400).json({ error: "Missing required offer details." });
   }
+
+  if (await rejectIfOverLimit(req, res, "analysis")) return;
 
   try {
     const client = new Anthropic({ apiKey });

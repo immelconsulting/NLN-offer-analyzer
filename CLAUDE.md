@@ -342,6 +342,16 @@ identifying details into another user's analysis — aggregates only.
 - Brand: navy scale in `tailwind.config.js` (#001E34 / #16163F / #0099CC / #6BCCF7 / #D8F0F8),
   logos in `src/assets/`, Trustpilot green #00B67A for stars.
 
+## Rate limits (added Oct 17, 2026)
+
+`api/_lib/rateLimit.js`: per-IP daily caps in Redis (`nln:rl:<bucket>:<UTC day>:<ip>`):
+**10 analyses/day shared across all four analyzers** (Alex's call; each one costs real money in
+web searches and model calls), 30 leads/day, 500 events/day. Over the cap → 429 with a friendly
+message the forms already display. Logged-in admins are exempt (the `nln_admin` cookie is
+`Path=/`), and it fails open if Redis is down. Checked after validation, so a rejected form
+doesn't use up an attempt. No CAPTCHA by design: friction for JobJenny's clients, and the cap
+covers the real risk (cost). Backstop: a monthly spend limit on the Anthropic account.
+
 ## Environment variables (Vercel)
 
 `ANTHROPIC_API_KEY`, `KV_REST_API_URL` + `KV_REST_API_TOKEN` (Upstash marketplace integration;

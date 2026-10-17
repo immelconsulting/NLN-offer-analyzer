@@ -6,6 +6,7 @@ import {
   eventCountKey,
   eventDay,
 } from "./_lib/store.js";
+import { rejectIfOverLimit } from "./_lib/rateLimit.js";
 
 // Records one funnel event per request. Same storage pattern as lead.js.
 // Unauthenticated by design — these are anonymous counts, never PII — but the
@@ -26,6 +27,7 @@ export default async function handler(req, res) {
   if (!event || !TRACKED_EVENTS.includes(event)) {
     return res.status(400).json({ error: "Unknown event." });
   }
+  if (await rejectIfOverLimit(req, res, "event")) return;
 
   // Vercel's Upstash integration names these KV_*; a manual Upstash setup
   // uses UPSTASH_*. Accept either.

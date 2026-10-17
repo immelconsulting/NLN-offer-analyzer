@@ -11,6 +11,7 @@ import {
   RISK_TO_STRATEGY,
   normalizeRange,
 } from "./_lib/analysis.js";
+import { rejectIfOverLimit } from "./_lib/rateLimit.js";
 
 // Expecting-an-offer-soon analysis. No offer exists yet, but one is coming
 // from a named company, so this returns a researched picture of what a strong
@@ -199,6 +200,8 @@ export default async function handler(req, res) {
   ) {
     return res.status(400).json({ error: "Missing required details." });
   }
+
+  if (await rejectIfOverLimit(req, res, "analysis")) return;
 
   try {
     const client = new Anthropic({ apiKey });
