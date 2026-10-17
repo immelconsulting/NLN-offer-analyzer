@@ -9,30 +9,27 @@ deploys from `main`).
 Alex is non-technical: explain changes in plain English and give click-by-click steps for
 dashboards (Stripe, Vercel, Trustpilot).
 
-## Current status (Sept 11, 2026)
+## Current status (Oct 17, 2026; launch with JobJenny Oct 20)
 
-Two products ship from this funnel:
+Two products ship from this funnel, both live with real Stripe payments:
 
-1. **$47 self-serve counter-offer script** — fully live and working end-to-end, including real
-   Stripe payments. Nothing outstanding.
-2. **Paid Negotiation Strategy Session** ($199 / 30 min, $329 / hour) — pages are built and
-   deployed, but **two URLs are still `REPLACE_ME` placeholders in `src/lib/config.js`**, so
-   checkout is non-functional until they're filled in:
-   - `STRATEGY_SESSION_30MIN_CHECKOUT_URL` — Stripe Payment Link, $199 tier
-   - `STRATEGY_SESSION_60MIN_CHECKOUT_URL` — Stripe Payment Link, $329 tier
+1. **$47 self-serve script** (one per flow: counter-offer, screening-call, offer-call).
+2. **Negotiation Strategy Session with Jenny Foss** ($199 / 30 min, $329 / hour). Live Payment
+   Links `STRATEGY_SESSION_30MIN_CHECKOUT_URL` / `_60MIN_` in `src/lib/config.js` were made in
+   the Stripe dashboard on Oct 10 (so their Prices have **no lookup key**; the tier is read from
+   the Price amount, see item 9). Each tier reveals its own Thryv calendar on `/booking`, and
+   every purchase emails `info@jobjenny.com` (item 10).
 
-   Create them with `scripts/create-session-payment-links.js` (Alex runs it locally with his
-   own key; it checks the account is `acct_1MRh0gKjxEB5kBDn`, tags each Price with a lookup
-   key, and sets the redirect to `https://<domain>/booking?session_id={CHECKOUT_SESSION_ID}`).
-   Until then the tier buttons lead to dead Stripe URLs. Sessions are run by **Jenny Foss**,
-   named on every session CTA. The Thryv calendars are real: `THRIVE_30MIN_BOOKING_URL` and
-   `THRIVE_60MIN_BOOKING_URL`, one direct link per tier.
+**Still open before/at launch:** free-test mode is still ON in production (see "Testing without
+paying"; switch off on Oct 19 once Alisa's audit is done); Alisa's notes on two flows are
+pending; `JENNY_BIO_URL` is a temporary team-page link. `scripts/create-session-payment-links.js`
+was written for creating the links but never run; keep it only as a reference for the shape.
 
-**JobJenny pilot:** strategy sessions are delivered by the JobJenny team (Jenny/Alisa), not
-Alex. Most `/session` visitors are JobJenny coaching clients sent there straight after their
-resume/LinkedIn work — see item 8 below, that audience drives the page's copy rules. There is
-no longer a free-consult path anywhere in the funnel; every "talk to a human" CTA leads to a
-paid tier.
+**JobJenny pilot:** sessions are run by **Jenny Foss**, not Alex, and she's named (with a bio link)
+on every "book a session" decision point. Alisa runs JobJenny's operations. Most `/session`
+visitors are JobJenny coaching clients sent there straight after their resume/LinkedIn work —
+see item 8 below, that audience drives the page's copy rules. There is no free-consult path
+anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
 
 ## Funnel (script path verified end-to-end, including a real Stripe payment)
 
@@ -118,8 +115,10 @@ paid tier.
    ProofPage's script testimonial, which is about the script product.
 9. `/booking` **BookingPage** — post-payment destination for both session tiers. Stripe redirects
    here with `?session_id={CHECKOUT_SESSION_ID}`; the page POSTs to `/api/verify-payment`,
-   which expands the session's line items, maps the Price's `lookup_key` through
-   `SESSION_TIERS` in config.js, and returns that tier's Thryv link. A paid session with no
+   which expands the session's line items and resolves the tier with `strategySessionTier()`
+   (`api/_lib/payment.js`): the Price's `lookup_key` if set, else its `unit_amount`
+   (19900 / 32900, unaffected by promo codes; the live dashboard-made Prices use this path).
+   It returns that tier's Thryv link from `SESSION_TIERS` in config.js. A paid session with no
    session tier (e.g. a $47 script purchase) gets no calendar. The Thryv URLs are only read
    server-side, so they don't ship in the browser bundle. Test with
    `/booking?session_id=test_skip_payment&tier=30` (or `60`).
@@ -355,7 +354,8 @@ code also accepts `UPSTASH_*` names), `STRIPE_SECRET_KEY`, `LEADS_EXPORT_TOKEN`,
 `session_id=test_skip_payment` skips Stripe verification — always on non-production deployments,
 and in production only while `ALLOW_TEST_BYPASS=true`. Two visible testing links use it, both
 gated by `FREE_TEST_MODE` in config.js: "[Testing] Generate my script free" on `/proof`, and
-"[Testing] Skip payment and preview the booking step" on `/session` (jumps to `/booking`).
+"[Testing] Skip payment (30 / 60 min booking step)" on `/session` (jumps to
+`/booking?...&tier=30|60`). **As of Oct 17 `ALLOW_TEST_BYPASS=true` is set in production.**
 **This free-test path is temporary — remove both flags when testing ends** (set
 `FREE_TEST_MODE = false` to hide the links, delete `ALLOW_TEST_BYPASS` in Vercel to close the
 server-side bypass, then redeploy).
@@ -368,8 +368,14 @@ Alex has multiple Stripe accounts, two formerly both named "Immel Consulting LLC
 account (payment link, coupons, secret key must ALL live here) is `acct_1MRh0gKjxEB5kBDn`,
 renamed "Next Level Negotiation". Stripe object IDs embed the account fingerprint (the chars
 after the 6-char unique part match the account ID tail) — useful to detect wrong-account objects.
-After-payment redirects: the $47 script link → `https://<domain>/script?session_id={CHECKOUT_SESSION_ID}`;
-**both** session-tier links → `https://<domain>/booking?session_id={CHECKOUT_SESSION_ID}`.
+After-payment redirects (moved to the new domain Oct 15: the $47 link is confirmed working there;
+the two session links and the webhook were handed to Alex to update and are **not yet
+confirmed**; the old vercel.app URLs keep working either way): the $47 script link → `https://www.jobofferanalyzer.com/script?session_id={CHECKOUT_SESSION_ID}`;
+**both** session-tier links → `https://www.jobofferanalyzer.com/booking?session_id={CHECKOUT_SESSION_ID}`.
+Webhook endpoint: `https://www.jobofferanalyzer.com/api/stripe-webhook` (must be `www.`; Stripe
+doesn't follow the apex redirect). Events: `checkout.session.completed`,
+`checkout.session.async_payment_succeeded`. The checkout page's header shows the account's public
+business name, still "Immel Consulting LLC"; that's expected, not a wrong-account sign.
 
 ## Script content rules (Alex's voice — do not regress)
 
@@ -383,8 +389,8 @@ negotiating. No day-specific timing advice unless the deadline confirms a safe w
 Industry lens (tech=base/equity; healthcare/gov/nonprofit=non-salary levers; finance/legal=
 bonus/sign-on) never overrides actual offer data. Paid-session mentions link
 `STRATEGY_SESSION_URL` (`src/lib/config.js`) — a Negotiation Strategy Session, never called a
-"free consult" or a "quickie". As of the JobJenny pilot this books time with the JobJenny team
-(Jenny/Alisa), not Alex; the script-generator prompt gets the same URL substituted in at request
+"free consult" or a "quickie". As of the JobJenny pilot this books time with Jenny Foss, not
+Alex; the script-generator prompt gets the same URL substituted in at request
 time (`{{strategy_session_url}}` in `script-generator-prompt.md`, filled by
 `api/generate-script.js`) so it's a one-place update, not two. No fake urgency, no crossed-out
 prices.
