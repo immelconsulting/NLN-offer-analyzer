@@ -310,6 +310,9 @@ script when generated), indexed by `nln:subs` (newest first) and `nln:subs:email
 Append-only history; email comes from the landing-page session (`leadEmail` in the analyze
 payload). `analysis.submissionId` rides inside the encoded `?d=` data so `/api/generate-script`
 can attach the script to the same record. Storage failures never block users.
+**The Upstash database is on the free plan: no automatic backups** (Alex's choice, Oct 18, 2026).
+He exports it by hand from Upstash → Backups → Export every couple of weeks; the free plan's
+monthly command cap is the other limit to watch if traffic grows.
 
 Pre-offer submissions store the same way with `flow: "apply"`, `"interview"` or `"offer_soon"`; offer
 records predate the field, so anything unmarked is an offer.
