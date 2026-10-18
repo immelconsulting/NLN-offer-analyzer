@@ -1,0 +1,26 @@
+# Runs on every pull request and every push to main: lint, unit tests, and a
+# production build. Needs no secrets: the tests fake Stripe, Claude, Redis
+# and Resend, so nothing here can charge a card, send an email, or touch
+# customer data.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
