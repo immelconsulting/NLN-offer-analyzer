@@ -76,7 +76,7 @@ const fmtMoney = (n) => `$${Math.round(n).toLocaleString("en-US")}`;
 // The form asks for TOTAL annual compensation, so it may only be compared
 // against the total_comp range. Comparing it to base would silently inflate
 // the base floor, since total comp normally sits well above base.
-function applyFloors(form, analysis) {
+export function applyFloors(form, analysis) {
   const range = analysis.market_range;
   const currentTotal = parseMoney(form.currentTotalComp);
   const baseFloor = range?.base?.low ?? null;
@@ -171,7 +171,7 @@ const CALL_TIMING_LABELS = {
 // Compares the recruiter's stated band against the researched range. Only
 // emitted when the recruiter actually shared one; the script uses it to
 // explain that a low band is an opening position, not the market.
-function recruiterRangeCheck(form, analysis) {
+export function recruiterRangeCheck(form, analysis) {
   const high = parseMoney(form.recruiterRangeHigh);
   if (high === null) return null;
   const base = analysis.market_range?.base;
@@ -194,7 +194,7 @@ const CANDIDATE_SHARED = ["i_shared_number", "both_shared"];
 // model. Asking it to pick "the floor" vs "the target" off a strategy label
 // produced the wrong low end for aggressive, so the values are handed over
 // already resolved.
-function wideRangeAnswer(analysis, strategy, baseFloor, totalFloor) {
+export function wideRangeAnswer(analysis, strategy, baseFloor, totalFloor) {
   const range = analysis.market_range;
   if (!range?.base) return null;
 

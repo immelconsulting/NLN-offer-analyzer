@@ -424,6 +424,26 @@ claim the AI is "trained on" NLN material), and an AI-disclosure + not-professio
 disclaimer on the script page (which intentionally prints in the PDF). These support Anthropic
 AUP requirements for consumer-facing employment-related advice (disclosure at session start).
 
+## Checks and tests (added Oct 18, 2026)
+
+**Before pushing any change, run `npm run check`** (= `npm run lint && npm test && npm run build`)
+and fix anything red. GitHub Actions (`.github/workflows/ci.yml`) runs the same three on every pull
+request and every push to `main`, with no secrets.
+
+- Tests live in `tests/` (Vitest, `vitest.config.js`). They fake Stripe, Claude, Redis and Resend
+  with `vi.mock`, so they never charge, email or touch customer data. Covered: session tier and
+  booking gate, the floor / recruiter-range / wide-range money math (`applyFloors`,
+  `recruiterRangeCheck`, `wideRangeAnswer` are exported from `generate-script.js` for this),
+  one-payment-one-script and the `client_reference_id` precedence, daily limits, the checkout URL,
+  result encoding, the script PDF, Jenny's alert summaries, admin session signing, every prompt
+  file (loads; the two pre-offer script prompts contain **no em dashes or `--`**; script prompts
+  keep `{{strategy_session_url}}`), and that every `/api` function imports.
+- **When you change behavior, change or add the test in the same commit.** A rule in this file
+  that can be checked (a voice rule, a money rule) should also be a test.
+- Lint (`eslint.config.js`) is bug-catching only: undefined names, unused code, React hook rules.
+  `exhaustive-deps` is a warning. Locally ESLint and git can take ~30s on the Desktop folder;
+  that's the filesystem, not the tools.
+
 ## Local development quirks
 
 - `npm run dev` serves only the frontend — `/api` functions 404 locally (no Vercel CLI installed).
