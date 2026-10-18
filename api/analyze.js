@@ -1,6 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import fs from "fs";
-import path from "path";
 import {
   getRedis,
   newSubmissionId,
@@ -11,19 +9,12 @@ import { buildComparablesSummary } from "./_lib/comparables.js";
 import { extractTextFromUpload } from "./_lib/extract.js";
 import { runSearchAnalysis, SOURCES_SCHEMA } from "./_lib/analysis.js";
 import { rejectIfOverLimit } from "./_lib/rateLimit.js";
+import { loadPrompt } from "./_lib/prompts.js";
 
-// Loads the system prompt from system-prompt.md at the project root so it can
-// be edited without touching this file. Falls back to a placeholder if the
-// file is empty so the endpoint still works before the real prompt is added.
+// The system prompt lives in system-prompt.md so it can be edited without
+// touching this file.
 function loadSystemPrompt() {
-  try {
-    const filePath = path.join(process.cwd(), "system-prompt.md");
-    const content = fs.readFileSync(filePath, "utf-8").trim();
-    if (content) return content;
-  } catch {
-    // fall through to placeholder
-  }
-  return `You are a salary negotiation coach for Next Level Negotiation. Analyze the job offer details provided and return a structured negotiation analysis: an offer score (0-100) with a one-line interpretation, at least 3 specific negotiation opportunities with brief explanations and estimated dollar impact where possible, three negotiation strategies (Conservative, Balanced, Aggressive) each with an expected outcome, pros, cons, and risk level, and one clear recommended next step.`;
+  return loadPrompt("system-prompt.md");
 }
 
 const STRATEGY_SCHEMA = {

@@ -1,8 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
-import fs from "fs";
-import path from "path";
 import { getRedis, getSubmission, updateSubmission } from "./_lib/store.js";
 import { verifyPayment } from "./_lib/payment.js";
+import { loadPrompt } from "./_lib/prompts.js";
 import { sendScriptEmail } from "./_lib/email.js";
 import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
 
@@ -45,24 +44,15 @@ const PRE_OFFER_FLOWS = ["apply", "interview", "offer_soon"];
 const SCREENING_FLOWS = ["apply", "interview"];
 
 function loadSystemPrompt(flow = "offer") {
-  try {
-    const filePath = path.join(
-      process.cwd(),
-      PROMPT_FILES[flow] || PROMPT_FILES.offer
-    );
-    const content = fs.readFileSync(filePath, "utf-8").trim();
-    // The prompt's sign-off links out to the paid strategy session. That URL
-    // stays in src/lib/config.js rather than being duplicated in the prompt,
-    // so changing the booking link is a one-line edit. It stays an absolute
-    // external URL (not /session) because the script gets downloaded as a
-    // standalone PDF, where an in-app relative link would be dead.
-    if (content) {
-      return content.replaceAll("{{strategy_session_url}}", STRATEGY_SESSION_URL);
-    }
-  } catch {
-    // fall through to placeholder
-  }
-  return "You are a salary negotiation coach for Next Level Negotiation. Write a complete, word-for-word counter-offer script tailored to the candidate's offer details and negotiation analysis, covering the opening, the counter itself, objection handling, and the close.";
+  // The prompt's sign-off links out to the paid strategy session. That URL
+  // stays in src/lib/config.js rather than being duplicated in the prompt,
+  // so changing the booking link is a one-line edit. It stays an absolute
+  // external URL (not /session) because the script gets downloaded as a
+  // standalone PDF, where an in-app relative link would be dead.
+  return loadPrompt(PROMPT_FILES[flow] || PROMPT_FILES.offer).replaceAll(
+    "{{strategy_session_url}}",
+    STRATEGY_SESSION_URL
+  );
 }
 
 const STAGE_LABELS = {

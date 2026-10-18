@@ -1,6 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import fs from "fs";
-import path from "path";
 import { getRedis, newSubmissionId, saveSubmission } from "./_lib/store.js";
 import { extractTextFromUpload } from "./_lib/extract.js";
 import {
@@ -12,6 +10,7 @@ import {
   normalizeRange,
 } from "./_lib/analysis.js";
 import { rejectIfOverLimit } from "./_lib/rateLimit.js";
+import { loadPrompt } from "./_lib/prompts.js";
 
 // Expecting-an-offer-soon analysis. No offer exists yet, but one is coming
 // from a named company, so this returns a researched picture of what a strong
@@ -27,14 +26,7 @@ import { rejectIfOverLimit } from "./_lib/rateLimit.js";
 // nor contribute internal comparables.
 
 function loadSystemPrompt() {
-  try {
-    const filePath = path.join(process.cwd(), "offer-soon-analyze-prompt.md");
-    const content = fs.readFileSync(filePath, "utf-8").trim();
-    if (content) return content;
-  } catch {
-    // fall through to placeholder
-  }
-  return `You are a salary negotiation coach for Next Level Negotiation. The candidate expects a job offer soon from a specific company. Research current market compensation for their role, company, and location, then return what a strong offer looks like, how to read the number when they hear it, the biggest way they could give away leverage on the offer call, an honest read of their leverage, and three approaches. They must never accept or counter on the call itself.`;
+  return loadPrompt("offer-soon-analyze-prompt.md");
 }
 
 const OFFER_SOON_TOOL = {

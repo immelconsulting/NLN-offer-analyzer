@@ -1,16 +1,20 @@
 {
   "functions": {
     "api/analyze.js": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "*-prompt.md"
     },
     "api/analyze-apply.js": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "*-prompt.md"
     },
     "api/generate-script.js": {
-      "maxDuration": 120
+      "maxDuration": 120,
+      "includeFiles": "*-prompt.md"
     },
     "api/analyze-offer-soon.js": {
-      "maxDuration": 300
+      "maxDuration": 300,
+      "includeFiles": "*-prompt.md"
     }
   },
   "rewrites": [

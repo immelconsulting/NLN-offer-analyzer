@@ -153,7 +153,7 @@ Script** instead of a score and a counter-offer script.
 
 **Applying and Interviewing share everything.** They face the identical negotiation moment
 (a recruiter asking what you want), so they use one form, one analyzer, one prompt pair, one
-results page, one proof page, and one script — parameterized by stage in `src/lib/stages.js`.
+results page, one proof page, and one script — parameterized by `flow` (registry in `src/lib/flows.js`).
 They stay separate `flow` values so the admin can tell them apart and the copy can diverge
 later, but nothing is duplicated: a voice change is one edit, not two, and the two can't drift.
 Routes are `/apply`, `/apply/results`, `/apply/proof` and `/interview`, `/interview/results`,
@@ -334,7 +334,10 @@ identifying details into another user's analysis — aggregates only.
 - `system-prompt.md` / `script-generator-prompt.md` / `apply-analyze-prompt.md` /
   `apply-script-generator-prompt.md` / `offer-soon-analyze-prompt.md` /
   `offer-soon-script-generator-prompt.md` — all six prompts are file-based, read at request
-  time.
+  time through `loadPrompt()` (`api/_lib/prompts.js`), which **throws** on a missing or empty file
+  rather than falling back to a generic prompt (that would sell a script or show an analysis
+  built without NLN's rules). `vercel.json` bundles `*-prompt.md` via `includeFiles` on the four
+  functions that read them.
 - `src/lib/config.js` — every external URL and price label in one place: the $47 script Stripe
   link, the two session-tier Stripe links, the two per-tier Thryv links (`SESSION_TIERS`), `STRATEGY_SESSION_URL` (the
   absolute `/session` URL used by generated script PDFs — absolute because a relative link is

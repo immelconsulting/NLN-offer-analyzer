@@ -1,39 +1,47 @@
-# Next Level Negotiation — Offer Analyzer
+# Job Offer Analyzer (Next Level Negotiation)
 
-Lead-capture and monetization funnel for [Next Level Negotiation](https://www.nextlevelnegotiation.com):
-a free AI offer analysis feeding a paid ($47) personalized counter-offer script, with an expert
-path to 1:1 coaching.
+Live at **https://www.jobofferanalyzer.com**. A salary-negotiation funnel for
+[Next Level Negotiation](https://www.nextlevelnegotiation.com): a free AI analysis grounded in
+live market research, a paid ($47) word-for-word script, and a paid Negotiation Strategy Session
+with Jenny Foss (JobJenny pilot).
 
-**Flow:** landing page (email + job-search stage) → free offer analysis with three strategies →
-proof page → Stripe checkout → AI-generated counter-offer phone script. Visitors without an offer
-get stage-matched PDF prep resources instead.
+**Four paths**, chosen on the landing page: received an offer (score + counter-offer script),
+applying and interviewing (target range + recruiter screening-call script), and expecting an offer
+soon (range + offer-call script). Each runs: short form → free analysis → $47 script → optional
+$199 / $329 session.
 
-Built with React 18 + Vite + Tailwind, deployed on Vercel. Anthropic API powers the analysis and
-script generation; Upstash Redis stores leads; Stripe Payment Links handle payment (verified
-server-side before script generation). Shareable results are stateless — encoded entirely in the URL.
+Built with React 18 + Vite + Tailwind on Vercel serverless functions. The Anthropic API (with web
+search) writes the analyses and scripts; Stripe Payment Links take payment, verified server-side;
+Upstash Redis stores leads, submissions and purchased scripts; Resend emails scripts to buyers and
+purchase alerts to JobJenny.
 
-See [CLAUDE.md](CLAUDE.md) for the full architecture, environment variables, testing notes, and
+See [CLAUDE.md](CLAUDE.md) for the architecture, every flow, Stripe setup, testing notes and
 operational gotchas.
 
 ## Local development
 
 ```bash
 npm install
-cp .env.example .env.local   # add keys (see .env.example for the full list)
-npm run dev                   # frontend only — /api functions run on Vercel
+cp .env.example .env.local   # every variable the code reads is listed there
+npm run dev                   # frontend only; /api functions run on Vercel
 ```
 
-The `/api` serverless functions don't run under `npm run dev`; deploy to a Vercel preview (push a
-branch) to test the full stack, or invoke handlers directly in Node with mock req/res objects.
+The `/api` functions don't run under `npm run dev`. Push a branch for a Vercel preview to test the
+full stack, or import a handler in Node with mock req/res objects.
 
 ## Prompts
 
-- `system-prompt.md` — the offer analyzer prompt (structured JSON via tool use)
-- `script-generator-prompt.md` — the paid counter-offer script prompt (markdown output)
+Six prompt files at the project root, read at request time (edit and redeploy to change behavior):
 
-Both are read at request time; edit and redeploy to change behavior.
+| Path | Analysis | Script |
+|---|---|---|
+| Received an offer | `system-prompt.md` | `script-generator-prompt.md` |
+| Applying / Interviewing | `apply-analyze-prompt.md` | `apply-script-generator-prompt.md` |
+| Expecting an offer soon | `offer-soon-analyze-prompt.md` | `offer-soon-script-generator-prompt.md` |
+
+A missing or empty prompt file is an error, never a silent fallback (`api/_lib/prompts.js`).
 
 ## Deployment
 
-Push to `main`; Vercel auto-builds the Vite frontend and `/api` serverless functions. Branch
-pushes create preview deployments for testing before merging.
+Push to `main`; Vercel builds the frontend and `/api` functions. Branch pushes create preview
+deployments (behind Vercel login) for testing before merging.

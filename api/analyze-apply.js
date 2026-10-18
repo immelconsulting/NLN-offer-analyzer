@@ -1,6 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import fs from "fs";
-import path from "path";
 import { getRedis, newSubmissionId, saveSubmission } from "./_lib/store.js";
 import { extractTextFromUpload } from "./_lib/extract.js";
 import {
@@ -12,6 +10,7 @@ import {
   normalizeRange,
 } from "./_lib/analysis.js";
 import { rejectIfOverLimit } from "./_lib/rateLimit.js";
+import { loadPrompt } from "./_lib/prompts.js";
 
 // Pre-offer analysis, shared by the Applying and Interviewing stages. No
 // offer exists yet, so instead of scoring one this returns a researched
@@ -35,14 +34,7 @@ const STAGE_SITUATIONS = {
 const normalizeFlow = (flow) => (flow === "interview" ? "interview" : "apply");
 
 function loadSystemPrompt() {
-  try {
-    const filePath = path.join(process.cwd(), "apply-analyze-prompt.md");
-    const content = fs.readFileSync(filePath, "utf-8").trim();
-    if (content) return content;
-  } catch {
-    // fall through to placeholder
-  }
-  return `You are a salary negotiation coach for Next Level Negotiation. The candidate is still applying and has no offer. Research current market compensation for their role and location, then return a target salary range adjusted for their seniority and market, the biggest way they could undercut themselves on a recruiter screening call, a note tailored to where they are with the salary question, and three approaches to answering it.`;
+  return loadPrompt("apply-analyze-prompt.md");
 }
 
 const APPLY_TOOL = {
