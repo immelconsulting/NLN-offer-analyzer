@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import MeetJennyLink from "./MeetJennyLink.jsx";
 import { track } from "../lib/track.js";
+import { decodeResult } from "../lib/encodeResult.js";
+import { checkoutUrl } from "../lib/checkoutUrl.js";
 import {
   STRIPE_PAYMENT_LINK_URL,
   STRATEGY_SESSION_PRICE_LABEL,
@@ -96,7 +98,15 @@ export default function ProofPage({ flow = "offer" }) {
   function handleCheckout() {
     track("script_checkout_clicked");
     stashOfferData();
-    window.location.href = STRIPE_PAYMENT_LINK_URL;
+    // The stash still covers the usual same-browser return; the reference
+    // on the link covers everything else.
+    let submissionId;
+    try {
+      submissionId = encoded ? decodeResult(encoded)?.analysis?.submissionId : undefined;
+    } catch {
+      submissionId = undefined;
+    }
+    window.location.href = checkoutUrl(STRIPE_PAYMENT_LINK_URL, { submissionId });
   }
 
   function handleFreeTest() {

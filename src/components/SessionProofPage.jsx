@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import SiteHeader from "./SiteHeader.jsx";
 import MeetJennyLink from "./MeetJennyLink.jsx";
+import { checkoutUrl } from "../lib/checkoutUrl.js";
 import { track } from "../lib/track.js";
 import {
   STRATEGY_SESSION_30MIN_CHECKOUT_URL,
@@ -148,7 +149,9 @@ export default function SessionProofPage() {
                   {tier.detail}
                 </p>
                 <a
-                  href={tier.checkoutUrl}
+                  // Prefills their landing-page email so Jenny's alert can
+                  // match their analyzer history.
+                  href={checkoutUrl(tier.checkoutUrl)}
                   // Beacon fires and the link navigates as normal — no
                   // preventDefault, so checkout is never delayed by tracking.
                   onClick={() =>

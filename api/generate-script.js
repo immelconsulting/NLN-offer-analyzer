@@ -342,9 +342,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server is misconfigured (missing API key)." });
   }
 
-  const { sessionId, form, analysis, flow: rawFlow } = req.body || {};
-  const flow = PRE_OFFER_FLOWS.includes(rawFlow) ? rawFlow : "offer";
-  const isPreOffer = flow !== "offer";
+  const { sessionId } = req.body || {};
+  let { form, analysis, flow: rawFlow } = req.body || {};
   if (!sessionId) {
     return res.status(400).json({ error: "Missing payment session." });
   }
@@ -363,8 +362,36 @@ export default async function handler(req, res) {
     }
   }
 
+  const payment = await verifyPayment(sessionId);
+  if (!payment.paid) {
+    return res.status(payment.status).json({ error: payment.error });
+  }
+
+  // The proof page stamps the analysis id on the Stripe link as
+  // client_reference_id, so the payment itself says which analysis it was
+  // for. That record wins over whatever this browser stashed: it works on a
+  // different device or browser, and can't be confused by a second analysis
+  // run in another tab before paying.
+  const reference = payment.session?.client_reference_id;
+  if (reference && redis) {
+    try {
+      const record = await getSubmission(redis, reference);
+      if (record?.form && record?.analysis) {
+        form = record.form;
+        analysis = { ...record.analysis, submissionId: record.id };
+        rawFlow = record.flow || "offer"; // offer records predate the field
+      }
+    } catch (err) {
+      console.error("Payment's analysis lookup failed; using the browser's copy:", err);
+    }
+  }
+
+  const flow = PRE_OFFER_FLOWS.includes(rawFlow) ? rawFlow : "offer";
+  const isPreOffer = flow !== "offer";
+
   if (!form || !analysis) {
-    // Reopened somewhere without the offer details, and nothing saved yet.
+    // Opened somewhere without the offer details, and the payment carries no
+    // usable reference (e.g. paid before references existed).
     return res.status(404).json({
       error:
         "We couldn't find a script for this payment yet. Open this link in the browser you used to analyze your offer, or email us and we'll sort it out.",
@@ -381,11 +408,6 @@ export default async function handler(req, res) {
     }
   } else if (!form.role || !form.location || !form.offerBaseSalary) {
     return res.status(400).json({ error: "Missing offer details." });
-  }
-
-  const payment = await verifyPayment(sessionId);
-  if (!payment.paid) {
-    return res.status(payment.status).json({ error: payment.error });
   }
 
   try {

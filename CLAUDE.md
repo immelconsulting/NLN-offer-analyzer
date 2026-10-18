@@ -90,7 +90,13 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
    offer data needed, so the same `/script?session_id=` link works on any device. The first
    time, the buyer (Stripe `customer_details.email`) is emailed the script plus that link via
    Resend (`sendScriptEmail` in `api/_lib/email.js`). `test_skip_payment` is never saved or
-   emailed. **Download PDF** builds a real PDF client-side with pdfmake (`src/lib/scriptPdf.js`,
+   emailed. **The payment says which analysis it bought:** the proof page sends buyers to Stripe
+   via `checkoutUrl()` (`src/lib/checkoutUrl.js`), which adds `client_reference_id=<submissionId>`
+   and `prefilled_email=<landing-page email>`. The generator loads that submission record and
+   prefers it over the localStorage stash, so the first visit works on another device/browser and
+   can't pick up a second analysis from another tab. Payments without a reference (pre-Oct 18)
+   fall back to the stash. Session tier links get `prefilled_email` too, so Jenny's alert matches
+   their analyzer history. **Download PDF** builds a real PDF client-side with pdfmake (`src/lib/scriptPdf.js`,
    markdown → pdfmake; 🗣️ becomes "Say:" since Roboto has no emoji; includes the AI
    disclaimer), downloads it and opens it in a tab opened synchronously in the click so pop-up
    blockers allow it; pdfmake is lazy-loaded (prefetched once a script is shown) and falls back
@@ -385,7 +391,8 @@ confirmed**; the old vercel.app URLs keep working either way): the $47 script li
 Webhook endpoint: `https://www.jobofferanalyzer.com/api/stripe-webhook` (must be `www.`; Stripe
 doesn't follow the apex redirect). Events: `checkout.session.completed`,
 `checkout.session.async_payment_succeeded`. The checkout page's header shows the account's public
-business name, still "Immel Consulting LLC"; that's expected, not a wrong-account sign.
+business name (was "Immel Consulting LLC", showed "Next Level Negotiation" by Oct 18); a name
+mismatch there is not by itself a wrong-account sign.
 
 ## Script content rules (Alex's voice — do not regress)
 
