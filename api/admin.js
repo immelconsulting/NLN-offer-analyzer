@@ -2,29 +2,56 @@ import {
   getRedis,
   getSubmission,
   listRecentSubmissions,
-  getFunnelCounts,
   eventDay,
+  dayRange,
   shiftDays,
   shiftMonths,
   MAX_RANGE_DAYS,
 } from "./_lib/store.js";
 import { isAuthorized } from "./_lib/auth.js";
+import { readEvents, VIDMAP_KEY, NAMES_KEY } from "./_lib/events.js";
+import {
+  SCRIPT_FUNNEL,
+  SESSION_FUNNEL,
+  normalizeExclusion,
+  isExcludedEmail,
+  groupPeople,
+  filterPeople,
+  funnelCounts,
+  kpis,
+  byFlow,
+  journey,
+} from "./_lib/dashboard.js";
 
-// Read-only admin API. Requires the session cookie from /api/login — there
-// is no query-parameter token, so a URL alone never grants access.
-//   GET /api/admin                    -> submission list (newest first)
-//   GET /api/admin?q=alice           -> filtered by email/role/company/location
+// Admin API. Requires the session cookie from /api/login — there is no
+// query-parameter token, so a URL alone never grants access.
+//   GET /api/admin                    -> dashboard + submission list (newest first)
+//   GET /api/admin?q=alice           -> everything narrowed to matching people
+//                                       (email, or name for buyers); the table
+//                                       also matches role/company/location
+//   GET /api/admin?flow=apply        -> everything narrowed to one flow
+//   GET /api/admin?person=a@b.com    -> plus that person's journey timeline
 //   GET /api/admin?range=3m          -> preset window (1d/7d/30d/3m/4m/6m/12m)
 //   GET /api/admin?start=&end=       -> custom YYYY-MM-DD range
 //   GET /api/admin?id=sub_...        -> one full record
 //   GET /api/admin?export=full       -> CSV of everything
 //   GET /api/admin?export=salary     -> CSV of salary-relevant fields only
+//   POST /api/admin {action: "exclude"|"include", value}
+//                                    -> add/remove an email or @domain from the
+//                                       "hide these people" list
+//
+// Exclusions and anything Alex did while logged in here (events marked
+// internal) are removed from every number, table and export.
 //
 // The date range drives both the funnel rollup and the submission list (and
 // therefore the CSV exports), so the page has one control rather than two
 // that disagree.
 
 const LIST_LIMIT = 500;
+const EXCLUSIONS_KEY = "nln:admin:excluded";
+// Per-person tracking (api/_lib/events.js) started with this deploy; older
+// days only had anonymous totals, which the dashboard can't split by person.
+const TRACKING_SINCE = "2026-10-18";
 
 // Presets the UI offers, keyed by the id sent as ?range=. Short windows stay
 // in days; longer ones are calendar months, so "3 months" back from Sep 12 is
@@ -104,16 +131,27 @@ const flowOf = (sub) => (FLOWS.includes(sub.flow) ? sub.flow : "offer");
 const roleOf = (sub) => sub.form?.role || sub.form?.targetRole || "";
 const companyOf = (sub) => sub.form?.company || sub.form?.targetCompany || "";
 
-function matchesQuery(sub, q) {
-  const hay = [sub.email, roleOf(sub), companyOf(sub), sub.form?.location]
+function matchesQuery(sub, q, names) {
+  const hay = [sub.email, names[sub.email] || "", roleOf(sub), companyOf(sub), sub.form?.location]
     .join(" ")
     .toLowerCase();
   return hay.includes(q);
 }
 
+async function handleExclusion(req, res, redis) {
+  const { action, value } = req.body || {};
+  const clean = normalizeExclusion(value);
+  if (!clean || !["exclude", "include"].includes(action)) {
+    return res.status(400).json({ error: "Enter an email address or a domain like @example.com." });
+  }
+  if (action === "exclude") await redis.sadd(EXCLUSIONS_KEY, clean);
+  else await redis.srem(EXCLUSIONS_KEY, clean);
+  return res.status(200).json({ exclusions: ((await redis.smembers(EXCLUSIONS_KEY)) || []).sort() });
+}
+
 export default async function handler(req, res) {
-  if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
+  if (req.method !== "GET" && req.method !== "POST") {
+    res.setHeader("Allow", "GET, POST");
     return res.status(405).json({ error: "Method not allowed" });
   }
 
@@ -126,6 +164,15 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Storage is not configured." });
   }
 
+  if (req.method === "POST") {
+    try {
+      return await handleExclusion(req, res, redis);
+    } catch (err) {
+      console.error("Exclusion update failed:", err);
+      return res.status(502).json({ error: "Couldn't update the list." });
+    }
+  }
+
   try {
     if (req.query.id) {
       const sub = await getSubmission(redis, req.query.id);
@@ -134,10 +181,29 @@ export default async function handler(req, res) {
     }
 
     const range = resolveRange(req.query);
-    const all = await listRecentSubmissions(redis, LIST_LIMIT);
     const flowFilter = FLOWS.includes(req.query.flow) ? req.query.flow : null;
+    const q = String(req.query.q || "").trim().toLowerCase();
+
+    const [all, events, vidmap, names, exclusionList] = await Promise.all([
+      listRecentSubmissions(redis, LIST_LIMIT),
+      readEvents(redis, dayRange(range.start, range.end)),
+      redis.hgetall(VIDMAP_KEY).then((m) => m || {}),
+      redis.hgetall(NAMES_KEY).then((m) => m || {}),
+      redis.smembers(EXCLUSIONS_KEY).then((m) => (m || []).sort()),
+    ]);
+
+    // People, with Alex's own test traffic (internal) and his exclusion list
+    // removed before anything is counted.
+    const everyone = groupPeople(events, vidmap, names);
+    const internalEmails = everyone.filter((p) => p.internal && p.email).map((p) => p.email);
+    const hidden = [...exclusionList, ...internalEmails];
+    const people = filterPeople(everyone, { flow: flowFilter, q, exclusions: hidden });
+
     const subs = all.filter(
-      (s) => inRange(s, range) && (!flowFilter || flowOf(s) === flowFilter)
+      (s) =>
+        inRange(s, range) &&
+        (!flowFilter || flowOf(s) === flowFilter) &&
+        !isExcludedEmail(s.email, hidden)
     );
 
     if (req.query.export === "full") {
@@ -200,31 +266,36 @@ export default async function handler(req, res) {
       return res.status(200).send(lines.join("\n"));
     }
 
-    const q = (req.query.q || "").trim().toLowerCase();
-    const filtered = q ? subs.filter((s) => matchesQuery(s, q)) : subs;
+    const filtered = q ? subs.filter((s) => matchesQuery(s, q, names)) : subs;
 
-    // Rollup rides along on the list response so the admin page doesn't need
-    // a second request. A counter read failing shouldn't cost Alex the
-    // submissions table, so it degrades to null.
-    let funnel = null;
-    try {
-      funnel = await getFunnelCounts(redis, range.start, range.end);
-    } catch (err) {
-      console.error("Funnel rollup failed:", err);
-    }
+    // One person's journey: asked for directly, or the search narrowed the
+    // people down to exactly one.
+    const personEmail = String(req.query.person || "").trim().toLowerCase();
+    const focus = personEmail
+      ? everyone.find((p) => p.email === personEmail)
+      : people.length === 1
+        ? people[0]
+        : null;
 
     // List view: summaries only, full record fetched by id on click.
     // `range` is echoed back so the page can label what it's showing —
     // including when a request was corrected (future end date, over-long span).
     return res.status(200).json({
-      funnel,
       range,
+      trackingSince: TRACKING_SINCE,
+      exclusions: exclusionList,
+      kpis: kpis(people),
+      scriptFunnel: funnelCounts(people, SCRIPT_FUNNEL),
+      sessionFunnel: funnelCounts(people, SESSION_FUNNEL),
+      byFlow: byFlow(people),
+      journey: focus ? journey(focus) : null,
       submissionsCapped: all.length >= LIST_LIMIT,
-      submissions: filtered.map((s) => ({
+      submissions: (personEmail ? filtered.filter((s) => s.email === personEmail) : filtered).map((s) => ({
         id: s.id,
         timestamp: s.timestamp,
         flow: flowOf(s),
         email: s.email,
+        name: names[s.email] || null,
         role: roleOf(s),
         company: companyOf(s),
         location: s.form?.location,

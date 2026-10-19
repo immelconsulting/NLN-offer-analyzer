@@ -8,10 +8,15 @@ const h = vi.hoisted(() => ({
   emails: [],
   modelCalls: 0,
   lastSystem: "",
+  events: [],
 }));
 
 vi.mock("../api/_lib/store.js", () => ({
+  eventDay: () => "2026-10-21",
   getRedis: () => ({
+    rpush: async (_k, v) => h.events.push(JSON.parse(v)),
+    expire: async () => {},
+    hset: async () => {},
     get: async (k) => (h.db.has(k) ? JSON.parse(h.db.get(k)) : null),
     set: async (k, v, o = {}) => {
       if (o.nx && h.db.has(k)) return null;
@@ -55,6 +60,7 @@ beforeEach(() => {
   h.records = {};
   h.payment = { paid: true, session: { customer_details: { email: "buyer@example.com" } } };
   h.emails.length = 0;
+  h.events.length = 0;
   h.modelCalls = 0;
 });
 
@@ -74,6 +80,16 @@ describe("one payment = one script", () => {
     expect(otherDevice.body.script).toBe("# Script 1");
     expect(h.modelCalls).toBe(1);
     expect(h.emails).toHaveLength(1);
+  });
+
+  it("records the sale once for the dashboard, on the person's analyzer email", async () => {
+    h.records.sub_A = { id: "sub_A", email: "pat@example.com", form: offerForm, analysis: {} };
+    h.payment.session = { client_reference_id: "sub_A", amount_total: 4700, customer_details: { email: "pat.stripe@example.com", name: "Pat" } };
+    await call({ sessionId: "cs_sale", vid: "vid-pat-0001" });
+    await call({ sessionId: "cs_sale" });
+    const sales = h.events.filter((e) => e.e === "script_purchased");
+    expect(sales).toHaveLength(1);
+    expect(sales[0]).toMatchObject({ email: "pat@example.com", amount: 4700, flow: "offer", vid: "vid-pat-0001" });
   });
 
   it("never saves or emails the shared test session", async () => {

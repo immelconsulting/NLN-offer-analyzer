@@ -354,6 +354,30 @@ identifying details into another user's analysis — aggregates only.
 - Brand: navy scale in `tailwind.config.js` (#001E34 / #16163F / #0099CC / #6BCCF7 / #D8F0F8),
   logos in `src/assets/`, Trustpilot green #00B67A for stars.
 
+## Admin dashboard and per-person tracking (added Oct 18, 2026)
+
+`/admin` is a dashboard: filter bar (date range, flow, search), a "Hidden people" list, KPI tiles,
+a drawn **script funnel** (Attract / Inform / Convert bands) and **session funnel**, a by-flow
+breakdown, one person's **journey timeline**, and the submissions table (click an email for that
+person's journey). Components in `src/components/AdminDashboard.jsx`.
+
+- **Tracking** (`src/lib/track.js` → `/api/event` → `api/_lib/events.js`): every event carries a
+  random visitor id (`localStorage["nln:vid"]`) and the flow from the URL. Stored one Redis list
+  per UTC day (`nln:ev:<day>`, ~13-month TTL). `/api/lead` links visitor id → email
+  (`nln:vidmap`) and records `lead_captured`. Purchases are recorded **server-side only**, once
+  per checkout (`recordPurchaseOnce`): `script_purchased` in `generate-script.js` (email = the
+  submission's analyzer email, else Stripe's) and `session_purchased` in the webhook. Buyer names
+  from Stripe go to `nln:names`. The browser can't send purchase events (`CLIENT_EVENTS`
+  allowlist). The old anonymous counters (`nln:events*`) are no longer written or read.
+- **Counting** (`api/_lib/dashboard.js`, pure, fully tested): groups events into **people**
+  (email if known, else visitor id) and counts people per step, so refreshes don't inflate.
+  Filters apply per person: a flow filter keeps everything those people did.
+- **Hidden people:** `nln:admin:excluded` (emails or `@domain`), managed from the page
+  (`POST /api/admin`). Anything sent while logged in to `/admin` is tagged `internal` and that
+  person is hidden automatically. Exclusions apply to KPIs, funnels, the table and CSVs.
+- Detailed tracking starts Oct 18, 2026 (`TRACKING_SINCE` in `api/admin.js`); earlier activity was
+  anonymous only. Disclosed in the privacy policy (usage data line, effective Oct 18).
+
 ## Rate limits (added Oct 17, 2026)
 
 `api/_lib/rateLimit.js`: per-IP daily caps in Redis (`nln:rl:<bucket>:<UTC day>:<ip>`):

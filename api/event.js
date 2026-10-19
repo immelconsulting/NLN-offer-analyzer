@@ -1,21 +1,18 @@
-import { Redis } from "@upstash/redis";
-import {
-  EVENTS_LIST,
-  EVENTS_MAX,
-  TRACKED_EVENTS,
-  eventCountKey,
-  eventDay,
-} from "./_lib/store.js";
+import { getRedis } from "./_lib/store.js";
+import { CLIENT_EVENTS, FLOW_IDS, isVisitorId, recordEvent } from "./_lib/events.js";
 import { rejectIfOverLimit } from "./_lib/rateLimit.js";
+import { isAuthorized } from "./_lib/auth.js";
 
-// Records one funnel event per request. Same storage pattern as lead.js.
-// Unauthenticated by design — these are anonymous counts, never PII — but the
-// event name must be on the TRACKED_EVENTS allowlist, so this can't be used
-// to write arbitrary keys.
+// Records one funnel event from the browser (src/lib/track.js). The event
+// name must be on the CLIENT_EVENTS allowlist; purchases and leads are
+// recorded server-side where they're verified, never accepted from here.
 //
-// Writes twice per event: onto a capped list (recent activity, eyeballing)
-// and into a per-day counter (what /api/admin's rollup reads, so summarizing
-// never scans the list).
+// Carries the browser's visitor id and the flow it was in, so the admin
+// dashboard can count people (not clicks) and filter by flow and person.
+// Anything sent from a browser logged in to /admin is marked internal and
+// hidden from the dashboard, so Alex's own testing never skews the numbers.
+
+const MAX_META_CHARS = 300;
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -23,34 +20,29 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { event, meta } = req.body || {};
-  if (!event || !TRACKED_EVENTS.includes(event)) {
+  const { event, meta, vid, flow } = req.body || {};
+  if (!event || !CLIENT_EVENTS.includes(event)) {
     return res.status(400).json({ error: "Unknown event." });
   }
   if (await rejectIfOverLimit(req, res, "event")) return;
 
-  // Vercel's Upstash integration names these KV_*; a manual Upstash setup
-  // uses UPSTASH_*. Accept either.
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) {
+  const redis = getRedis();
+  if (!redis) {
     console.error("Event not stored: Upstash Redis env vars are missing.");
     return res.status(500).json({ error: "Event storage is not configured." });
   }
 
+  const cleanMeta =
+    meta && typeof meta === "object" && JSON.stringify(meta).length <= MAX_META_CHARS ? meta : undefined;
+
   try {
-    const redis = new Redis({ url, token });
-    await redis.rpush(
-      EVENTS_LIST,
-      JSON.stringify({
-        event,
-        meta: meta && typeof meta === "object" ? meta : {},
-        timestamp: new Date().toISOString(),
-      })
-    );
-    // Keep only the most recent EVENTS_MAX entries.
-    await redis.ltrim(EVENTS_LIST, -EVENTS_MAX, -1);
-    await redis.incr(eventCountKey(event, eventDay()));
+    await recordEvent(redis, {
+      e: event,
+      vid: isVisitorId(vid) ? vid : undefined,
+      flow: FLOW_IDS.includes(flow) ? flow : undefined,
+      meta: cleanMeta && Object.keys(cleanMeta).length ? cleanMeta : undefined,
+      internal: isAuthorized(req) ? true : undefined,
+    });
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Failed to store event:", err);

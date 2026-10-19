@@ -4,6 +4,7 @@ import { encodeResult } from "../lib/encodeResult.js";
 import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
 import SiteHeader from "./SiteHeader.jsx";
 import icon from "../assets/nln-icon.png";
+import { track } from "../lib/track.js";
 
 const INDUSTRIES = [
   "Tech",
@@ -161,6 +162,8 @@ export default function OfferForm() {
       } catch {
         // no lead in this session — store anonymously
       }
+      // Counted before the 70-90s wait, so the dashboard shows who gives up.
+      track("analysis_submitted");
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

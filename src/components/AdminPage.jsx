@@ -2,6 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import SiteHeader from "./SiteHeader.jsx";
+import {
+  FLOW_OPTIONS,
+  chipClass,
+  KpiRow,
+  FunnelChart,
+  FlowBreakdown,
+  JourneyPanel,
+  ExclusionsPanel,
+} from "./AdminDashboard.jsx";
 
 // Private lookup page for Alex. Not linked from anywhere in the funnel, and
 // gated by a password that's exchanged for an httpOnly session cookie — the
@@ -9,34 +18,6 @@ import SiteHeader from "./SiteHeader.jsx";
 
 const inputClass =
   "w-full rounded-md border border-slate-300 bg-white px-3 py-2.5 text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition";
-
-// The funnel isn't one straight line — results branch into the self-serve
-// script and the paid strategy session — so it's modelled as a shared top
-// with two independent paths.
-const FUNNEL_TOP = { key: "results_viewed", label: "Results viewed" };
-
-const FUNNEL_BRANCHES = [
-  {
-    name: "Script path",
-    note: "$47 self-serve counter-offer script",
-    steps: [
-      { key: "script_cta_clicked", label: "Script CTA clicked" },
-      { key: "proof_viewed", label: "Proof page viewed" },
-      { key: "script_checkout_clicked", label: "Checkout clicked" },
-      { key: "script_generated", label: "Script delivered" },
-    ],
-  },
-  {
-    name: "Strategy session path",
-    note: "$199 / $329 paid session",
-    steps: [
-      { key: "session_cta_clicked", label: "Session CTA clicked" },
-      { key: "session_viewed", label: "Session page viewed" },
-      { key: "session_checkout_clicked", label: "Checkout clicked" },
-      { key: "booking_confirmed", label: "Booking confirmed" },
-    ],
-  },
-];
 
 // Short windows stay in days; longer ones are calendar months. Ids match
 // RANGE_PRESETS in api/admin.js.
@@ -72,23 +53,12 @@ function rangeLabel(range) {
     : `${prettyDay(range.start)} – ${prettyDay(range.end)}`;
 }
 
-// A percentage is only meaningful with a non-zero denominator.
-function pct(part, whole) {
-  if (!whole) return null;
-  return (part / whole) * 100;
-}
-
-function formatPct(value) {
-  if (value === null) return "—";
-  if (value > 0 && value < 1) return "<1%";
-  return `${Math.round(value)}%`;
-}
-
 // One URL builder for both the fetch and the CSV export links, so exports
 // always cover exactly the range on screen. Auth rides on the cookie.
-function buildAdminUrl(range, extra = {}, flow = "all") {
+function buildAdminUrl(range, extra = {}, flow = "all", person = "") {
   const params = new URLSearchParams();
   if (flow !== "all") params.set("flow", flow);
+  if (person) params.set("person", person);
   if (range.preset === "custom") {
     params.set("start", range.start);
     params.set("end", range.end);
@@ -175,12 +145,7 @@ function RangeControls({ applied, onApply }) {
   const dateClass =
     "rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition";
 
-  const chip = (active) =>
-    `rounded-md px-3 py-1.5 text-sm font-medium transition border ${
-      active
-        ? "bg-navy-900 border-navy-900 text-white"
-        : "bg-white border-slate-300 text-slate-700 hover:border-navy-600 hover:text-navy-900"
-    }`;
+  const chip = chipClass;
 
   return (
     <div className="space-y-3">
@@ -246,78 +211,6 @@ function RangeControls({ applied, onApply }) {
   );
 }
 
-// One step of the funnel: a proportional bar plus the raw count and both
-// percentages (share of everyone who reached results, and share of the step
-// immediately before it).
-function FunnelBar({ label, count, top, previous, tone = "bar" }) {
-  const share = pct(count, top);
-  const step = previous === null ? null : pct(count, previous);
-  const width = share === null ? 0 : Math.min(share, 100);
-
-  const barColor = tone === "top" ? "bg-navy-900" : "bg-navy-600";
-
-  return (
-    <div>
-      <div className="flex items-baseline justify-between gap-2 mb-1">
-        <span className="text-sm text-slate-700">{label}</span>
-        <span className="text-sm font-semibold text-navy-900 tabular-nums">
-          {count.toLocaleString()}
-        </span>
-      </div>
-      <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-        <div
-          className={`h-full rounded-full ${barColor} transition-all`}
-          style={{ width: `${width}%` }}
-        />
-      </div>
-      <div className="flex justify-between gap-2 mt-1">
-        <span className="text-xs text-slate-500">
-          {formatPct(share)} of results
-        </span>
-        {step !== null && (
-          <span className="text-xs text-slate-400">
-            {formatPct(step)} of previous step
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Filters the submissions table by funnel. The funnel rollup above it is
-// event-based and not flow-aware, so this deliberately only affects the
-// table and the CSV exports.
-function FlowFilter({ value, onChange }) {
-  const options = [
-    ["All flows", "all"],
-    ["Offer", "offer"],
-    ["Apply", "apply"],
-    ["Interview", "interview"],
-    ["Offer soon", "offer_soon"],
-  ];
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 mr-1">
-        Submissions
-      </span>
-      {options.map(([label, key]) => (
-        <button
-          key={key}
-          type="button"
-          onClick={() => onChange(key)}
-          className={`rounded-md px-3 py-1.5 text-sm font-medium transition border ${
-            value === key
-              ? "bg-navy-900 border-navy-900 text-white"
-              : "bg-white border-slate-300 text-slate-700 hover:border-navy-600 hover:text-navy-900"
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // Flow marker, used in the table and the detail view.
 const FLOW_LABELS = {
   apply: "Apply",
@@ -342,74 +235,6 @@ function FlowBadge({ flow }) {
     >
       {label}
     </span>
-  );
-}
-
-function FunnelVisual({ funnel, range }) {
-  if (!funnel) return null;
-
-  const top = funnel[FUNNEL_TOP.key] ?? 0;
-  const empty = Object.values(funnel).every((v) => !v);
-
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
-      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-5">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Funnel
-        </h2>
-        <span className="text-xs text-slate-400">{rangeLabel(range)}</span>
-      </div>
-
-      {empty ? (
-        <p className="text-sm text-slate-500">
-          No tracked activity in this date range.
-        </p>
-      ) : (
-        <>
-          <div className="mb-6">
-            <FunnelBar
-              label={FUNNEL_TOP.label}
-              count={top}
-              top={top}
-              previous={null}
-              tone="top"
-            />
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6 md:gap-8">
-            {FUNNEL_BRANCHES.map((branch) => (
-              <div key={branch.name}>
-                <div className="mb-3 pb-2 border-b border-slate-200">
-                  <h3 className="text-sm font-semibold text-navy-900">
-                    {branch.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-0.5">{branch.note}</p>
-                </div>
-                <div className="space-y-4">
-                  {branch.steps.map((step, i) => (
-                    <FunnelBar
-                      key={step.key}
-                      label={step.label}
-                      count={funnel[step.key] ?? 0}
-                      top={top}
-                      previous={
-                        i === 0 ? top : funnel[branch.steps[i - 1].key] ?? 0
-                      }
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-xs text-slate-400 mt-6 leading-relaxed">
-            Bars are scaled against results viewed. The session page is also
-            reachable from the thank-you pages and the post-script upsell, so
-            its step percentage can exceed 100%.
-          </p>
-        </>
-      )}
-    </div>
   );
 }
 
@@ -455,7 +280,7 @@ function sortSubmissions(rows, sort) {
   });
 }
 
-function SubmissionsTable({ rows, sort, onSort, onOpen }) {
+function SubmissionsTable({ rows, sort, onSort, onOpen, onPerson }) {
   const cell = "px-3 py-2 whitespace-nowrap text-sm border-b border-slate-100";
 
   return (
@@ -505,7 +330,21 @@ function SubmissionsTable({ rows, sort, onSort, onOpen }) {
                   <FlowBadge flow={s.flow} />
                 </td>
                 <td className={`${cell} text-navy-900 font-medium`}>
-                  {s.email || "—"}
+                  {s.email ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPerson(s.email);
+                      }}
+                      className="underline decoration-navy-300 underline-offset-2 hover:text-navy-600"
+                      title="Show this person's journey"
+                    >
+                      {s.name ? `${s.name} · ${s.email}` : s.email}
+                    </button>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className={`${cell} text-slate-700`}>{s.role || "—"}</td>
                 <td className={`${cell} text-slate-700`}>{s.company || "—"}</td>
@@ -600,7 +439,8 @@ export default function AdminPage() {
   const [authed, setAuthed] = useState(null);
   const [query, setQuery] = useState("");
   const [subs, setSubs] = useState([]);
-  const [funnel, setFunnel] = useState(null);
+  const [dash, setDash] = useState(null);
+  const [person, setPerson] = useState("");
   const [range, setRange] = useState(DEFAULT_RANGE);
   const [shownRange, setShownRange] = useState(null);
   const [capped, setCapped] = useState(false);
@@ -610,11 +450,11 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function load(q = "", activeRange = range, activeFlow = flow) {
+  async function load(q = query, activeRange = range, activeFlow = flow, activePerson = person) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(buildAdminUrl(activeRange, { q }, activeFlow));
+      const res = await fetch(buildAdminUrl(activeRange, { q }, activeFlow, activePerson));
       if (res.status === 401) {
         setAuthed(false);
         return;
@@ -622,7 +462,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error("Could not load submissions.");
       const body = await res.json();
       setSubs(body.submissions);
-      setFunnel(body.funnel ?? null);
+      setDash(body);
       // The server echoes the range it actually used, which can differ from
       // what was asked for (future end date, over-long span).
       setShownRange(body.range ?? null);
@@ -668,16 +508,16 @@ export default function AdminPage() {
       /* clearing local state is what matters */
     }
     setSubs([]);
-    setFunnel(null);
+    setDash(null);
     setSelected(null);
     setAuthed(false);
   }
 
   // An existing cookie means this succeeds and skips the login screen.
   useEffect(() => {
-    load(query);
+    load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, flow]);
+  }, [range, flow, person]);
 
   function toggleSort(key) {
     setSort((s) =>
@@ -844,7 +684,7 @@ export default function AdminPage() {
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-xl font-serif font-semibold text-navy-900">
-            Submissions
+            Dashboard
           </h1>
           <div className="flex items-center gap-3 text-sm">
             <a
@@ -870,33 +710,97 @@ export default function AdminPage() {
           </div>
         </div>
 
-        <RangeControls applied={range} onApply={setRange} />
-
-        <FlowFilter value={flow} onChange={setFlow} />
-
-        <FunnelVisual funnel={funnel} range={shownRange} />
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            load(query);
-          }}
-          className="flex gap-2"
-        >
-          <input
-            type="text"
-            className={inputClass}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by email, role, company, or location"
-          />
-          <button
-            type="submit"
-            className="shrink-0 bg-navy-900 hover:bg-navy-600 text-white font-medium rounded-md px-5 transition"
+        {/* Filters: one block of controls that drives every number, chart,
+            table and export below. */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 sm:p-5 space-y-4">
+          <RangeControls applied={range} onApply={setRange} />
+          <div className="flex flex-wrap gap-2">
+            {FLOW_OPTIONS.map(([label, key]) => (
+              <button key={key} type="button" onClick={() => setFlow(key)} className={chipClass(flow === key)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPerson("");
+              load(query, range, flow, "");
+            }}
+            className="flex flex-wrap sm:flex-nowrap gap-2"
           >
-            Search
-          </button>
-        </form>
+            <input
+              type="text"
+              className={inputClass}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by email or name (names are known for buyers), role, company or location"
+            />
+            <button
+              type="submit"
+              className="shrink-0 bg-navy-900 hover:bg-navy-600 text-white font-medium rounded-md px-5 py-2.5 transition"
+            >
+              Search
+            </button>
+            {(query || person) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setPerson("");
+                  load("", range, flow, "");
+                }}
+                className="shrink-0 rounded-md border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-navy-900"
+              >
+                Clear
+              </button>
+            )}
+          </form>
+        </div>
+
+        <ExclusionsPanel exclusions={dash?.exclusions || []} onChange={() => load()} />
+
+        {dash?.trackingSince && shownRange && shownRange.start < dash.trackingSince && (
+          <p className="text-xs text-slate-500">
+            Person-by-person tracking started {prettyDay(dash.trackingSince)}. Activity before then
+            was only counted anonymously, so it isn't in the numbers below.
+          </p>
+        )}
+
+        <JourneyPanel
+          journey={dash?.journey}
+          onClose={() => {
+            setQuery("");
+            setPerson("");
+            load("", range, flow, "");
+          }}
+        />
+
+        <KpiRow kpis={dash?.kpis} />
+
+        <div className="grid lg:grid-cols-3 gap-5 items-start">
+          <div className="lg:col-span-2">
+            {/* Phones get the narrow drawing without the side bands, so the
+                text stays readable instead of shrinking with the canvas. */}
+            <div className="sm:hidden">
+              <FunnelChart title="Script funnel" note={rangeLabel(shownRange)} steps={dash?.scriptFunnel} showGroups={false} compact />
+            </div>
+            <div className="hidden sm:block">
+              <FunnelChart title="Script funnel" note={rangeLabel(shownRange)} steps={dash?.scriptFunnel} />
+            </div>
+          </div>
+          <FunnelChart
+            title="Strategy session funnel"
+            note="$199 / $329 with Jenny"
+            steps={dash?.sessionFunnel}
+            showGroups={false}
+            compact
+          />
+        </div>
+
+        <FlowBreakdown rows={dash?.byFlow} />
+
+        <h2 className="text-base font-serif font-semibold text-navy-900 pt-2">Submissions</h2>
 
         {error && <p className="text-sm text-rose-700">{error}</p>}
         {loading && <p className="text-sm text-slate-500">Loading…</p>}
@@ -913,11 +817,15 @@ export default function AdminPage() {
               sort={sort}
               onSort={toggleSort}
               onOpen={open}
+              onPerson={(email) => {
+                setQuery(email);
+                setPerson(email);
+              }}
             />
             <p className="text-xs text-slate-500">
               {subs.length.toLocaleString()} submission
-              {subs.length === 1 ? "" : "s"} · click any row for the full
-              record
+              {subs.length === 1 ? "" : "s"} · click a row for the full
+              record, or an email for that person's journey
               {capped
                 ? " · showing the 500 most recent, older ones in this range aren't included"
                 : ""}

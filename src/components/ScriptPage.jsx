@@ -8,7 +8,7 @@ import SiteHeader from "./SiteHeader.jsx";
 import MeetJennyLink from "./MeetJennyLink.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
-import { track } from "../lib/track.js";
+import { track, getVisitorId } from "../lib/track.js";
 import { buildScriptPdf, scriptPdfFilename } from "../lib/scriptPdf.js";
 
 // Post-payment destination. Stripe's Payment Link redirects here with
@@ -195,6 +195,7 @@ export default function ScriptPage() {
             flow,
             form: data?.form,
             analysis: data?.analysis,
+            vid: getVisitorId(),
           }),
         });
         const body = await res.json().catch(() => ({}));

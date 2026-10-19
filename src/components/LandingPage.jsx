@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { TRUSTPILOT_REVIEWS_URL } from "../lib/config.js";
+import { track, getVisitorId } from "../lib/track.js";
 
 const STAGES = [
   {
@@ -36,6 +37,10 @@ const STAGE_ROUTES = {
 };
 
 export default function LandingPage() {
+  useEffect(() => {
+    track("landing_viewed");
+  }, []);
+
   const navigate = useNavigate();
   const [stage, setStage] = useState("");
   const [email, setEmail] = useState("");
@@ -64,7 +69,7 @@ export default function LandingPage() {
       await fetch("/api/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(lead),
+        body: JSON.stringify({ ...lead, vid: getVisitorId() }),
       });
     } catch {
       // Ignore — the visitor continues either way.
