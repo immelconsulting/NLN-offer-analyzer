@@ -3,6 +3,7 @@ import { getRedis } from "./_lib/store.js";
 import { strategySessionTier } from "./_lib/payment.js";
 import { sendEmail } from "./_lib/email.js";
 import { buildClientContext } from "./_lib/clientContext.js";
+import { recordPurchaseOnce } from "./_lib/events.js";
 import { CONTACT_EMAIL } from "../src/lib/config.js";
 
 // Emails JobJenny the moment someone buys a strategy session, so Alisa can
@@ -67,8 +68,22 @@ export default async function handler(req, res) {
     return res.status(200).json({ ignored: "not a strategy session" });
   }
 
-  // Stripe retries and may deliver both events, so alert once per checkout.
   const redis = getRedis();
+
+  // The dashboard's "Bought a session" step, recorded once per checkout and
+  // independently of the alert email below, so a failed email can't hide a
+  // sale and a retried one can't count it twice.
+  if (redis) {
+    await recordPurchaseOnce(redis, session.id, {
+      e: "session_purchased",
+      email: session.customer_details?.email?.toLowerCase() || undefined,
+      tier: tier.label,
+      amount: session.amount_total ?? undefined,
+      name: session.customer_details?.name || undefined,
+    }).catch((err) => console.error("Webhook: recording the session sale failed:", err));
+  }
+
+  // Stripe retries and may deliver both events, so alert once per checkout.
   const dedupeKey = `nln:session-alert:${session.id}`;
   if (redis && !(await redis.set(dedupeKey, event.id, { nx: true, ex: 60 * 60 * 24 * 30 }))) {
     return res.status(200).json({ duplicate: true });

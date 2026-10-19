@@ -6,6 +6,7 @@ import { getFlow } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import icon from "../assets/nln-icon.png";
+import { track } from "../lib/track.js";
 
 // Pre-offer form, shared by the Applying and Interviewing stages (see
 // src/lib/flows.js). Deliberately much shorter than OfferForm — people at
@@ -131,6 +132,8 @@ export default function ApplyForm({ flow = "apply" }) {
       } catch {
         // no lead in this session — store anonymously
       }
+      // Counted before the 70-90s wait, so the dashboard shows who gives up.
+      track("analysis_submitted");
       const res = await fetch("/api/analyze-apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -3,6 +3,7 @@ import { getRedis, getSubmission, updateSubmission } from "./_lib/store.js";
 import { verifyPayment } from "./_lib/payment.js";
 import { loadPrompt } from "./_lib/prompts.js";
 import { sendScriptEmail } from "./_lib/email.js";
+import { isVisitorId, recordPurchaseOnce } from "./_lib/events.js";
 import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
 
 // Generates the paid counter-offer script. The client sends the Stripe
@@ -332,7 +333,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server is misconfigured (missing API key)." });
   }
 
-  const { sessionId } = req.body || {};
+  const { sessionId, vid } = req.body || {};
   let { form, analysis, flow: rawFlow } = req.body || {};
   if (!sessionId) {
     return res.status(400).json({ error: "Missing payment session." });
@@ -472,6 +473,23 @@ export default async function handler(req, res) {
           }
         }
         const buyerEmail = payment.session?.customer_details?.email;
+        if (first) {
+          // The dashboard's "Bought a script" step. Tied to the email they
+          // used in the tool when there is one, so it lands on the same
+          // person as their visits; recorded before the email so a Resend
+          // failure can't hide a sale.
+          const submission = analysis.submissionId
+            ? await getSubmission(redis, analysis.submissionId).catch(() => null)
+            : null;
+          await recordPurchaseOnce(redis, sessionId, {
+            e: "script_purchased",
+            email: (submission?.email || buyerEmail || "").toLowerCase() || undefined,
+            vid: isVisitorId(vid) ? vid : undefined,
+            flow,
+            amount: payment.session?.amount_total ?? undefined,
+            name: payment.session?.customer_details?.name || undefined,
+          }).catch((err) => console.error("Recording the script sale failed:", err));
+        }
         if (first && buyerEmail) {
           await sendScriptEmail({
             to: buyerEmail,

@@ -6,6 +6,7 @@ import { getFlow } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import icon from "../assets/nln-icon.png";
+import { track } from "../lib/track.js";
 
 // Expecting-an-offer-soon form. Field names match ApplyForm wherever the
 // question is the same, so formDraft.js prefill carries across flows.
@@ -177,6 +178,8 @@ export default function OfferSoonForm() {
         // no lead in this session — store anonymously
       }
       const payload = { ...form, priorities };
+      // Counted before the 70-90s wait, so the dashboard shows who gives up.
+      track("analysis_submitted");
       const res = await fetch("/api/analyze-offer-soon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

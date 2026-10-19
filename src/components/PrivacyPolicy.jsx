@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
-const EFFECTIVE_DATE = "October 16, 2026";
+const EFFECTIVE_DATE = "October 18, 2026";
 
 function SectionHeading({ children }) {
   return (
@@ -46,8 +46,14 @@ export default function PrivacyPolicy() {
               script (we keep the extracted text, not the file itself)
             </li>
             <li>
-              Basic usage data, such as which stage of your job search you
-              selected
+              Usage data: which pages of the tool you visit and the steps you
+              take (for example, starting an analysis or a checkout), recorded
+              with a random identifier stored in your browser. Once you give
+              us your email, we link that activity to it
+            </li>
+            <li>
+              If you make a purchase, the name and email you give Stripe at
+              checkout
             </li>
             <li>
               The analysis and any negotiation script generated for you,
@@ -66,7 +72,10 @@ export default function PrivacyPolicy() {
               If you opt in, to send you occasional negotiation tips and
               resources by email
             </li>
-            <li>To improve our tool and understand how it's used</li>
+            <li>
+              To improve our tool and understand how it's used, including
+              seeing where people get stuck on their way through it
+            </li>
             <li>
               To prepare for coaching calls you book with us — we may review
               your submission, analysis, and script before speaking with you

@@ -7,33 +7,10 @@ const SUBS_LIST = "nln:subs"; // all submission ids, newest first
 const subKey = (id) => `nln:sub:${id}`;
 const emailKey = (email) => `nln:subs:email:${email.trim().toLowerCase()}`;
 
-// Funnel events. The list is capped (see EVENTS_MAX) because it's only for
-// eyeballing recent activity; the per-day counters are what the admin rollup
-// reads, so summarizing never has to scan the list.
-export const EVENTS_LIST = "nln:events";
-export const EVENTS_MAX = 5000;
-export const eventCountKey = (event, day) => `nln:events:count:${event}:${day}`;
-
-// UTC date stamp (YYYY-MM-DD) used in the daily counter keys.
+// UTC date stamp (YYYY-MM-DD) used in per-day keys (events, rate limits).
 export function eventDay(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
-
-// Every event the app is allowed to record, in funnel order. Anything not on
-// this list is rejected by /api/event, so a typo or a rogue caller can't
-// quietly create new keys.
-export const TRACKED_EVENTS = [
-  "results_viewed",
-  "script_cta_clicked",
-  "session_cta_clicked",
-  "proof_viewed",
-  "session_viewed",
-  "script_checkout_clicked",
-  "session_checkout_clicked",
-  "script_generated",
-  "script_pdf_downloaded",
-  "booking_confirmed",
-];
 
 export function getRedis() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -75,13 +52,9 @@ export async function updateSubmission(redis, id, patch) {
   return updated;
 }
 
-// Longest window the rollup will read, so a bad ?start= can't ask for tens of
-// thousands of keys. A year (the longest preset) fits comfortably under it.
+// Longest window the dashboard will read (one event list per day), so a bad
+// ?start= can't ask for thousands of keys. A year (the longest preset) fits comfortably under it.
 export const MAX_RANGE_DAYS = 400;
-
-// Upstash takes every mget key in one request, so a year of keys (9 events x
-// 365 days) is split into batches rather than sent as a single huge call.
-const MGET_CHUNK = 400;
 
 // The day N calendar months before the given day. Day-of-month is clamped to
 // the target month's length, so 1 month before Mar 31 is Feb 28 (or Feb 29 in
@@ -116,42 +89,6 @@ export function dayRange(startDay, endDay) {
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return days;
-}
-
-async function mgetChunked(redis, keys) {
-  if (keys.length === 0) return [];
-  const batches = [];
-  for (let i = 0; i < keys.length; i += MGET_CHUNK) {
-    batches.push(keys.slice(i, i + MGET_CHUNK));
-  }
-  const results = await Promise.all(batches.map((b) => redis.mget(...b)));
-  return results.flat();
-}
-
-// Funnel rollup from the per-day counters only — never a scan of the events
-// list. Returns { event: total } per tracked event, summed over the inclusive
-// day range. Missing days simply read as 0.
-export async function getFunnelCounts(redis, startDay, endDay) {
-  const days = dayRange(startDay, endDay);
-  const counts = {};
-  if (days.length === 0) {
-    TRACKED_EVENTS.forEach((event) => {
-      counts[event] = 0;
-    });
-    return counts;
-  }
-
-  const keys = TRACKED_EVENTS.flatMap((event) =>
-    days.map((day) => eventCountKey(event, day))
-  );
-  const values = await mgetChunked(redis, keys);
-
-  TRACKED_EVENTS.forEach((event, i) => {
-    counts[event] = values
-      .slice(i * days.length, (i + 1) * days.length)
-      .reduce((sum, v) => sum + (Number(v) || 0), 0);
-  });
-  return counts;
 }
 
 // Most recent submissions, capped. Used by the admin list and the
