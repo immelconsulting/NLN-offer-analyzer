@@ -76,7 +76,7 @@ export default function BookingPage() {
         {status === "paid" && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 sm:p-10 text-center">
             <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-navy-900">
-              You're all set — now pick your time.
+              You're all set. Now pick your time.
             </h1>
             <p className="text-slate-700 mt-3 max-w-md mx-auto">
               Your {booking.tier} Negotiation Strategy Session with Jenny
@@ -92,7 +92,7 @@ export default function BookingPage() {
               Pick my time with Jenny →
             </a>
             <p className="text-xs text-slate-500 mt-4">
-              Bookmark this page — you can come back to it if you need to
+              Bookmark this page. You can come back to it if you need to
               schedule later.
             </p>
           </div>

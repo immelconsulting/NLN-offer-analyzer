@@ -301,10 +301,28 @@ would corrupt the floor math. Uploaded files are excluded: a 2MB upload is ~2.7M
 two would exceed the ~5MB quota, so files must be re-picked. The offer-soon `priorities`
 multi-select is also excluded, since the draft store keeps strings only.
 
-**Note on prompt style:** both script-generator prompts for the pre-offer flows forbid em
-dashes in their output, and the prompt files themselves contain none. That's load-bearing —
-when the instructions used em dashes in their own prose, the model mirrored the style and
-produced 7 of them in a script.
+**No em dashes anywhere customers can see (Alex, Oct 20, 2026: "it looks like AI wrote it").**
+All six prompts forbid them (a `## PUNCTUATION` section in the analyzers, a formatting rule in the
+scripts) and the prompt files themselves contain none. That's load-bearing: when the instructions
+used em dashes in their own prose, the model mirrored the style and produced 7 of them in a
+script. Safety net: `stripEmDashes()` (`api/_lib/text.js`) rewrites any that slip through, on every
+analysis (in `runSearchAnalysis`) and every script (new and reopened); en dashes in ranges and
+markdown `---` are untouched. Site copy is also dash-free; `tests/no-em-dashes.test.js` enforces
+all three (the private admin page is exempt). Write new copy with commas, periods, colons or
+parentheses instead.
+
+**Loading screen** (`src/components/AnalysisLoading.jsx`, shared by all three forms): cycles
+every 7s through what the analyzer is doing, built from the form (role, location, company,
+years): BLS, Glassdoor, the specialist sources only when the role matches (Levels.fyi/Built In
+for tech, RepVue/Betts for revenue, mirroring the prompts' routing), then the three strategies,
+holding on the last step. **Results pages** have "Print these results" (window.print; the share
+row and the script/session choice are `print:hidden`). **Footer** (`SiteFooter.jsx`, rendered once
+in `App.jsx`) on every page links www.nextlevelnegotiation.com and the privacy policy.
+
+**Script price copy** (ProofPage): "Limited-time price" / "This rate may go up soon. Lock it in
+before your next negotiation call." It replaced "Founding member / early access price", which
+read as too new; keep urgency honest (no countdowns, no crossed-out prices). Session mentions
+say Jenny **helps them prepare before** their calls, never that she's on the call.
 
 ## Submission storage & admin (added July 26, 2026)
 

@@ -149,7 +149,7 @@ On this call the candidate does not accept the offer and does not counter. They 
 
 7. **Closing the call.** Kept close to verbatim: 🗣️ "Thanks again for your time. I'm excited to have this offer! You've been so easy to work with through this whole process." Then one line confirming the follow-up time and that they'll look out for the written details. Follow with a one-line note: send a short thank-you email the same day that restates the follow-up time.
 
-8. **Sign-off**, in Alex Immel's voice, Founder & CEO of NLN. One line of genuine encouragement. Tell them that the moment the offer arrives in writing, they should run it through the Job Offer Analyzer at https://www.jobofferanalyzer.com/offer to build their counter-offer. Then a soft, non-pushy line: if they'd rather have a negotiator in their corner for the real conversation, NLN offers a 1:1 Negotiation Strategy Session, linked as [book a Negotiation Strategy Session]({{strategy_session_url}}). An invitation, not a pitch. Never describe it as free or as a consultation.
+8. **Sign-off**, in Alex Immel's voice, Founder & CEO of NLN. One line of genuine encouragement. Tell them that the moment the offer arrives in writing, they should run it through the Job Offer Analyzer at https://www.jobofferanalyzer.com/offer to build their counter-offer. Then a soft, non-pushy line: if they would like help preparing before their negotiation calls, they can book a 1:1 Negotiation Strategy Session with Jenny Foss to prepare together, linked as [book a Negotiation Strategy Session]({{strategy_session_url}}). An invitation, not a pitch. Never describe it as free or as a consultation.
 
 ### When no range is available
 

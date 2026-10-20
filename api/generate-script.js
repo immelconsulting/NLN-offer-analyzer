@@ -3,6 +3,7 @@ import { getRedis, getSubmission, updateSubmission } from "./_lib/store.js";
 import { verifyPayment } from "./_lib/payment.js";
 import { loadPrompt } from "./_lib/prompts.js";
 import { sendScriptEmail } from "./_lib/email.js";
+import { stripEmDashes } from "./_lib/text.js";
 import { isVisitorId, recordPurchaseOnce } from "./_lib/events.js";
 import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
 
@@ -346,7 +347,7 @@ export default async function handler(req, res) {
     try {
       const saved = await redis.get(scriptKey(sessionId));
       if (saved?.script) {
-        return res.status(200).json({ script: saved.script, flow: saved.flow, subtitle: saved.subtitle, reopened: true });
+        return res.status(200).json({ script: stripEmDashes(saved.script), flow: saved.flow, subtitle: saved.subtitle, reopened: true });
       }
     } catch (err) {
       console.error("Saved script lookup failed:", err);
@@ -441,11 +442,13 @@ export default async function handler(req, res) {
       messages: [{ role: "user", content: userMessage }],
     });
 
-    const script = response.content
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
+    const script = stripEmDashes(
+      response.content
+        .filter((b) => b.type === "text")
+        .map((b) => b.text)
+        .join("\n")
+        .trim()
+    );
     if (!script) {
       throw new Error("Empty script response from model.");
     }
@@ -469,7 +472,7 @@ export default async function handler(req, res) {
         if (!first) {
           const saved = await redis.get(scriptKey(sessionId));
           if (saved?.script) {
-            return res.status(200).json({ script: saved.script, flow: saved.flow, subtitle: saved.subtitle, reopened: true });
+            return res.status(200).json({ script: stripEmDashes(saved.script), flow: saved.flow, subtitle: saved.subtitle, reopened: true });
           }
         }
         const buyerEmail = payment.session?.customer_details?.email;

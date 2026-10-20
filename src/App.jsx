@@ -13,9 +13,11 @@ import BookingPage from "./components/BookingPage.jsx";
 import ScriptPage from "./components/ScriptPage.jsx";
 import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
 import AdminPage from "./components/AdminPage.jsx";
+import SiteFooter from "./components/SiteFooter.jsx";
 
 export default function App() {
   return (
+    <>
     <Routes>
       <Route path="/" element={<LandingPage />} />
 
@@ -49,5 +51,7 @@ export default function App() {
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/admin" element={<AdminPage />} />
     </Routes>
+    <SiteFooter />
+    </>
   );
 }

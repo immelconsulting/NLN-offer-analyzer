@@ -8,6 +8,7 @@ import OpportunityList from "./OpportunityList.jsx";
 import StrategyCards from "./StrategyCards.jsx";
 import ShareButton from "./ShareButton.jsx";
 import SiteHeader from "./SiteHeader.jsx";
+import PrintButton from "./PrintButton.jsx";
 
 export default function ResultsPage() {
   const [searchParams] = useSearchParams();
@@ -76,8 +77,11 @@ export default function ResultsPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <ShareButton />
+        <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
+          <div className="flex flex-wrap items-center gap-3">
+            <ShareButton />
+            <PrintButton />
+          </div>
           <Link
             to="/"
             className="inline-block py-2.5 text-sm font-medium text-navy-700 hover:text-navy-900 transition"
@@ -166,10 +170,10 @@ function NextStepChoice({ encoded }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:hidden">
       <p className="font-serif font-semibold text-navy-900 text-xl text-center mb-6">
-        What do you want next — a script you can run yourself, or a
-        negotiator in your corner?
+        What do you want next: a script you can run yourself, or help
+        preparing with Jenny Foss?
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         <button
@@ -189,7 +193,7 @@ function NextStepChoice({ encoded }) {
         >
           <span className="block font-semibold">Book a Strategy Session</span>
           <span className="block text-sm text-slate-600 mt-1">
-            Get Jenny Foss in your corner for the actual call
+            Prepare with Jenny Foss before your negotiation calls
           </span>
         </button>
       </div>
