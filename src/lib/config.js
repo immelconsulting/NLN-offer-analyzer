@@ -63,10 +63,9 @@ export const TRUSTPILOT_REVIEWS_URL = "https://www.trustpilot.com/review/nextlev
 
 export const CONTACT_EMAIL = "alex@nextlevelnegotiation.com";
 
-// TEMPORARY: shows a free "skip payment" button on the proof page for
-// testing the script generator. To remove the free path later:
-//   1. Set this to false (hides the button)
-//   2. Delete the ALLOW_TEST_BYPASS env var in Vercel (disables the server
-//      bypass) and redeploy
-// The paid flow is unaffected either way — both paths share the same code.
-export const FREE_TEST_MODE = true;
+// Free-test links ("[Testing] Generate my script free" on the proof pages,
+// "[Testing] Skip payment" on /session). Turned OFF for launch (Oct 20, 2026).
+// The server-side bypass (session_id=test_skip_payment) only works off
+// production, or in production while ALLOW_TEST_BYPASS=true is set in Vercel.
+// Vercel preview deployments still accept it, so test there.
+export const FREE_TEST_MODE = false;

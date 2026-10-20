@@ -20,9 +20,7 @@ Two products ship from this funnel, both live with real Stripe payments:
    the Price amount, see item 9). Each tier reveals its own Thryv calendar on `/booking`, and
    every purchase emails `info@jobjenny.com` (item 10).
 
-**Still open before/at launch:** free-test mode is still ON in production (see "Testing without
-paying"; switch off on Oct 19 once Alisa's audit is done); Alisa's notes on two flows are
-pending; `JENNY_BIO_URL` is a temporary team-page link. `scripts/create-session-payment-links.js`
+**Still open at launch:** Alisa's notes on two flows are pending; `JENNY_BIO_URL` is a temporary team-page link. `scripts/create-session-payment-links.js`
 was written for creating the links but never run; keep it only as a reference for the shape.
 
 **JobJenny pilot:** sessions are run by **Jenny Foss**, not Alex, and she's named (with a bio link)
@@ -430,14 +428,12 @@ code also accepts `UPSTASH_*` names), `STRIPE_SECRET_KEY`, `LEADS_EXPORT_TOKEN`,
 
 ## Testing without paying
 
-`session_id=test_skip_payment` skips Stripe verification — always on non-production deployments,
-and in production only while `ALLOW_TEST_BYPASS=true`. Two visible testing links use it, both
-gated by `FREE_TEST_MODE` in config.js: "[Testing] Generate my script free" on `/proof`, and
-"[Testing] Skip payment (30 / 60 min booking step)" on `/session` (jumps to
-`/booking?...&tier=30|60`). **As of Oct 17 `ALLOW_TEST_BYPASS=true` is set in production.**
-**This free-test path is temporary — remove both flags when testing ends** (set
-`FREE_TEST_MODE = false` to hide the links, delete `ALLOW_TEST_BYPASS` in Vercel to close the
-server-side bypass, then redeploy).
+`session_id=test_skip_payment` skips Stripe verification, **always on non-production (Vercel
+preview) deployments** and in production only while `ALLOW_TEST_BYPASS=true`. **Free-test mode
+was turned off for launch on Oct 20, 2026:** `FREE_TEST_MODE = false` hides the two "[Testing]"
+links ("Generate my script free" on `/proof`, "Skip payment (30 / 60 min booking step)" on
+`/session`), and `ALLOW_TEST_BYPASS` was removed from production in Vercel. To test without paying
+now, use a branch's preview deployment (behind Vercel login), or a 99%-off promo code in production.
 Stripe promo-code testing: 100%-off codes are rejected on one-time Payment Links, and discounts
 leaving less than $0.50 also fail — use 99% off (or price − $0.50 max discount).
 
