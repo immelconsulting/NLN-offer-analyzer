@@ -76,8 +76,39 @@ export function filterPeople(people, { flow = null, q = "", exclusions = [] } = 
 const did = (person, events) =>
   events === "*" ? person.events.length > 0 : person.events.some((ev) => events.includes(ev.e));
 
+// Who's behind each number, so a click on a funnel layer can list them.
+// Newest activity first, capped so a busy step can't bloat the response
+// (the count stays exact).
+export const STEP_PEOPLE_LIMIT = 300;
+
+function summarize(person) {
+  const lastSeen = person.events.reduce((latest, ev) => (String(ev.t) > latest ? String(ev.t) : latest), "");
+  return { key: person.key, email: person.email, name: person.name, flows: [...person.flows], lastSeen };
+}
+
+const newestFirst = (list) =>
+  list
+    .map(summarize)
+    .sort((a, b) => b.lastSeen.localeCompare(a.lastSeen))
+    .slice(0, STEP_PEOPLE_LIMIT);
+
 export function funnelCounts(people, steps) {
-  return steps.map((s) => ({ key: s.key, label: s.label, group: s.group, count: people.filter((p) => did(p, s.events)).length }));
+  let previous = null;
+  return steps.map((s) => {
+    const reached = people.filter((p) => did(p, s.events));
+    // Did the step above but not this one: where the funnel leaks.
+    const droppedOff = previous ? previous.filter((p) => !did(p, s.events)) : [];
+    previous = reached;
+    return {
+      key: s.key,
+      label: s.label,
+      group: s.group,
+      count: reached.length,
+      droppedCount: droppedOff.length,
+      people: newestFirst(reached),
+      droppedOff: newestFirst(droppedOff),
+    };
+  });
 }
 
 const sumAmount = (people, event) =>

@@ -67,6 +67,19 @@ describe("/api/admin", () => {
     expect(body.submissions).toHaveLength(1);
   });
 
+  it("opens an anonymous visitor's journey by their visitor key", async () => {
+    h.events.push({ t: "2026-10-21T09:05:00Z", e: "results_viewed", vid: "anon-vid-0009", flow: "offer" });
+    const { body } = await call(admin, { method: "GET", query: { person: "visitor:anon-vid-0009" } });
+    expect(body.journey).toMatchObject({ email: null, flows: ["offer"] });
+    expect(body.journey.events.map((e) => e.e)).toEqual(["results_viewed"]);
+  });
+
+  it("returns each funnel step's people for the click-through", async () => {
+    const { body } = await call(admin, { method: "GET" });
+    const visited = body.scriptFunnel.find((x) => x.key === "visited");
+    expect(visited.people.map((p) => p.email).sort()).toEqual(["alex@nextlevelnegotiation.com", "pat@example.com"]);
+  });
+
   it("adds and removes exclusions, rejecting junk", async () => {
     expect((await call(admin, { method: "POST", body: { action: "exclude", value: "Alex@NextLevelNegotiation.com" } })).body.exclusions)
       .toEqual(["alex@nextlevelnegotiation.com"]);

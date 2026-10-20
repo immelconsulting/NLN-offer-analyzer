@@ -115,9 +115,14 @@ export function KpiRow({ kpis }) {
 
 // `compact` draws on a narrower canvas for the side column, so its text
 // renders at the same size as the main funnel's instead of being shrunk.
-export function FunnelChart({ steps, title, note, showGroups = true, compact = false }) {
+// Every layer is a button: clicking one lists who reached that step (and who
+// dropped off just before it) underneath; clicking a person opens their
+// journey via onPerson.
+export function FunnelChart({ steps, title, note, showGroups = true, compact = false, onPerson }) {
   const [hover, setHover] = useState(null);
+  const [selected, setSelected] = useState(null);
   if (!steps?.length) return null;
+  const toggle = (i) => setSelected((cur) => (cur === i ? null : i));
 
   const W = compact ? 400 : 640;
   const layerH = 54;
@@ -145,6 +150,7 @@ export function FunnelChart({ steps, title, note, showGroups = true, compact = f
         <h2 className="text-base font-serif font-semibold text-navy-900">{title}</h2>
         {note && <span className="text-xs text-slate-500">{note}</span>}
       </div>
+      <p className="text-xs text-slate-500 -mt-2 mb-3">Click a layer to see who&rsquo;s in it.</p>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label={`${title}: ${steps.map((s) => `${s.label} ${s.count}`).join(", ")}`}>
         {groups.map((g) => {
           const y = g.start * (layerH + gap);
@@ -173,20 +179,37 @@ export function FunnelChart({ steps, title, note, showGroups = true, compact = f
             .map((p) => p.join(","))
             .join(" ");
           const prev = i === 0 ? null : steps[i - 1].count;
-          const active = hover === i;
+          const isSelected = selected === i;
+          const active = hover === i || isSelected;
           return (
             <g
               key={s.key}
+              role="button"
+              tabIndex={0}
+              aria-pressed={isSelected}
+              aria-label={`${s.label}: ${s.count} ${s.count === 1 ? "person" : "people"}. Show who.`}
+              onClick={() => toggle(i)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  toggle(i);
+                }
+              }}
               onMouseEnter={() => setHover(i)}
               onMouseLeave={() => setHover(null)}
-              style={{ cursor: "default" }}
+              style={{ cursor: "pointer", outline: "none" }}
             >
               <title>
                 {`${s.label}: ${s.count.toLocaleString()} ${s.count === 1 ? "person" : "people"}`}
                 {prev !== null ? ` · ${pctOf(s.count, prev)} of the step above` : ""}
                 {` · ${pctOf(s.count, steps[0].count)} of the top`}
               </title>
-              <polygon points={points} fill={fill} stroke={active ? INK : "none"} strokeWidth={active ? 1.5 : 0} />
+              <polygon
+                points={points}
+                fill={fill}
+                stroke={active ? INK : "none"}
+                strokeWidth={isSelected ? 3 : active ? 1.5 : 0}
+              />
               <text x={center} y={y + layerH / 2 - 8} textAnchor="middle" dominantBaseline="middle" fill={ink} fontSize="13">
                 {s.label}
               </text>
@@ -202,6 +225,83 @@ export function FunnelChart({ steps, title, note, showGroups = true, compact = f
           );
         })}
       </svg>
+      {selected !== null && steps[selected] && (
+        <StepPeople
+          step={steps[selected]}
+          isFirst={selected === 0}
+          previousLabel={selected > 0 ? steps[selected - 1].label : null}
+          onPerson={onPerson}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+// The people behind one funnel layer: who reached it, or who did the step
+// above and stopped (usually the more useful list).
+function StepPeople({ step, isFirst, previousLabel, onPerson, onClose }) {
+  const [view, setView] = useState("reached");
+  const showDropped = view === "dropped" && !isFirst;
+  const list = showDropped ? step.droppedOff || [] : step.people || [];
+  const total = showDropped ? step.droppedCount || 0 : step.count;
+
+  return (
+    <div className="mt-4 border-t border-slate-200 pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+        <h3 className="text-sm font-semibold text-navy-900">{step.label}</h3>
+        <button type="button" onClick={onClose} className="text-sm font-medium text-navy-600 hover:text-navy-900">
+          Close ×
+        </button>
+      </div>
+      {!isFirst && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          <button type="button" onClick={() => setView("reached")} className={chipClass(!showDropped)}>
+            Reached this step ({step.count})
+          </button>
+          <button type="button" onClick={() => setView("dropped")} className={chipClass(showDropped)}>
+            Stopped after &ldquo;{previousLabel}&rdquo; ({step.droppedCount || 0})
+          </button>
+        </div>
+      )}
+      {list.length === 0 ? (
+        <p className="text-sm text-slate-500">Nobody here in this date range.</p>
+      ) : (
+        <ul className="divide-y divide-slate-100 max-h-80 overflow-y-auto rounded-lg border border-slate-200">
+          {list.map((p) => (
+            <li key={p.key}>
+              <button
+                type="button"
+                onClick={() => onPerson?.(p)}
+                className="w-full text-left px-3 py-2 hover:bg-navy-50 transition flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5"
+                title="Show this person's journey"
+              >
+                <span className="text-sm text-navy-950">
+                  {p.email ? (
+                    <>
+                      {p.name && <span className="font-semibold">{p.name} · </span>}
+                      <span className="underline decoration-navy-300 underline-offset-2">{p.email}</span>
+                    </>
+                  ) : (
+                    <span className="text-slate-600">Anonymous visitor (no email yet)</span>
+                  )}
+                  {p.flows.length > 0 && (
+                    <span className="text-slate-500"> · {p.flows.map((f) => FLOW_NAMES[f] || f).join(", ")}</span>
+                  )}
+                </span>
+                <span className="text-xs text-slate-500">
+                  {p.lastSeen ? `last active ${new Date(p.lastSeen).toLocaleString()}` : ""}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {total > list.length && (
+        <p className="text-xs text-slate-500 mt-2">
+          Showing the {list.length} most recently active of {total}.
+        </p>
+      )}
     </div>
   );
 }

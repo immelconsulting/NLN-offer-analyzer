@@ -90,6 +90,18 @@ describe("funnels and KPIs (people, not clicks)", () => {
     expect(counts(visible, SESSION_FUNNEL)).toEqual({ viewed_session: 1, session_checkout: 1, booked_session: 1 });
   });
 
+  it("lists who reached each step and who stopped just before it", () => {
+    const steps = funnelCounts(visible, SCRIPT_FUNNEL);
+    const gaveEmail = steps.find((x) => x.key === "gave_email");
+    expect(gaveEmail.people.map((p) => p.email)).toEqual(["pat@example.com"]);
+    // Sam visited but never gave an email: he's in the drop-off list.
+    expect(gaveEmail.droppedCount).toBe(2);
+    expect(gaveEmail.droppedOff.some((p) => p.key === "visitor:vid-sam-0002" && p.email === null)).toBe(true);
+    expect(steps[0].droppedOff).toEqual([]);
+    expect(gaveEmail.people[0]).toMatchObject({ name: "Pat Example", flows: ["apply"] });
+    expect(gaveEmail.people[0].lastSeen).toBe("2026-10-21T09:07:00Z");
+  });
+
   it("totals sales and revenue", () => {
     expect(kpis(visible)).toEqual({ visitors: 3, emails: 1, analyses: 1, scriptsSold: 1, sessionsSold: 1, revenueCents: 37600 });
   });
