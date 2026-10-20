@@ -68,7 +68,11 @@ const ANALYSIS_TOOL = {
         },
         required: ["conservative", "balanced", "aggressive"],
       },
-      recommendedNextStep: { type: "string" },
+      recommendedNextStep: {
+        type: "string",
+        description:
+          "One action. Usually an email to the recruiter thanking them for the offer and asking for a time to talk it through. Never a call made only to schedule another call.",
+      },
       // Empty is allowed for the genuinely-no-data case; the system prompt
       // requires at least one entry whenever searches found anything usable.
       sources: SOURCES_SCHEMA,

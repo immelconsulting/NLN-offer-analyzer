@@ -98,9 +98,12 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
    fall back to the stash. Session tier links get `prefilled_email` too, so Jenny's alert matches
    their analyzer history. **Download PDF** builds a real PDF client-side with pdfmake (`src/lib/scriptPdf.js`,
    markdown → pdfmake; 🗣️ becomes "Say:" since Roboto has no emoji; includes the AI
-   disclaimer), downloads it and opens it in a tab opened synchronously in the click so pop-up
-   blockers allow it; pdfmake is lazy-loaded (prefetched once a script is shown) and falls back
-   to `window.print()` on failure.
+   disclaimer). It builds the PDF **once** (`getBlob`), saves it with a plain `<a download>` and
+   points a tab, opened synchronously in the click so pop-up blockers allow it, at the same blob
+   URL. pdfmake is lazy-loaded (prefetched once a script is shown). **It never opens the print
+   dialog on its own** (Alex, Oct 20: buyers kept landing in print): on failure it shows a short
+   message with an optional "Print or save as PDF instead" link and records `script_pdf_failed`
+   with the error text, so a device-specific failure shows up in the admin data.
    The script's own sign-off links directly to `STRATEGY_SESSION_URL` (not `/session`), since it
    must still work when the script is downloaded/printed as a standalone PDF outside the app.
    The prompt holds a `{{strategy_session_url}}` placeholder that `api/generate-script.js`
@@ -318,6 +321,11 @@ for tech, RepVue/Betts for revenue, mirroring the prompts' routing), then the th
 holding on the last step. **Results pages** have "Print these results" (window.print; the share
 row and the script/session choice are `print:hidden`). **Footer** (`SiteFooter.jsx`, rendered once
 in `App.jsx`) on every page links www.nextlevelnegotiation.com and the privacy policy.
+
+**Offer analysis next step:** defaults to **emailing the recruiter** to thank them and ask for a
+time to talk it through, never a call made only to schedule another call (Alex, Oct 20). The rule,
+the example in `system-prompt.md` and the `recommendedNextStep` schema description all say so;
+`tests/prompts.test.js` guards it.
 
 **Script price copy** (ProofPage): "Limited-time price" / "This rate may go up soon. Lock it in
 before your next negotiation call." It replaced "Founding member / early access price", which
