@@ -30,18 +30,28 @@ import {
 // confirms the payment and only then reveals Jenny's Thryv calendar for the
 // tier that was bought.
 //
-// NOTE for Alex: the four points below are deliberately generic and don't
-// claim any number that isn't verified (client count, win rate, years in
-// business). If you have real, specific stats or a real client quote from
-// Jenny/Alisa's practice, swap them in here the same way PROOF_POINTS and the
-// blockquote work in ProofPage.jsx — just don't reuse the script testimonial
-// from ProofPage, since that quote is about the script product, not a live
-// session.
+// Page copy is Jenny Foss's own (her "Sales Page for Jenny Consulting" doc,
+// Oct 2026), kept word for word. One page serves all four flows, so edit it
+// here and every flow picks it up. If a real client quote from Jenny's
+// practice arrives, it goes in the testimonial slot below; never reuse the
+// script testimonial from ProofPage, which is about a different product.
 const PROOF_POINTS = [
-  "One-on-one time with Jenny Foss, working from your actual target role, your numbers, and the specific conversation ahead of you, not generic advice.",
-  "You don't need an offer in hand to book this. The earlier you prep, the more room you have to shape how the conversation goes.",
-  "Real conversations rarely go the way you rehearsed. Jenny can help you adjust to whatever the recruiter or hiring manager actually says back.",
-  "Built on Next Level Negotiation's methodology, the same approach behind hundreds of real negotiations, applied to your specific situation.",
+  {
+    title: "Built around your specific situation.",
+    body: "You'll work through your target role, your numbers, and the specific people you'll be negotiating with.",
+  },
+  {
+    title: "No offer yet? No problem.",
+    body: "Honestly, the earlier you prepare, the better. You'll have more room to shape things before anyone throws out a number.",
+  },
+  {
+    title: "No more getting caught off guard.",
+    body: "Real conversations rarely go the way you rehearsed. Jenny will help you plan for the curveballs so you can respond with confidence.",
+  },
+  {
+    title: "A proven method behind it.",
+    body: "Jenny works from the Next Level Negotiation approach, which has been used in hundreds of successful negotiations.",
+  },
 ];
 
 const TIERS = [
@@ -81,19 +91,28 @@ export default function SessionProofPage() {
       <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
           <h1 className="text-2xl sm:text-3xl font-serif font-semibold text-navy-900 text-center">
-            Your resume is polished. Let's make sure your negotiation is too.
+            Let's get you paid what you're worth.
           </h1>
           <p className="text-center mt-3 text-lg font-serif font-semibold text-navy-600">
             Get Jenny Foss in your corner.
           </p>
           <p className="text-center mt-1 text-sm">
-            <MeetJennyLink className="text-navy-600 hover:text-navy-900" />
+            <MeetJennyLink className="text-navy-600 hover:text-navy-900">
+              Meet Jenny →
+            </MeetJennyLink>
           </p>
-          <p className="text-slate-700 text-center mt-3 max-w-xl mx-auto">
-            You've already put in the work on your resume and LinkedIn. A
-            Negotiation Strategy Session with Jenny makes sure that work
-            actually pays off, literally, when it's time to talk numbers.
-          </p>
+          <div className="text-slate-700 text-center mt-5 max-w-xl mx-auto space-y-3">
+            <p>
+              You've done the hard part. You're in the running (or already
+              holding an offer!) Now comes the conversation most people dread,
+              and plenty skip altogether: the money talk.
+            </p>
+            <p>
+              In a Negotiation Strategy Session, you and Jenny will figure out
+              exactly what to say, how to say it, and what to do if they push
+              back.
+            </p>
+          </div>
 
           <ul className="mt-8 space-y-4">
             {PROOF_POINTS.map((point, i) => (
@@ -101,7 +120,10 @@ export default function SessionProofPage() {
                 <span className="shrink-0 mt-0.5 w-6 h-6 rounded-full bg-navy-50 text-navy-600 text-sm font-semibold flex items-center justify-center">
                   ✓
                 </span>
-                <span className="text-slate-700">{point}</span>
+                <span className="text-slate-700">
+                  <strong className="font-semibold text-navy-900">{point.title}</strong>{" "}
+                  {point.body}
+                </span>
               </li>
             ))}
           </ul>
@@ -120,7 +142,7 @@ export default function SessionProofPage() {
           */}
 
           <h2 className="mt-10 text-lg font-serif font-semibold text-navy-900 text-center">
-            Choose your session with Jenny
+            Ready? Choose your session with Jenny.
           </h2>
 
           <div className="mt-5 grid sm:grid-cols-2 gap-4">

@@ -115,7 +115,10 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
    their resume/LinkedIn work, not cold traffic, and often people who never touched the
    self-serve script. So the copy leans on the JobJenny relationship and must **never** frame a
    session as the better choice over the script — for most visitors the script isn't what
-   they're weighing it against. Don't sync this page's copy to ProofPage's. No Trustpilot block
+   they're weighing it against. Don't sync this page's copy to ProofPage's. **The copy is Jenny
+   Foss's own** (her "Sales Page for Jenny Consulting" doc, Oct 19, 2026: "Let's get you paid what
+   you're worth.", four ✓ points, "Ready? Choose your session with Jenny."), kept word for word;
+   change it only with Jenny/Alex's say-so. One page serves all four flows. No Trustpilot block
    here (JobJenny has no Trustpilot presence); the testimonial slot is an empty comment
    placeholder — a real quote from Jenny/Alisa's practice can fill it, but never reuse
    ProofPage's script testimonial, which is about the script product.
