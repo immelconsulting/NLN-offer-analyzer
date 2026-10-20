@@ -31,6 +31,8 @@ import {
 //                                       also matches role/company/location
 //   GET /api/admin?flow=apply        -> everything narrowed to one flow
 //   GET /api/admin?person=a@b.com    -> plus that person's journey timeline
+//                                       (or person=visitor:<id> for someone
+//                                       who never gave an email)
 //   GET /api/admin?range=3m          -> preset window (1d/7d/30d/3m/4m/6m/12m)
 //   GET /api/admin?start=&end=       -> custom YYYY-MM-DD range
 //   GET /api/admin?id=sub_...        -> one full record
@@ -272,7 +274,7 @@ export default async function handler(req, res) {
     // people down to exactly one.
     const personEmail = String(req.query.person || "").trim().toLowerCase();
     const focus = personEmail
-      ? everyone.find((p) => p.email === personEmail)
+      ? everyone.find((p) => p.email === personEmail || p.key === personEmail)
       : people.length === 1
         ? people[0]
         : null;

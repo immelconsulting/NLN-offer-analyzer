@@ -372,6 +372,10 @@ person's journey). Components in `src/components/AdminDashboard.jsx`.
 - **Counting** (`api/_lib/dashboard.js`, pure, fully tested): groups events into **people**
   (email if known, else visitor id) and counts people per step, so refreshes don't inflate.
   Filters apply per person: a flow filter keeps everything those people did.
+- **Clickable funnels:** each layer is a button. Clicking lists who **reached** the step and who
+  **stopped after the step above** (`people` / `droppedOff` on each step from `funnelCounts()`,
+  newest activity first, capped at 300 each; counts stay exact). Clicking a person opens their
+  journey; anonymous visitors use `?person=visitor:<id>`.
 - **Hidden people:** `nln:admin:excluded` (emails or `@domain`), managed from the page
   (`POST /api/admin`). Anything sent while logged in to `/admin` is tagged `internal` and that
   person is hidden automatically. Exclusions apply to KPIs, funnels, the table and CSVs.

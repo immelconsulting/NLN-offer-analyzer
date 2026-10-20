@@ -529,6 +529,14 @@ export default function AdminPage() {
 
   const sorted = useMemo(() => sortSubmissions(subs, sort), [subs, sort]);
 
+  // From a funnel layer's people list: show that person's journey (at the
+  // top of the page). Anonymous visitors are looked up by their visitor key.
+  function openPerson(p) {
+    setQuery(p.email || "");
+    setPerson(p.email || p.key);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   if (authed === null) {
     return (
       <div className="min-h-screen bg-navy-50">
@@ -783,16 +791,16 @@ export default function AdminPage() {
             {/* Phones get the narrow drawing without the side bands, so the
                 text stays readable instead of shrinking with the canvas. */}
             <div className="sm:hidden">
-              <FunnelChart title="Script funnel" note={rangeLabel(shownRange)} steps={dash?.scriptFunnel} showGroups={false} compact />
+              <FunnelChart title="Script funnel" note={rangeLabel(shownRange)} steps={dash?.scriptFunnel} onPerson={openPerson} showGroups={false} compact />
             </div>
             <div className="hidden sm:block">
-              <FunnelChart title="Script funnel" note={rangeLabel(shownRange)} steps={dash?.scriptFunnel} />
+              <FunnelChart title="Script funnel" note={rangeLabel(shownRange)} steps={dash?.scriptFunnel} onPerson={openPerson} />
             </div>
           </div>
           <FunnelChart
             title="Strategy session funnel"
             note="$199 / $329 with Jenny"
-            steps={dash?.sessionFunnel}
+            steps={dash?.sessionFunnel} onPerson={openPerson}
             showGroups={false}
             compact
           />
