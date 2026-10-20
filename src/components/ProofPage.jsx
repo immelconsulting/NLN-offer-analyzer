@@ -18,18 +18,18 @@ const FLOW_COPY = {
   offer: {
     heading: "You're not the only one who wondered if this actually works.",
     proofPoints: [
-      "100% 5-star reviews on Trustpilot — 20 verified reviews",
+      "100% 5-star reviews on Trustpilot (20 verified reviews)",
       "Real outcomes: an average 8% salary increase, with one client offer increasing by as much as $30,000",
-      "5+ years and 200+ negotiations behind every script — not a generic AI template",
-      "Delivered instantly — a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
+      "5+ years and 200+ negotiations behind every script, not a generic AI template",
+      "Delivered instantly: a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
     ],
-    ctaLabel: "Get my instant script — $47",
+    ctaLabel: "Get my instant script ($47)",
     // Specific to the counter-offer script product. Deliberately not reused
     // on the apply page, which sells a different script.
     testimonial: {
       quote:
         "His high-level script provided me with immense confidence during my negotiation call.",
-      attribution: "— VP of Finance, June 2024",
+      attribution: "VP of Finance, June 2024",
     },
   },
   // Applying and Interviewing sell the same script; only the heading changes
@@ -38,12 +38,12 @@ const FLOW_COPY = {
   apply: {
     heading: "The call that decides your salary happens before the offer.",
     proofPoints: [
-      "100% 5-star reviews on Trustpilot — 20 verified reviews",
+      "100% 5-star reviews on Trustpilot (20 verified reviews)",
       "Word-for-word answers to the two questions that cost people the most: what are your expectations, and what do you make now",
-      "5+ years and 200+ negotiations behind every script — not a generic AI template",
-      "Delivered instantly — a fully customized script ready in under 5 minutes, because recruiter calls don't wait for a good time",
+      "5+ years and 200+ negotiations behind every script, not a generic AI template",
+      "Delivered instantly: a fully customized script ready in under 5 minutes, because recruiter calls don't wait for a good time",
     ],
-    ctaLabel: "Get my screening call script — $47",
+    ctaLabel: "Get my screening call script ($47)",
     // TODO: drop in a real quote from someone who used the screening call
     // script. Never reuse the counter-offer testimonial here — it's about a
     // different product and a different moment in the process.
@@ -63,12 +63,12 @@ FLOW_COPY.interview = {
 FLOW_COPY.offer_soon = {
   heading: "The offer call is where most people leave money on the table.",
   proofPoints: [
-    "100% 5-star reviews on Trustpilot — 20 verified reviews",
+    "100% 5-star reviews on Trustpilot (20 verified reviews)",
     "Word-for-word lines for the moment the number lands: how to respond, what to ask, and how to buy time without losing momentum",
     "5+ years and 200+ negotiations behind every script, not a generic AI template",
     "Delivered instantly: a fully customized script in under 5 minutes, because offer calls don't wait for a good time",
   ],
-  ctaLabel: "Get my offer call script — $47",
+  ctaLabel: "Get my offer call script ($47)",
   // TODO: drop in a real quote from someone who used the offer call script.
   // Never reuse the counter-offer testimonial here — it's about a different
   // product and a different moment in the process.
@@ -164,10 +164,10 @@ export default function ProofPage({ flow = "offer" }) {
           <div className="mt-10 text-center">
             <p className="text-4xl font-serif font-bold text-navy-900">$47</p>
             <p className="text-sm font-medium text-navy-600 mt-1">
-              Founding member / early access price
+              Limited-time price
             </p>
             <p className="text-xs text-slate-500 mt-1">
-              Early access rate — may increase as we grow.
+              This rate may go up soon. Lock it in before your next negotiation call.
             </p>
           </div>
 
@@ -190,7 +190,7 @@ export default function ProofPage({ flow = "offer" }) {
               <MeetJennyLink className="text-slate-600 hover:text-navy-900">
                 Jenny Foss
               </MeetJennyLink>{" "}
-              of JobJenny — sessions start at{" "}
+              of JobJenny. Sessions start at{" "}
               {STRATEGY_SESSION_PRICE_LABEL}.
             </p>
             {FREE_TEST_MODE && (
@@ -199,7 +199,7 @@ export default function ProofPage({ flow = "offer" }) {
                 onClick={handleFreeTest}
                 className="block w-full text-center text-sm text-slate-400 underline hover:text-navy-600 transition pt-1"
               >
-                [Testing] Generate my script free — skip payment
+                [Testing] Generate my script free (skip payment)
               </button>
             )}
           </div>

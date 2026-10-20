@@ -12,6 +12,7 @@ import {
   RangeCard,
   SourceList,
 } from "./RangeBlocks.jsx";
+import PrintButton from "./PrintButton.jsx";
 
 // Expecting-an-offer-soon results. Same building blocks as the screening-call
 // results page, but the content is about the offer call: how to read the
@@ -65,8 +66,11 @@ export default function OfferSoonResultsPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <ShareButton />
+        <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
+          <div className="flex flex-wrap items-center gap-3">
+            <ShareButton />
+            <PrintButton />
+          </div>
           <Link
             to={stage.basePath}
             className="inline-block py-2.5 text-sm font-medium text-navy-700 hover:text-navy-900 transition"
@@ -78,7 +82,7 @@ export default function OfferSoonResultsPage() {
         <RangeCard
           analysis={analysis}
           noDataNote="Rather than show you a number we can't stand behind, we've left this open. Everything below still applies, and your script will include instructions for building a range from your own research before the call."
-          floorNote="An offer below that is a real gap worth addressing in your counter — and knowing the number before the call is what lets you recognize it instantly."
+          floorNote="An offer below that is a real gap worth addressing in your counter, and knowing the number before the call is what lets you recognize it instantly."
         />
 
         <Callout title="How to read the offer when you hear it" tone="light">

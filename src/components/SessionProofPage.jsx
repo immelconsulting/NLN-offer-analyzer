@@ -62,7 +62,7 @@ const TIERS = [
     detail:
       "Best if you know your number and want a second set of eyes before you pick up the phone.",
     checkoutUrl: STRATEGY_SESSION_30MIN_CHECKOUT_URL,
-    cta: `Book 30 minutes with Jenny — ${STRATEGY_SESSION_PRICE_LABEL}`,
+    cta: `Book 30 minutes with Jenny (${STRATEGY_SESSION_PRICE_LABEL})`,
     testTier: "30",
     featured: false,
   },
@@ -73,7 +73,7 @@ const TIERS = [
     detail:
       "Best if there's real money on the table, the package is complicated, or you want to rehearse the call itself.",
     checkoutUrl: STRATEGY_SESSION_60MIN_CHECKOUT_URL,
-    cta: `Book a full hour with Jenny — ${STRATEGY_SESSION_PRICE_LABEL_60MIN}`,
+    cta: `Book a full hour with Jenny (${STRATEGY_SESSION_PRICE_LABEL_60MIN})`,
     testTier: "60",
     featured: true,
   },
@@ -136,7 +136,7 @@ export default function SessionProofPage() {
             <blockquote className="mt-8 bg-navy-50 rounded-lg px-6 py-5 text-center">
               <p className="text-navy-900 font-medium">"..."</p>
               <cite className="block text-sm text-slate-600 not-italic mt-2">
-                — Name, Title, Month Year
+                Name, Title, Month Year
               </cite>
             </blockquote>
           */}

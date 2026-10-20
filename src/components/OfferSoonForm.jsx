@@ -5,8 +5,8 @@ import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
 import { getFlow } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
-import icon from "../assets/nln-icon.png";
 import { track } from "../lib/track.js";
+import AnalysisLoading, { loadingSteps } from "./AnalysisLoading.jsx";
 
 // Expecting-an-offer-soon form. Field names match ApplyForm wherever the
 // question is the same, so formDraft.js prefill carries across flows.
@@ -213,7 +213,7 @@ export default function OfferSoonForm() {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      {loading && <LoadingOverlay />}
+      {loading && <AnalysisLoading title="Researching your market rate…" steps={loadingSteps("offer_soon", { role: form.targetRole, location: form.location, company: form.targetCompany, years: form.yearsExperience })} />}
       <SiteHeader />
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
@@ -338,7 +338,7 @@ export default function OfferSoonForm() {
                     className={inputClass}
                     value={form.sharedNumber}
                     onChange={(e) => update("sharedNumber", e.target.value)}
-                    placeholder='Optional — e.g. "around $140k" or "$130k to $150k"'
+                    placeholder='Optional, e.g. "around $140k" or "$130k to $150k"'
                   />
                   <p className="text-sm text-slate-500 mt-1.5">
                     Sharing a number early is common and recoverable. Knowing it
@@ -419,7 +419,7 @@ export default function OfferSoonForm() {
                 value={form.callTiming}
                 onChange={(e) => update("callTiming", e.target.value)}
               >
-                <option value="">Optional — select…</option>
+                <option value="">Optional: select…</option>
                 {CALL_TIMINGS.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
@@ -478,7 +478,7 @@ export default function OfferSoonForm() {
                 rows={4}
                 value={form.additionalContext}
                 onChange={(e) => update("additionalContext", e.target.value)}
-                placeholder="Optional — how the interviews went, anything the recruiter has said, your timeline, or anything else that feels relevant."
+                placeholder="Optional: how the interviews went, anything the recruiter has said, your timeline, or anything else that feels relevant."
               />
             </div>
           </section>
@@ -492,8 +492,8 @@ export default function OfferSoonForm() {
               </span>
             </h2>
             <p className="text-sm text-slate-500 -mt-2">
-              These are used only to add context to your analysis and script —
-              nothing here is required.
+              These are used only to add context to your analysis and script.
+              Nothing here is required.
             </p>
 
             <div>
@@ -569,22 +569,6 @@ export default function OfferSoonForm() {
   );
 }
 
-function LoadingOverlay() {
-  return (
-    <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center px-6 text-center">
-      <img src={icon} alt="NLN" className="h-14 w-auto animate-pulse mb-8" />
-      <div className="h-10 w-10 rounded-full border-4 border-navy-100 border-t-navy-600 animate-spin mb-6" />
-      <p className="text-xl font-serif font-semibold text-navy-900">
-        Researching your market rate…
-      </p>
-      <p className="text-slate-600 text-sm mt-2 max-w-xs">
-        We're pulling current compensation data for this role and company, then
-        building what a strong offer looks like. This takes up to two minutes —
-        worth the wait for real numbers.
-      </p>
-    </div>
-  );
-}
 
 const UPLOAD_MAX_BYTES = 2 * 1024 * 1024; // 2MB
 const UPLOAD_ACCEPT = ".pdf,.docx,.txt";
@@ -602,7 +586,7 @@ function FileUpload({ file, onChange, onError, label }) {
       return;
     }
     if (picked.size > UPLOAD_MAX_BYTES) {
-      onError("That file is over 2MB — please upload a smaller version.");
+      onError("That file is over 2MB. Please upload a smaller version.");
       return;
     }
     const reader = new FileReader();
@@ -612,7 +596,7 @@ function FileUpload({ file, onChange, onError, label }) {
       onError("");
     };
     reader.onerror = () =>
-      onError("We couldn't read that file — please try again.");
+      onError("We couldn't read that file. Please try again.");
     reader.readAsDataURL(picked);
   }
 
@@ -635,7 +619,7 @@ function FileUpload({ file, onChange, onError, label }) {
     <label className="flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-3 py-2.5 cursor-pointer hover:border-navy-400 transition">
       <span className="text-sm text-slate-600">
         {label || "Upload a file"}{" "}
-        <span className="text-slate-400">(PDF, Word, or .txt — max 2MB)</span>
+        <span className="text-slate-400">(PDF, Word, or .txt, max 2MB)</span>
       </span>
       <input
         type="file"

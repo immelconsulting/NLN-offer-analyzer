@@ -1,3 +1,5 @@
+import { stripEmDashes } from "./text.js";
+
 // Shared web-search analysis loop, used by /api/analyze (offer stage),
 // /api/analyze-apply (screening-call stages) and /api/analyze-offer-soon.
 // Files under api/_lib are not deployed as serverless functions (underscore
@@ -77,7 +79,8 @@ export async function runSearchAnalysis({
   if (!result) {
     throw new Error(`Model never returned a ${submitTool.name} tool call.`);
   }
-  return result;
+  // Every analysis the site shows comes through here.
+  return stripEmDashes(result);
 }
 
 // Shape of the `sources` array, identical in both flows: the market-data

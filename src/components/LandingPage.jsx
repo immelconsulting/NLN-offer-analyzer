@@ -91,7 +91,7 @@ export default function LandingPage() {
             Only 42% of job seekers negotiate. Nearly 9 in 10 who do, win.
           </h1>
           <p className="text-slate-700 mt-4 max-w-xl">
-            See exactly where your offer has room to grow — free, no strings
+            See exactly where your offer has room to grow. Free, no strings
             attached.
           </p>
           <a
@@ -155,7 +155,7 @@ export default function LandingPage() {
               placeholder="you@example.com"
             />
             <p className="text-sm text-slate-500 mt-1.5">
-              No spam — just your results and relevant resources.
+              No spam, just your results and relevant resources.
             </p>
             <label className="flex items-start gap-2 mt-3 cursor-pointer">
               <input

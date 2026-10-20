@@ -7,12 +7,12 @@ import MeetJennyLink from "./MeetJennyLink.jsx";
 export const money = (n) =>
   typeof n === "number" && Number.isFinite(n)
     ? `$${Math.round(n).toLocaleString("en-US")}`
-    : "—";
+    : "Not available";
 
 export const CONFIDENCE_COPY = {
-  high: "High confidence — multiple quality sources agreed on this market.",
-  medium: "Medium confidence — the data was thinner than we'd like.",
-  low: "Low confidence — this leans on adjacent roles or a broader market.",
+  high: "High confidence: multiple quality sources agreed on this market.",
+  medium: "Medium confidence: the data was thinner than we'd like.",
+  low: "Low confidence: this leans on adjacent roles or a broader market.",
 };
 
 export function RangeRow({ label, points, featured }) {
@@ -158,10 +158,10 @@ export function SourceList({ sources }) {
 // on both range pages; only the script blurb differs.
 export function NextStepChoice({ onGetScript, onBookSession, scriptBlurb }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:hidden">
       <p className="font-serif font-semibold text-navy-900 text-xl text-center mb-6">
-        What do you want next — a script you can run yourself, or a negotiator
-        in your corner?
+        What do you want next: a script you can run yourself, or help
+        preparing with Jenny Foss?
       </p>
       <div className="grid sm:grid-cols-2 gap-4">
         <button
@@ -179,7 +179,7 @@ export function NextStepChoice({ onGetScript, onBookSession, scriptBlurb }) {
         >
           <span className="block font-semibold">Book a Strategy Session</span>
           <span className="block text-sm text-slate-600 mt-1">
-            Get Jenny Foss in your corner for the actual call
+            Prepare with Jenny Foss before your negotiation calls
           </span>
         </button>
       </div>

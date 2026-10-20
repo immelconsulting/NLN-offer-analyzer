@@ -6,3 +6,15 @@ body {
   @apply bg-navy-50 text-slate-900;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
+
+/* Loading-screen status lines fade in as they change (AnalysisLoading). */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Printed results keep their colors (callouts, range card) on a white page. */
+@media print {
+  body { background: white; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

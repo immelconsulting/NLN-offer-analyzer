@@ -55,7 +55,7 @@ const FLOW_COPY = {
     loading: "Writing your script…",
     loadingNote:
       "We're turning your analysis into a word-for-word counter-offer script. This usually takes under a minute.",
-    upsellHeading: "Want Jenny Foss in your corner for the real call?",
+    upsellHeading: "Want Jenny Foss to help you prepare?",
     upsellBody:
       "Book a Negotiation Strategy Session with Jenny Foss and walk through your script together before you pick up the phone.",
   },
@@ -65,7 +65,7 @@ const FLOW_COPY = {
     loading: "Writing your script…",
     loadingNote:
       "We're turning your range into word-for-word answers for the recruiter call. This usually takes under a minute.",
-    upsellHeading: "Want Jenny Foss in your corner for the real call?",
+    upsellHeading: "Want Jenny Foss to help you prepare?",
     upsellBody:
       "Book a Negotiation Strategy Session with Jenny Foss and practice your answers together before the recruiter calls.",
   },
@@ -74,7 +74,7 @@ const FLOW_COPY = {
     loading: "Writing your script…",
     loadingNote:
       "We're turning your range into word-for-word lines for the offer call. This usually takes under a minute.",
-    upsellHeading: "Want Jenny Foss in your corner for the real call?",
+    upsellHeading: "Want Jenny Foss to help you prepare?",
     upsellBody:
       "Book a Negotiation Strategy Session with Jenny Foss and rehearse the offer call together before your recruiter reaches out.",
   },
@@ -339,7 +339,7 @@ export default function ScriptPage() {
 
         {script && !loading && (
           <p className="text-center text-sm text-slate-500 print:hidden">
-            How did your negotiation go? I read every reply — email me at{" "}
+            How did your negotiation go? I read every reply. Email me at{" "}
             <a
               href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("How my negotiation went")}`}
               className="font-medium text-navy-600 hover:text-navy-900 transition"

@@ -37,12 +37,12 @@ export default function PrivacyPolicy() {
             <li>Your email address, provided when you use our tool</li>
             <li>
               Details you enter about your job offer (role, location, salary
-              figures, and any additional context you provide) — used only to
+              figures, and any additional context you provide), used only to
               generate your personalized analysis and script
             </li>
             <li>
               If you choose to share them, the text of your resume and/or a
-              job description — used only to add context to your analysis and
+              job description, used only to add context to your analysis and
               script (we keep the extracted text, not the file itself)
             </li>
             <li>
@@ -77,12 +77,12 @@ export default function PrivacyPolicy() {
               seeing where people get stuck on their way through it
             </li>
             <li>
-              To prepare for coaching calls you book with us — we may review
+              To prepare for coaching calls you book with us: we may review
               your submission, analysis, and script before speaking with you
             </li>
             <li>
-              In anonymized, aggregated form — never your name, email, or
-              identifying details — to provide market context in other users'
+              In anonymized, aggregated form (never your name, email, or
+              identifying details) to provide market context in other users'
               analyses
             </li>
           </ul>

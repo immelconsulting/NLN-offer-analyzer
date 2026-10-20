@@ -12,6 +12,7 @@ import {
   RangeCard,
   SourceList,
 } from "./RangeBlocks.jsx";
+import PrintButton from "./PrintButton.jsx";
 
 // Screening-call results, shared by the Applying and Interviewing stages.
 // Mirrors ResultsPage's visual language and stateless ?d= encoding, but the
@@ -65,8 +66,11 @@ export default function ApplyResultsPage({ flow = "apply" }) {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8 space-y-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <ShareButton />
+        <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
+          <div className="flex flex-wrap items-center gap-3">
+            <ShareButton />
+            <PrintButton />
+          </div>
           <Link
             to={stage.basePath}
             className="inline-block py-2.5 text-sm font-medium text-navy-700 hover:text-navy-900 transition"
@@ -78,7 +82,7 @@ export default function ApplyResultsPage({ flow = "apply" }) {
         <RangeCard
           analysis={analysis}
           noDataNote="Rather than show you a number we can't stand behind, we've left this open. Everything below still applies, and your script will include instructions for building a range from your own research."
-          floorNote="Below that, the role isn't worth your time — and knowing that before the call is what keeps you from drifting down during it."
+          floorNote="Below that, the role isn't worth your time, and knowing that before the call is what keeps you from drifting down during it."
         />
 
         <SourceList sources={analysis.sources} />
@@ -92,7 +96,7 @@ export default function ApplyResultsPage({ flow = "apply" }) {
         </Callout>
 
         {/* The three strategies are deliberately NOT shown here. They are
-            effectively the script — the actual words to say — and giving them
+            effectively the script (the actual words to say), and giving them
             away free removes the reason to buy it. They stay in the analysis
             payload because the script generator builds from them. */}
 

@@ -5,8 +5,8 @@ import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
 import { getFlow } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
-import icon from "../assets/nln-icon.png";
 import { track } from "../lib/track.js";
+import AnalysisLoading, { loadingSteps } from "./AnalysisLoading.jsx";
 
 // Pre-offer form, shared by the Applying and Interviewing stages (see
 // src/lib/flows.js). Deliberately much shorter than OfferForm — people at
@@ -164,7 +164,7 @@ export default function ApplyForm({ flow = "apply" }) {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      {loading && <LoadingOverlay />}
+      {loading && <AnalysisLoading title="Researching your market rate…" steps={loadingSteps(flow, { role: form.targetRole, location: form.location, years: form.yearsExperience })} />}
       <SiteHeader />
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">
@@ -267,7 +267,7 @@ export default function ApplyForm({ flow = "apply" }) {
                   <SalaryInput
                     value={form.sharedNumber}
                     onChange={(v) => update("sharedNumber", v)}
-                    placeholder="Optional — helps us write your recovery script"
+                    placeholder="Optional: helps us write your recovery script"
                   />
                   <p className="text-sm text-slate-500 mt-1.5">
                     Giving a number early is common and recoverable. Knowing it
@@ -329,7 +329,7 @@ export default function ApplyForm({ flow = "apply" }) {
                 rows={4}
                 value={form.additionalContext}
                 onChange={(e) => update("additionalContext", e.target.value)}
-                placeholder="Optional — what you're targeting, how the search is going, anything a recruiter has already said to you, or anything else that feels relevant."
+                placeholder="Optional: what you're targeting, how the search is going, anything a recruiter has already said to you, or anything else that feels relevant."
               />
             </div>
           </section>
@@ -340,8 +340,8 @@ export default function ApplyForm({ flow = "apply" }) {
               Extra Context <span className="text-sm font-sans font-normal text-slate-500">(optional)</span>
             </h2>
             <p className="text-sm text-slate-500 -mt-2">
-              These are used only to add context to your analysis and script —
-              nothing here is required.
+              These are used only to add context to your analysis and script.
+              Nothing here is required.
             </p>
 
             <div>
@@ -374,7 +374,7 @@ export default function ApplyForm({ flow = "apply" }) {
                 />
               </div>
               <p className="text-sm text-slate-500 mt-1.5">
-                A posting for the kind of role you're going after — it doesn't
+                A posting for the kind of role you're going after. It doesn't
                 have to be one you've applied to. Pasting works best, since
                 links to job boards often can't be read.
               </p>
@@ -418,22 +418,6 @@ export default function ApplyForm({ flow = "apply" }) {
   );
 }
 
-function LoadingOverlay() {
-  return (
-    <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center px-6 text-center">
-      <img src={icon} alt="NLN" className="h-14 w-auto animate-pulse mb-8" />
-      <div className="h-10 w-10 rounded-full border-4 border-navy-100 border-t-navy-600 animate-spin mb-6" />
-      <p className="text-xl font-serif font-semibold text-navy-900">
-        Researching your market rate…
-      </p>
-      <p className="text-slate-600 text-sm mt-2 max-w-xs">
-        We're pulling current compensation data for your role and location,
-        then building your target range. This takes up to two minutes — worth
-        the wait for real numbers.
-      </p>
-    </div>
-  );
-}
 
 const UPLOAD_MAX_BYTES = 2 * 1024 * 1024; // 2MB
 const UPLOAD_ACCEPT = ".pdf,.docx,.txt";
@@ -451,7 +435,7 @@ function FileUpload({ file, onChange, onError, label }) {
       return;
     }
     if (picked.size > UPLOAD_MAX_BYTES) {
-      onError("That file is over 2MB — please upload a smaller version.");
+      onError("That file is over 2MB. Please upload a smaller version.");
       return;
     }
     const reader = new FileReader();
@@ -460,7 +444,7 @@ function FileUpload({ file, onChange, onError, label }) {
       onChange({ name: picked.name, type: picked.type, data: base64 });
       onError("");
     };
-    reader.onerror = () => onError("We couldn't read that file — please try again.");
+    reader.onerror = () => onError("We couldn't read that file. Please try again.");
     reader.readAsDataURL(picked);
   }
 
@@ -483,7 +467,7 @@ function FileUpload({ file, onChange, onError, label }) {
     <label className="flex items-center gap-2 rounded-md border border-dashed border-slate-300 bg-white px-3 py-2.5 cursor-pointer hover:border-navy-400 transition">
       <span className="text-sm text-slate-600">
         {label || "Upload a file"}{" "}
-        <span className="text-slate-400">(PDF, Word, or .txt — max 2MB)</span>
+        <span className="text-slate-400">(PDF, Word, or .txt, max 2MB)</span>
       </span>
       <input
         type="file"

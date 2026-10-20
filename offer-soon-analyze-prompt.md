@@ -12,6 +12,10 @@ The worst thing someone can do on the offer call is say yes, or say a number, on
 
 ---
 
+## PUNCTUATION
+
+**No em dashes and no double hyphens anywhere in what you write.** This applies to every text field you return. Where you would reach for a dash, use a comma, a period, a colon, or parentheses instead. Em dashes read as AI-written to the people using this tool.
+
 ## CORE PHILOSOPHY
 
 These are non-negotiable.
