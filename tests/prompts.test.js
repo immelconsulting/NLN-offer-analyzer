@@ -30,6 +30,13 @@ describe("prompt files", () => {
     expect(loadPrompt(f)).toContain("{{strategy_session_url}}");
   });
 
+  it("offer analysis recommends emailing the recruiter, never a call to schedule a call", () => {
+    const text = loadPrompt("system-prompt.md");
+    expect(text).toMatch(/an email to the recruiter/i);
+    expect(text).toMatch(/Never recommend calling the recruiter just to schedule/);
+    expect(text).not.toMatch(/Do you have 10 minutes/);
+  });
+
   it("fails loudly on a missing prompt instead of using a generic one", () => {
     expect(() => loadPrompt("does-not-exist-prompt.md")).toThrow(/could not be read/);
   });

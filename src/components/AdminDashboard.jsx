@@ -32,6 +32,7 @@ const EVENT_LABELS = {
   script_purchased: "Bought a script",
   script_generated: "Script delivered",
   script_pdf_downloaded: "Downloaded the PDF",
+  script_pdf_failed: "PDF download failed on their device",
   session_viewed: "Viewed the session page",
   session_checkout_clicked: "Started session checkout",
   session_purchased: "Bought a session",

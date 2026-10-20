@@ -31,6 +31,7 @@ export const CLIENT_EVENTS = [
   "session_checkout_clicked",
   "script_generated",
   "script_pdf_downloaded",
+  "script_pdf_failed",
   "booking_confirmed",
 ];
 

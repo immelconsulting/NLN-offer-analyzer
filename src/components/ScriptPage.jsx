@@ -98,46 +98,78 @@ const loadPdfMake = () =>
     throw err;
   }));
 
-// Rendered both above and below the script. Builds a real PDF file: it
-// downloads, and also opens in a new tab so people can see it straight away.
+// Rendered both above and below the script. Builds a real PDF file once,
+// saves it (a plain download link) and shows the same file in a new tab.
 // The tab has to be opened synchronously in the click, or pop-up blockers
-// stop it, so it's opened first and the PDF is poured into it when ready.
+// stop it, so it's opened first and pointed at the PDF when it's ready.
+// It never opens the print dialog on its own: if the PDF can't be built on
+// this device, it says so, offers printing as an explicit choice, and
+// reports the error so we can see what failed.
 function DownloadPdfButton({ script, title, subtitle }) {
   const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   async function handleClick() {
     track("script_pdf_downloaded");
     const tab = window.open("", "_blank");
-    if (tab) {
-      tab.document.title = "Preparing your PDF…";
-      tab.document.body.innerHTML =
-        '<p style="font-family:sans-serif;padding:2rem;color:#334155">Preparing your PDF…</p>';
+    try {
+      if (tab) {
+        tab.document.title = "Preparing your PDF…";
+        tab.document.body.innerHTML =
+          '<p style="font-family:sans-serif;padding:2rem;color:#334155">Preparing your PDF…</p>';
+      }
+    } catch {
+      // Cosmetic only; the PDF still goes into this tab below.
     }
     setBusy(true);
+    setFailed(false);
     try {
       const pdfMake = await loadPdfMake();
-      const pdf = pdfMake.createPdf(buildScriptPdf({ script, title, subtitle }));
-      await pdf.download(scriptPdfFilename(title));
-      if (tab) await pdf.open(tab);
+      const blob = await pdfMake.createPdf(buildScriptPdf({ script, title, subtitle })).getBlob();
+      const url = URL.createObjectURL(blob);
+
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = scriptPdfFilename(title);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      if (tab && !tab.closed) tab.location.href = url;
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (err) {
       console.error("PDF generation failed:", err);
-      if (tab) tab.close();
-      // Last resort: the browser's own print-to-PDF.
-      window.print();
+      try {
+        tab?.close();
+      } catch {
+        // already gone
+      }
+      track("script_pdf_failed", { message: String(err?.message || err).slice(0, 200) });
+      setFailed(true);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={busy}
-      className="inline-flex items-center gap-2 rounded-md bg-navy-900 hover:bg-navy-600 disabled:opacity-60 text-white font-semibold px-5 py-2.5 shadow-sm transition"
-    >
-      {busy ? "Preparing PDF…" : "⤓ Download PDF"}
-    </button>
+    <div className="inline-flex flex-col items-center gap-1">
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={busy}
+        className="inline-flex items-center gap-2 rounded-md bg-navy-900 hover:bg-navy-600 disabled:opacity-60 text-white font-semibold px-5 py-2.5 shadow-sm transition"
+      >
+        {busy ? "Preparing PDF…" : "⤓ Download PDF"}
+      </button>
+      {failed && (
+        <p className="text-xs text-rose-700 max-w-xs text-center">
+          We couldn&rsquo;t build the PDF on this device.{" "}
+          <button type="button" onClick={() => window.print()} className="underline">
+            Print or save as PDF instead
+          </button>
+        </p>
+      )}
+    </div>
   );
 }
 
