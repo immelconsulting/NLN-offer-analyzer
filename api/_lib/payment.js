@@ -50,6 +50,9 @@ export async function verifyPayment(sessionId, { expand } = {}) {
 // so the Price's list amount (unaffected by promo codes) is the fallback.
 const PRICE_AMOUNT_KEYS = {
   19900: "nln_strategy_session_30min",
+  31900: "nln_strategy_session_60min",
+  // The hour was $329 until Oct 20, 2026; kept so payments on the old link
+  // still reach the right calendar.
   32900: "nln_strategy_session_60min",
 };
 

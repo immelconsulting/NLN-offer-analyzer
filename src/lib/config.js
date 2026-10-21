@@ -22,12 +22,13 @@ export const STRATEGY_SESSION_URL = "https://www.jobofferanalyzer.com/session";
 //
 // Live links on NLN's Stripe account (acct_1MRh0gKjxEB5kBDn), created in the
 // dashboard Oct 2026. /booking tells the tiers apart by the Price's amount
-// ($199 / $329) since dashboard-made Prices have no lookup key, so keep those
+// ($199 / $319) since dashboard-made Prices have no lookup key, so keep those
 // amounts in sync with PRICE_AMOUNT_KEYS in api/_lib/payment.js. The
 // after-payment redirect on BOTH is:
 //   https://<your-domain>/booking?session_id={CHECKOUT_SESSION_ID}
 export const STRATEGY_SESSION_30MIN_CHECKOUT_URL = "https://buy.stripe.com/cNi28sglZbEdaCc7tGbwk02";
-export const STRATEGY_SESSION_60MIN_CHECKOUT_URL = "https://buy.stripe.com/5kQbJ2d9N37HeSsbJWbwk03";
+// $319 link created Oct 20, 2026 (replaced the $329 one, ...bwk03).
+export const STRATEGY_SESSION_60MIN_CHECKOUT_URL = "https://buy.stripe.com/3cI6oIedR37HfWw6pCbwk04";
 
 // JobJenny's Thryv calendar, one direct link per tier, so someone who paid for
 // 30 minutes can't land on the full service list and pick the hour by mistake.
@@ -56,7 +57,7 @@ export const JENNY_BIO_URL = "https://www.jobjenny.com/our-team";
 // Centralized so a price change is a one-line edit here instead of a copy
 // hunt across pages. Keep these in sync with the Stripe Payment Links above.
 export const STRATEGY_SESSION_PRICE_LABEL = "$199";
-export const STRATEGY_SESSION_PRICE_LABEL_60MIN = "$329";
+export const STRATEGY_SESSION_PRICE_LABEL_60MIN = "$319";
 
 // Public Trustpilot profile, linked from the proof page.
 export const TRUSTPILOT_REVIEWS_URL = "https://www.trustpilot.com/review/nextlevelnegotiation.com";

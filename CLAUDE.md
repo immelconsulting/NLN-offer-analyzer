@@ -14,7 +14,7 @@ dashboards (Stripe, Vercel, Trustpilot).
 Two products ship from this funnel, both live with real Stripe payments:
 
 1. **$47 self-serve script** (one per flow: counter-offer, screening-call, offer-call).
-2. **Negotiation Strategy Session with Jenny Foss** ($199 / 30 min, $329 / hour). Live Payment
+2. **Negotiation Strategy Session with Jenny Foss** ($199 / 30 min, $319 / hour; the hour was $329 until Oct 20, 2026). Live Payment
    Links `STRATEGY_SESSION_30MIN_CHECKOUT_URL` / `_60MIN_` in `src/lib/config.js` were made in
    the Stripe dashboard on Oct 10 (so their Prices have **no lookup key**; the tier is read from
    the Price amount, see item 9). Each tier reveals its own Thryv calendar on `/booking`, and
@@ -108,7 +108,7 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
    substitutes at request time, so the booking URL lives only in `src/lib/config.js`.
 8. `/session` **SessionProofPage** (added Sept 2026, structurally mirrors ProofPage) — sells the
    paid Negotiation Strategy Session as two tiers, each linking its own Stripe Payment Link:
-   $199 / 30 min (`STRATEGY_SESSION_30MIN_CHECKOUT_URL`) and $329 / hour
+   $199 / 30 min (`STRATEGY_SESSION_30MIN_CHECKOUT_URL`) and $319 / hour
    (`STRATEGY_SESSION_60MIN_CHECKOUT_URL`, visually featured as "Most support"). Every in-app
    "book a session" CTA (ResultsPage, ProofPage's secondary CTA, ScriptPage's post-script
    upsell, ThankYou's dead-end pages) routes here rather than linking a booking URL directly.
@@ -127,7 +127,8 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
    here with `?session_id={CHECKOUT_SESSION_ID}`; the page POSTs to `/api/verify-payment`,
    which expands the session's line items and resolves the tier with `strategySessionTier()`
    (`api/_lib/payment.js`): the Price's `lookup_key` if set, else its `unit_amount`
-   (19900 / 32900, unaffected by promo codes; the live dashboard-made Prices use this path).
+   (19900 / 31900, plus the old 32900 hour price for any payment made on the retired $329 link;
+   unaffected by promo codes; the live dashboard-made Prices use this path).
    It returns that tier's Thryv link from `SESSION_TIERS` in config.js. A paid session with no
    session tier (e.g. a $47 script purchase) gets no calendar. The Thryv URLs are only read
    server-side, so they don't ship in the browser bundle. Test with

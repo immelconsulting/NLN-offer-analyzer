@@ -8,7 +8,7 @@ with Jenny Foss (JobJenny pilot).
 **Four paths**, chosen on the landing page: received an offer (score + counter-offer script),
 applying and interviewing (target range + recruiter screening-call script), and expecting an offer
 soon (range + offer-call script). Each runs: short form → free analysis → $47 script → optional
-$199 / $329 session.
+$199 / $319 session.
 
 Built with React 18 + Vite + Tailwind on Vercel serverless functions. The Anthropic API (with web
 search) writes the analyses and scripts; Stripe Payment Links take payment, verified server-side;

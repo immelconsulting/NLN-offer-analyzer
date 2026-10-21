@@ -11,6 +11,7 @@ import {
   JourneyPanel,
   ExclusionsPanel,
 } from "./AdminDashboard.jsx";
+import { STRATEGY_SESSION_PRICE_LABEL, STRATEGY_SESSION_PRICE_LABEL_60MIN } from "../lib/config.js";
 
 // Private lookup page for Alex. Not linked from anywhere in the funnel, and
 // gated by a password that's exchanged for an httpOnly session cookie — the
@@ -799,7 +800,7 @@ export default function AdminPage() {
           </div>
           <FunnelChart
             title="Strategy session funnel"
-            note="$199 / $329 with Jenny"
+            note={`${STRATEGY_SESSION_PRICE_LABEL} / ${STRATEGY_SESSION_PRICE_LABEL_60MIN} with Jenny`}
             steps={dash?.sessionFunnel} onPerson={openPerson}
             showGroups={false}
             compact

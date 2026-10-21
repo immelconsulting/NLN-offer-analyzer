@@ -27,7 +27,7 @@ const TIERS = [
   {
     configName: "STRATEGY_SESSION_60MIN_CHECKOUT_URL",
     productName: "Negotiation Strategy Session, 60 Minutes",
-    amount: 32900,
+    amount: 31900,
     lookupKey: "nln_strategy_session_60min",
   },
 ];

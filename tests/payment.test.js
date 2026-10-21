@@ -7,6 +7,8 @@ const session = (price) => ({ line_items: { data: [{ price }] } });
 describe("strategySessionTier: which session a payment bought", () => {
   it("reads the live dashboard-made Prices by amount", () => {
     expect(strategySessionTier(session({ unit_amount: 19900 }))?.bookingUrl).toBe(THRIVE_30MIN_BOOKING_URL);
+    expect(strategySessionTier(session({ unit_amount: 31900 }))?.bookingUrl).toBe(THRIVE_60MIN_BOOKING_URL);
+    // The old $329 link still routes to the hour calendar.
     expect(strategySessionTier(session({ unit_amount: 32900 }))?.bookingUrl).toBe(THRIVE_60MIN_BOOKING_URL);
   });
 
