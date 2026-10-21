@@ -9,7 +9,7 @@ deploys from `main`).
 Alex is non-technical: explain changes in plain English and give click-by-click steps for
 dashboards (Stripe, Vercel, Trustpilot).
 
-## Current status (Oct 17, 2026; launch with JobJenny Oct 20)
+## Current status (Oct 20, 2026; launching with JobJenny the morning of Oct 21)
 
 Two products ship from this funnel, both live with real Stripe payments:
 
@@ -20,7 +20,8 @@ Two products ship from this funnel, both live with real Stripe payments:
    the Price amount, see item 9). Each tier reveals its own Thryv calendar on `/booking`, and
    every purchase emails `info@jobjenny.com` (item 10).
 
-**Still open at launch:** Alisa's notes on two flows are pending; `JENNY_BIO_URL` is a temporary team-page link. `scripts/create-session-payment-links.js`
+**Launch-ready (Oct 20):** all flows signed off (no further audit notes coming from Alisa), free-test
+mode off, 60-minute session repriced to $319. Still open: `JENNY_BIO_URL` is a temporary team-page link. `scripts/create-session-payment-links.js`
 was written for creating the links but never run; keep it only as a reference for the shape.
 
 **JobJenny pilot:** sessions are run by **Jenny Foss**, not Alex, and she's named (with a bio link)
