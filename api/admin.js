@@ -21,6 +21,8 @@ import {
   kpis,
   byFlow,
   journey,
+  purchases,
+  autoHidden,
 } from "./_lib/dashboard.js";
 
 // Admin API. Requires the session cookie from /api/login — there is no
@@ -30,6 +32,8 @@ import {
 //                                       (email, or name for buyers); the table
 //                                       also matches role/company/location
 //   GET /api/admin?flow=apply        -> everything narrowed to one flow
+//   GET /api/admin?showHidden=1      -> include hidden people (Alex's own
+//                                       testing and the exclusion list)
 //   GET /api/admin?person=a@b.com    -> plus that person's journey timeline
 //                                       (or person=visitor:<id> for someone
 //                                       who never gave an email)
@@ -197,9 +201,14 @@ export default async function handler(req, res) {
     // People, with Alex's own test traffic (internal) and his exclusion list
     // removed before anything is counted.
     const everyone = groupPeople(events, vidmap, names);
-    const internalEmails = everyone.filter((p) => p.internal && p.email).map((p) => p.email);
-    const hidden = [...exclusionList, ...internalEmails];
-    const people = filterPeople(everyone, { flow: flowFilter, q, exclusions: hidden });
+    const internalEmails = autoHidden(everyone);
+    const showHidden = req.query.showHidden === "1";
+    const hidden = showHidden ? [] : [...exclusionList, ...internalEmails];
+    const people = filterPeople(everyone, { flow: flowFilter, q, exclusions: hidden, includeHidden: showHidden });
+    // For the submissions table's "Session" column.
+    const sessionBuyers = new Set(
+      everyone.filter((p) => p.email && p.events.some((ev) => ev.e === "session_purchased")).map((p) => p.email)
+    );
 
     const subs = all.filter(
       (s) =>
@@ -286,6 +295,9 @@ export default async function handler(req, res) {
       range,
       trackingSince: TRACKING_SINCE,
       exclusions: exclusionList,
+      autoHidden: internalEmails,
+      showingHidden: showHidden,
+      purchases: purchases(people),
       kpis: kpis(people),
       scriptFunnel: funnelCounts(people, SCRIPT_FUNNEL),
       sessionFunnel: funnelCounts(people, SESSION_FUNNEL),
@@ -310,6 +322,7 @@ export default async function handler(req, res) {
         offerScore: s.analysis?.offerScore,
         internalDataUsed: Boolean(s.analysis?.internalDataUsed),
         hasScript: Boolean(s.script),
+        boughtSession: sessionBuyers.has(s.email),
         // Length, not content — enough for the table to show whether a
         // resume came in without shipping the whole text to the list view.
         resumeChars: s.resumeText ? s.resumeText.length : 0,

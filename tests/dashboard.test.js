@@ -10,6 +10,8 @@ import {
   kpis,
   byFlow,
   journey,
+  purchases,
+  autoHidden,
 } from "../api/_lib/dashboard.js";
 
 const t = (m) => `2026-10-21T09:${String(m).padStart(2, "0")}:00Z`;
@@ -100,6 +102,22 @@ describe("funnels and KPIs (people, not clicks)", () => {
     expect(steps[0].droppedOff).toEqual([]);
     expect(gaveEmail.people[0]).toMatchObject({ name: "Pat Example", flows: ["apply"] });
     expect(gaveEmail.people[0].lastSeen).toBe("2026-10-21T09:07:00Z");
+  });
+
+  it("lists every sale, sessions included, newest first", () => {
+    const sales = purchases(visible);
+    expect(sales.map((x) => [x.product, x.email, x.amountCents])).toEqual([
+      ["script", "pat@example.com", 4700],
+      ["session", "jo@example.com", 32900],
+    ]);
+    expect(sales[1]).toMatchObject({ tier: "60 minutes", name: "Jo Buyer" });
+  });
+
+  it("can bring back hidden people, and says who was auto-hidden", () => {
+    expect(autoHidden(everyone)).toEqual(["alex@nextlevelnegotiation.com"]);
+    const all = filterPeople(everyone, { exclusions: ["jo@example.com"], includeHidden: true });
+    expect(all.map((p) => p.email)).toContain("alex@nextlevelnegotiation.com");
+    expect(all.map((p) => p.email)).toContain("jo@example.com");
   });
 
   it("totals sales and revenue", () => {

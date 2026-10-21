@@ -10,6 +10,7 @@ import {
   FlowBreakdown,
   JourneyPanel,
   ExclusionsPanel,
+  PurchasesTable,
 } from "./AdminDashboard.jsx";
 import { STRATEGY_SESSION_PRICE_LABEL, STRATEGY_SESSION_PRICE_LABEL_60MIN } from "../lib/config.js";
 
@@ -56,10 +57,11 @@ function rangeLabel(range) {
 
 // One URL builder for both the fetch and the CSV export links, so exports
 // always cover exactly the range on screen. Auth rides on the cookie.
-function buildAdminUrl(range, extra = {}, flow = "all", person = "") {
+function buildAdminUrl(range, extra = {}, flow = "all", person = "", showHidden = false) {
   const params = new URLSearchParams();
   if (flow !== "all") params.set("flow", flow);
   if (person) params.set("person", person);
+  if (showHidden) params.set("showHidden", "1");
   if (range.preset === "custom") {
     params.set("start", range.start);
     params.set("end", range.end);
@@ -256,6 +258,7 @@ const COLUMNS = [
   { key: "resumeChars", label: "Resume", type: "flag" },
   { key: "jobDescriptionChars", label: "JD", type: "flag" },
   { key: "hasScript", label: "Script", type: "flag" },
+  { key: "boughtSession", label: "Session", type: "flag" },
 ];
 
 // Salaries arrive as display strings ("180,000"), so strip everything that
@@ -393,6 +396,13 @@ function SubmissionsTable({ rows, sort, onSort, onOpen, onPerson }) {
                     <span className="text-slate-300">—</span>
                   )}
                 </td>
+                <td className={cell}>
+                  {s.boughtSession ? (
+                    <span className="text-navy-600 font-medium">✓</span>
+                  ) : (
+                    <span className="text-slate-300">—</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -442,6 +452,7 @@ export default function AdminPage() {
   const [subs, setSubs] = useState([]);
   const [dash, setDash] = useState(null);
   const [person, setPerson] = useState("");
+  const [showHidden, setShowHidden] = useState(false);
   const [range, setRange] = useState(DEFAULT_RANGE);
   const [shownRange, setShownRange] = useState(null);
   const [capped, setCapped] = useState(false);
@@ -451,11 +462,11 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function load(q = query, activeRange = range, activeFlow = flow, activePerson = person) {
+  async function load(q = query, activeRange = range, activeFlow = flow, activePerson = person, activeShowHidden = showHidden) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(buildAdminUrl(activeRange, { q }, activeFlow, activePerson));
+      const res = await fetch(buildAdminUrl(activeRange, { q }, activeFlow, activePerson, activeShowHidden));
       if (res.status === 401) {
         setAuthed(false);
         return;
@@ -518,7 +529,7 @@ export default function AdminPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, flow, person]);
+  }, [range, flow, person, showHidden]);
 
   function toggleSort(key) {
     setSort((s) =>
@@ -767,7 +778,13 @@ export default function AdminPage() {
           </form>
         </div>
 
-        <ExclusionsPanel exclusions={dash?.exclusions || []} onChange={() => load()} />
+        <ExclusionsPanel
+          exclusions={dash?.exclusions || []}
+          onChange={() => load()}
+          autoHidden={dash?.autoHidden || []}
+          showingHidden={showHidden}
+          onToggleHidden={setShowHidden}
+        />
 
         {dash?.trackingSince && shownRange && shownRange.start < dash.trackingSince && (
           <p className="text-xs text-slate-500">
@@ -808,6 +825,8 @@ export default function AdminPage() {
         </div>
 
         <FlowBreakdown rows={dash?.byFlow} />
+
+        <PurchasesTable rows={dash?.purchases} onPerson={openPerson} />
 
         <h2 className="text-base font-serif font-semibold text-navy-900 pt-2">Submissions</h2>
 

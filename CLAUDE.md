@@ -407,7 +407,14 @@ person's journey). Components in `src/components/AdminDashboard.jsx`.
   journey; anonymous visitors use `?person=visitor:<id>`.
 - **Hidden people:** `nln:admin:excluded` (emails or `@domain`), managed from the page
   (`POST /api/admin`). Anything sent while logged in to `/admin` is tagged `internal` and that
-  person is hidden automatically. Exclusions apply to KPIs, funnels, the table and CSVs.
+  **whole person** is hidden automatically, purchases included. The panel lists those
+  auto-hidden emails, and an "Include hidden people" switch (`?showHidden=1`) brings them and the
+  exclusion list back into every number (Oct 21: Alex's own $319 test purchase was hidden this
+  way and looked missing). Exclusions apply to KPIs, funnels, the tables and CSVs.
+- **Purchases table:** every script and session sale (`purchases()` in `dashboard.js`), including
+  session buyers who never ran an analysis (they have no submission row). "Paid" is the amount
+  actually charged. The by-flow breakdown also shows sessions sold, and the submissions table has
+  a "Session" column.
 - Detailed tracking starts Oct 18, 2026 (`TRACKING_SINCE` in `api/admin.js`); earlier activity was
   anonymous only. Disclosed in the privacy policy (usage data line, effective Oct 18).
 

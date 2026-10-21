@@ -335,14 +335,15 @@ export function FlowBreakdown({ rows }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
       <h2 className="text-base font-serif font-semibold text-navy-900 mb-4">By flow</h2>
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 gap-x-10 gap-y-6">
         <BarList title="People" rows={rows} valueKey="people" />
         <BarList title="Analyses started" rows={rows} valueKey="analyses" />
         <BarList title="Scripts sold" rows={rows} valueKey="scriptsSold" />
+        <BarList title="Sessions sold" rows={rows} valueKey="sessionsSold" />
       </div>
       <p className="text-xs text-slate-500 mt-4">
-        Someone who tried more than one stage counts in each. Sessions aren't tied to a flow, so
-        they're in the session funnel instead.
+        Someone who tried more than one stage counts in each. Sessions bought by people who never
+        ran an analysis have no flow, so they only appear in the session funnel and Purchases.
       </p>
     </div>
   );
@@ -400,9 +401,68 @@ export function JourneyPanel({ journey, onClose }) {
   );
 }
 
+// ---- Every sale: scripts and sessions together.
+
+const PRODUCT_LABEL = (p) =>
+  p.product === "script" ? "$47 script" : `Strategy session${p.tier ? ` (${p.tier})` : ""}`;
+
+export function PurchasesTable({ rows, onPerson }) {
+  if (!rows) return null;
+  const cell = "px-3 py-2 whitespace-nowrap text-sm border-b border-slate-100";
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 sm:p-6">
+      <h2 className="text-base font-serif font-semibold text-navy-900 mb-3">
+        Purchases ({rows.length})
+      </h2>
+      {rows.length === 0 ? (
+        <p className="text-sm text-slate-500">No scripts or sessions sold in this date range.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-navy-50">
+              <tr>
+                {["Date", "Person", "Bought", "Flow", "Paid"].map((h) => (
+                  <th key={h} scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((p, i) => (
+                <tr key={`${p.key}-${p.t}-${i}`}>
+                  <td className={`${cell} text-slate-500`}>{new Date(p.t).toLocaleString()}</td>
+                  <td className={cell}>
+                    <button
+                      type="button"
+                      onClick={() => onPerson?.(p)}
+                      className="text-navy-900 font-medium underline decoration-navy-300 underline-offset-2 hover:text-navy-600"
+                      title="Show this person's journey"
+                    >
+                      {p.email ? (p.name ? `${p.name} · ${p.email}` : p.email) : "Anonymous visitor"}
+                    </button>
+                  </td>
+                  <td className={`${cell} ${p.product === "session" ? "text-navy-900 font-semibold" : "text-slate-700"}`}>
+                    {PRODUCT_LABEL(p)}
+                  </td>
+                  <td className={`${cell} text-slate-700`}>{p.flow ? FLOW_NAMES[p.flow] : "—"}</td>
+                  <td className={`${cell} text-slate-700 tabular-nums`}>{money(p.amountCents)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="text-xs text-slate-500 mt-3">
+        &ldquo;Paid&rdquo; is what was actually charged, so 99%-off test purchases show a few dollars.
+      </p>
+    </div>
+  );
+}
+
 // ---- Hidden people (exclusions)
 
-export function ExclusionsPanel({ exclusions, onChange }) {
+export function ExclusionsPanel({ exclusions, onChange, autoHidden = [], showingHidden = false, onToggleHidden }) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [error, setError] = useState("");
@@ -437,7 +497,8 @@ export function ExclusionsPanel({ exclusions, onChange }) {
         aria-expanded={open}
       >
         <span className="text-sm font-semibold text-navy-900">
-          Hidden people ({exclusions.length})
+          Hidden people ({exclusions.length + autoHidden.length})
+          {showingHidden && <span className="ml-2 font-normal text-rose-700">currently included in the numbers</span>}
         </span>
         <span className="text-sm text-slate-500">{open ? "Close ▲" : "Manage ▼"}</span>
       </button>
@@ -448,6 +509,27 @@ export function ExclusionsPanel({ exclusions, onChange }) {
             a domain like <code className="text-navy-900">@nextlevelnegotiation.com</code> to hide
             everyone at it. Anything you do while signed in to this page is hidden automatically.
           </p>
+          <label className="flex items-center gap-2 text-sm text-navy-900">
+            <input
+              type="checkbox"
+              checked={showingHidden}
+              onChange={(e) => onToggleHidden?.(e.target.checked)}
+              className="h-4 w-4"
+            />
+            Include hidden people in the numbers (to see your own test runs)
+          </label>
+          {autoHidden.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">
+                Hidden automatically (used the site while signed in here)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {autoHidden.map((x) => (
+                  <span key={x} className="rounded-full bg-slate-100 px-3 py-1 text-sm text-slate-700">{x}</span>
+                ))}
+              </div>
+            </div>
+          )}
           {exclusions.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {exclusions.map((x) => (

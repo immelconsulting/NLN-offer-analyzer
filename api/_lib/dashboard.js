@@ -60,10 +60,12 @@ export function groupPeople(events, vidmap = {}, names = {}) {
 // Applies the admin filters at the person level, so a funnel filtered to
 // "Apply" counts everything those people did, including their first visit
 // before they picked a stage.
-export function filterPeople(people, { flow = null, q = "", exclusions = [] } = {}) {
+// `includeHidden` brings back Alex's own testing and the exclusion list, for
+// when he wants to see his test runs (the "Include hidden people" switch).
+export function filterPeople(people, { flow = null, q = "", exclusions = [], includeHidden = false } = {}) {
   const needle = q.trim().toLowerCase();
   return people.filter((p) => {
-    if (p.internal || isExcludedEmail(p.email, exclusions)) return false;
+    if (!includeHidden && (p.internal || isExcludedEmail(p.email, exclusions))) return false;
     if (flow && !p.flows.has(flow)) return false;
     if (needle) {
       const hay = `${p.email || ""} ${p.name || ""}`.toLowerCase();
@@ -141,6 +143,33 @@ export function byFlow(people) {
       sessionsSold: countEvents(inFlow, "session_purchased"),
     };
   });
+}
+
+// Every sale in the range, newest first: scripts and sessions side by side,
+// including session buyers who never ran an analysis.
+export function purchases(people) {
+  return people
+    .flatMap((p) =>
+      p.events
+        .filter((ev) => ev.e === "script_purchased" || ev.e === "session_purchased")
+        .map((ev) => ({
+          t: ev.t,
+          product: ev.e === "script_purchased" ? "script" : "session",
+          tier: ev.tier || null,
+          flow: ev.flow || null,
+          amountCents: Number(ev.amount) || 0,
+          key: p.key,
+          email: p.email,
+          name: p.name,
+        }))
+    )
+    .sort((a, b) => String(b.t).localeCompare(String(a.t)));
+}
+
+// Emails Alex was auto-hidden as (anything done while logged in to /admin),
+// so the page can say who is hidden and why.
+export function autoHidden(people) {
+  return people.filter((p) => p.internal && p.email).map((p) => p.email);
 }
 
 // One person's timeline, oldest first, trimmed to what the page shows.

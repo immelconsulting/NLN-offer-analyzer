@@ -80,6 +80,26 @@ describe("/api/admin", () => {
     expect(visited.people.map((p) => p.email).sort()).toEqual(["alex@nextlevelnegotiation.com", "pat@example.com"]);
   });
 
+  it("shows session buyers who never ran an analysis, and flags sessions in the table", async () => {
+    h.events.push({ t: "2026-10-21T10:00:00Z", e: "session_purchased", email: "pat@example.com", tier: "60 minutes", amount: 319 });
+    h.events.push({ t: "2026-10-21T10:05:00Z", e: "session_purchased", email: "new@example.com", tier: "30 minutes", amount: 199 });
+    const { body } = await call(admin, { method: "GET" });
+    expect(body.purchases.map((p) => p.email)).toEqual(["new@example.com", "pat@example.com"]);
+    expect(body.kpis.sessionsSold).toBe(2);
+    expect(body.submissions.find((s) => s.email === "pat@example.com").boughtSession).toBe(true);
+  });
+
+  it("hides Alex's logged-in testing by default and brings it back on request", async () => {
+    h.events.push({ t: "2026-10-21T11:00:00Z", e: "landing_viewed", vid: "vid-alex-003", internal: true });
+    h.events.push({ t: "2026-10-21T11:05:00Z", e: "session_purchased", email: "alex@nextlevelnegotiation.com", tier: "60 minutes", amount: 319 });
+    const hidden = (await call(admin, { method: "GET" })).body;
+    expect(hidden.autoHidden).toEqual(["alex@nextlevelnegotiation.com"]);
+    expect(hidden.purchases).toEqual([]);
+    const shown = (await call(admin, { method: "GET", query: { showHidden: "1" } })).body;
+    expect(shown.purchases.map((p) => p.email)).toEqual(["alex@nextlevelnegotiation.com"]);
+    expect(shown.showingHidden).toBe(true);
+  });
+
   it("adds and removes exclusions, rejecting junk", async () => {
     expect((await call(admin, { method: "POST", body: { action: "exclude", value: "Alex@NextLevelNegotiation.com" } })).body.exclusions)
       .toEqual(["alex@nextlevelnegotiation.com"]);
