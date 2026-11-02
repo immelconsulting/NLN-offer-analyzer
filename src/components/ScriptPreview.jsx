@@ -1,58 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import ScriptMarkdown from "./ScriptMarkdown.jsx";
 import { track } from "../lib/track.js";
+import { watchPreview } from "../lib/scriptPreview.js";
 
 // The free opening of their script on the $47 page. Everything here is extra:
 // the page and its buy buttons never wait for it, and if it fails or takes too
 // long this simply disappears and the page is what it was before.
-
-const CHECK_EVERY_MS = 3000;
-const GIVE_UP_MS = 30_000;
 
 export function useScriptPreview(submissionId) {
   const [state, setState] = useState(submissionId ? { status: "loading" } : { status: "none" });
 
   useEffect(() => {
     if (!submissionId) return undefined;
-    let done = false;
-    let timer;
-    const controller = new AbortController();
-    const finish = (next) => {
-      done = true;
-      clearTimeout(timer);
-      setState(next);
-    };
-    const giveUp = setTimeout(() => {
-      controller.abort();
-      finish({ status: "none" });
-    }, GIVE_UP_MS);
-
-    async function check() {
-      try {
-        const res = await fetch("/api/generate-script", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ preview: true, submissionId }),
-          signal: controller.signal,
-        });
-        if (done) return;
-        const body = res.ok ? await res.json() : { status: "none" };
-        if (done) return;
-        if (body.status === "ready" && body.preview) finish(body);
-        else if (body.status === "generating") timer = setTimeout(check, CHECK_EVERY_MS);
-        else finish({ status: "none" });
-      } catch {
-        if (!done) finish({ status: "none" });
-      }
-    }
-    check();
-
-    return () => {
-      done = true;
-      clearTimeout(giveUp);
-      clearTimeout(timer);
-      controller.abort();
-    };
+    return watchPreview(submissionId, setState);
   }, [submissionId]);
 
   return state;
