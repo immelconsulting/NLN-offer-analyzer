@@ -107,6 +107,8 @@ const STAGE_LABELS = {
   call_scheduled: "A call is scheduled or coming up",
   dodged: "A recruiter asked and I dodged it",
   gave_number: "I already gave a number",
+  told_number: "They told me the salary or range",
+  not_asked: "They haven't asked, and I don't expect them to",
 };
 
 function buildUserMessage(form) {
@@ -121,6 +123,9 @@ function buildUserMessage(form) {
     `Where they are with the salary question: ${STAGE_LABELS[form.salaryStage] || form.salaryStage}`,
     form.salaryStage === "gave_number" && form.sharedNumber
       ? `Number they already shared: $${form.sharedNumber} — treat this as an anchor already on the table and write the recovery note around it`
+      : null,
+    form.salaryStage === "told_number" && form.toldNumber
+      ? `Number or range the recruiter told them: ${form.toldNumber} — compare it to your researched range in call_status_note; do not let it pull the range down`
       : null,
     // Context for sanity-checking only. The prompt forbids echoing it, and
     // the script generator is told the same. This is TOTAL annual comp (base

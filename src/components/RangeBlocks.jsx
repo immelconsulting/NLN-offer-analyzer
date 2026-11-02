@@ -156,7 +156,7 @@ export function SourceList({ sources }) {
 
 // The micro-decision between the $47 script and a paid session. Same pattern
 // on both range pages; only the script blurb differs.
-export function NextStepChoice({ onGetScript, onBookSession, scriptBlurb }) {
+export function NextStepChoice({ onGetScript, onBookSession, onPreviewScript, scriptBlurb }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:hidden">
       <p className="font-serif font-semibold text-navy-900 text-xl text-center mb-6">
@@ -186,6 +186,11 @@ export function NextStepChoice({ onGetScript, onBookSession, scriptBlurb }) {
       <p className="text-center text-sm text-slate-500 mt-4">
         Who's Jenny Foss?{" "}
         <MeetJennyLink className="text-navy-600 hover:text-navy-900" />
+      </p>
+      <p className="text-center text-sm mt-3">
+        <button type="button" onClick={onPreviewScript} className="font-medium text-navy-600 hover:text-navy-900 underline">
+          Preview my script
+        </button>
       </p>
     </div>
   );

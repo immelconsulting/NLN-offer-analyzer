@@ -26,6 +26,7 @@ export const CLIENT_EVENTS = [
   "script_cta_clicked",
   "session_cta_clicked",
   "proof_viewed",
+  "script_preview_viewed",
   "session_viewed",
   "script_checkout_clicked",
   "session_checkout_clicked",

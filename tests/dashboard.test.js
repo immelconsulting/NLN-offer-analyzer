@@ -84,7 +84,7 @@ describe("people", () => {
 describe("funnels and KPIs (people, not clicks)", () => {
   it("keeps the agreed order, with email after results", () => {
     expect(SCRIPT_FUNNEL.map((s) => s.key)).toEqual([
-      "visited", "started_analysis", "saw_results", "gave_email", "opened_offer", "started_checkout", "bought_script",
+      "visited", "started_analysis", "saw_results", "gave_email", "opened_offer", "saw_preview", "started_checkout", "bought_script",
     ]);
     expect(SESSION_FUNNEL.map((s) => s.key)).toEqual(["viewed_session", "session_checkout", "booked_session"]);
   });
@@ -94,7 +94,7 @@ describe("funnels and KPIs (people, not clicks)", () => {
   it("counts each person once per step, so refreshes don't inflate", () => {
     expect(counts(visible, SCRIPT_FUNNEL)).toEqual({
       visited: 3, gave_email: 1, started_analysis: 1, saw_results: 2,
-      opened_offer: 1, started_checkout: 1, bought_script: 1,
+      opened_offer: 1, saw_preview: 0, started_checkout: 1, bought_script: 1,
     });
     expect(counts(visible, SESSION_FUNNEL)).toEqual({ viewed_session: 1, session_checkout: 1, booked_session: 1 });
   });
@@ -162,7 +162,7 @@ describe("someone who only gives an email at checkout", () => {
     const people = groupPeople(events, { "vid-anon-0001": "buyer@example.com" }, {});
     expect(people).toHaveLength(1);
     const c = counts(people, SCRIPT_FUNNEL);
-    expect(c).toMatchObject({ visited: 1, started_analysis: 1, saw_results: 1, gave_email: 0, opened_offer: 1, started_checkout: 1, bought_script: 1 });
+    expect(c).toMatchObject({ visited: 1, started_analysis: 1, saw_results: 1, gave_email: 0, opened_offer: 1, saw_preview: 0, started_checkout: 1, bought_script: 1 });
     // Skipping the optional email isn't counted as stopping at it.
     const offer = funnelCounts(people, SCRIPT_FUNNEL).find((s) => s.key === "opened_offer");
     expect(offer.droppedCount).toBe(0);

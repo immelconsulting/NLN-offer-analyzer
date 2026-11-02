@@ -1,7 +1,8 @@
-import { useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo } from "react";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import MeetJennyLink from "./MeetJennyLink.jsx";
+import ScriptPreview, { useScriptPreview } from "./ScriptPreview.jsx";
 import { track } from "../lib/track.js";
 import { decodeResult } from "../lib/encodeResult.js";
 import { checkoutUrl } from "../lib/checkoutUrl.js";
@@ -82,10 +83,35 @@ export default function ProofPage({ flow = "offer" }) {
   const navigate = useNavigate();
   const encoded = searchParams.get("d");
   const copy = FLOW_COPY[flow] || FLOW_COPY.offer;
+  const { hash } = useLocation();
+
+  const decoded = useMemo(() => {
+    try {
+      return encoded ? decodeResult(encoded) : null;
+    } catch {
+      return null;
+    }
+  }, [encoded]);
+
+  // Loads on its own below the buy buttons, which never wait for it.
+  const preview = useScriptPreview(decoded?.analysis?.submissionId);
 
   useEffect(() => {
     track("proof_viewed");
   }, []);
+
+  // "Preview my script" on the results page lands here. If the preview falls
+  // through, back to the top rather than stranded at the bottom of the page.
+  const jumpToPreview = hash === "#script-preview";
+  const previewStatus = preview.status;
+  useEffect(() => {
+    if (!jumpToPreview) return;
+    if (previewStatus === "none") window.scrollTo({ top: 0 });
+    else document.getElementById("script-preview")?.scrollIntoView();
+  }, [jumpToPreview, previewStatus]);
+
+  const alreadySharedNumber =
+    (flow === "apply" || flow === "interview") && decoded?.form?.salaryStage === "gave_number";
 
   function stashOfferData() {
     // The /script page picks this up — after the round-trip through Stripe
@@ -100,13 +126,9 @@ export default function ProofPage({ flow = "offer" }) {
     stashOfferData();
     // The stash still covers the usual same-browser return; the reference
     // on the link covers everything else.
-    let submissionId;
-    try {
-      submissionId = encoded ? decodeResult(encoded)?.analysis?.submissionId : undefined;
-    } catch {
-      submissionId = undefined;
-    }
-    window.location.href = checkoutUrl(STRIPE_PAYMENT_LINK_URL, { submissionId });
+    window.location.href = checkoutUrl(STRIPE_PAYMENT_LINK_URL, {
+      submissionId: decoded?.analysis?.submissionId,
+    });
   }
 
   function handleFreeTest() {
@@ -161,13 +183,20 @@ export default function ProofPage({ flow = "offer" }) {
             </a>
           </div>
 
+          {alreadySharedNumber && (
+            <p className="mt-8 rounded-lg bg-navy-50 px-5 py-4 text-center text-navy-900 font-medium">
+              You've already shared a number. Your script shows how to hold it,
+              or reopen it, without backpedaling.
+            </p>
+          )}
+
           <div className="mt-10 text-center">
             <p className="text-4xl font-serif font-bold text-navy-900">$47</p>
             <p className="text-sm font-medium text-navy-600 mt-1">
               Limited-time price
             </p>
             <p className="text-xs text-slate-500 mt-1">
-              This rate may go up soon. Lock it in before your next negotiation call.
+              One-time price. Your script is saved, so you can reopen it on any device.
             </p>
           </div>
 
@@ -193,6 +222,13 @@ export default function ProofPage({ flow = "offer" }) {
               of JobJenny. Sessions start at{" "}
               {STRATEGY_SESSION_PRICE_LABEL}.
             </p>
+            {preview.status === "ready" && (
+              <p className="text-center text-sm pt-1">
+                <a href="#script-preview" className="font-medium text-navy-600 hover:text-navy-900 underline">
+                  See a preview of your script
+                </a>
+              </p>
+            )}
             {FREE_TEST_MODE && (
               <button
                 type="button"
@@ -204,6 +240,8 @@ export default function ProofPage({ flow = "offer" }) {
             )}
           </div>
         </div>
+
+        <ScriptPreview state={preview} onUnlock={handleCheckout} />
       </main>
     </div>
   );

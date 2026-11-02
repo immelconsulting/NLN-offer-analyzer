@@ -109,6 +109,10 @@ export default function ApplyResultsPage({ flow = "apply" }) {
             track("script_cta_clicked");
             navigate(`${stage.proofPath}${encoded ? `?d=${encoded}` : ""}`);
           }}
+          onPreviewScript={() => {
+            track("script_cta_clicked", { source: "preview" });
+            navigate(`${stage.proofPath}${encoded ? `?d=${encoded}` : ""}#script-preview`);
+          }}
           onBookSession={() => {
             track("session_cta_clicked");
             navigate("/session");

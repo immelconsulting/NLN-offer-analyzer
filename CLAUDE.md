@@ -88,8 +88,8 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
    later request for that session returns it (`reopened: true`) with no model call and no
    offer data needed, so the same `/script?session_id=` link works on any device. The first
    time, the buyer (Stripe `customer_details.email`) is emailed the script plus that link via
-   Resend (`sendScriptEmail` in `api/_lib/email.js`). `test_skip_payment` is never saved or
-   emailed. **The payment says which analysis it bought:** the proof page sends buyers to Stripe
+   Resend (`sendScriptEmail` in `api/_lib/email.js`). `test_skip_payment` is never emailed, and
+   saved only briefly per analysis (see "Script preview and background writing"). **The payment says which analysis it bought:** the proof page sends buyers to Stripe
    via `checkoutUrl()` (`src/lib/checkoutUrl.js`), which adds `client_reference_id=<submissionId>`
    and `prefilled_email=<their email, if they gave one>`. The generator loads that submission record and
    prefers it over the localStorage stash, so the first visit works on another device/browser and
@@ -327,8 +327,8 @@ time to talk it through, never a call made only to schedule another call (Alex, 
 the example in `system-prompt.md` and the `recommendedNextStep` schema description all say so;
 `tests/prompts.test.js` guards it.
 
-**Script price copy** (ProofPage): "Limited-time price" / "This rate may go up soon. Lock it in
-before your next negotiation call." It replaced "Founding member / early access price", which
+**Script price copy** (ProofPage): "Limited-time price" / "One-time price. Your script is saved, so
+you can reopen it on any device." (Nov 2026). The first line replaced "Founding member / early access price", which
 read as too new; keep urgency honest (no countdowns, no crossed-out prices). Session mentions
 say Jenny **helps them prepare before** their calls, never that she's on the call.
 
@@ -359,6 +359,34 @@ checkout, bought. Optional steps use `compareTo` in `SCRIPT_FUNNEL`, so they're 
 results" rather than the step above. Data before Nov 1 has `lead_captured` before the analysis, so
 "gave email" can exceed "saw results" in old date ranges. Submissions with no email show "No email
 given" in the admin table and open by visitor id.
+
+## Script preview and background writing (Nov 2026)
+
+`/api/generate-script` has two modes; the work lives in `api/_lib/scriptJob.js`, and what the model is
+told in `api/_lib/scriptMessages.js`.
+
+- **Preview** (`{ preview: true, submissionId }`, no payment): the script's opening, shown on the proof
+  page by `ScriptPreview.jsx` below the buy buttons, with the remaining headings faded and "Unlock your
+  full script, $47". Offer flow: section 1. Other flows: sections 1 and 2. Stored once per analysis at
+  `nln:preview:<id>` (a failure is remembered for an hour), so a reload makes no model call. It only runs
+  on a saved analysis, never on input from the browser. The page gives up after 30s and hides it. The
+  remaining headings are a fixed list (`remainingHeadings()`), not model output.
+- **Paid script** (`{ sessionId }`): starts a background job (`waitUntil`) and answers at once; the page
+  asks every 4s. `nln:script-job:<id>` says one is running and holds the opening to show meanwhile (it
+  outlives the 300s function, so a dead run clears itself). With a preview, the model writes only the
+  rest and `joinScript()` puts them together; with none, it writes the whole script as before. **Two
+  tries per run, then an email to Alex (once per payment), up to 3 runs**, then a "your payment is safe"
+  message with Try Again. A failed buyer email also alerts Alex.
+- **The webhook also starts the job** for a $47 payment carrying `client_reference_id`, so someone who
+  closes the tab at Stripe still gets it by email. Payments with no reference rely on the page.
+- `test_skip_payment` with a saved analysis uses the job under `test-<id>` (1 hour, no email, no sale),
+  which is how to test refresh behavior on a preview deployment. With no analysis id it writes inline.
+- If storage fails, the script is written inside the request, as the page always did.
+- Token usage is logged as `Script model usage (preview | rest of script | full script)`.
+
+**Salary question (`salaryStage`):** also `told_number` (with free-text `toldNumber`) and `not_asked`; the
+screening script prompt opens section 5 from those. `gave_number` shows a line on the proof page, and the
+prompt's section 6 covers holding the number as well as reopening it.
 
 ## Submission storage & admin (added July 26, 2026)
 

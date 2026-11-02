@@ -41,6 +41,8 @@ const SALARY_STAGES = [
   { value: "call_scheduled", label: "A call is scheduled or coming up" },
   { value: "dodged", label: "A recruiter asked and I dodged it" },
   { value: "gave_number", label: "I already gave a number" },
+  { value: "told_number", label: "They told me the salary or range" },
+  { value: "not_asked", label: "They haven't asked, and I don't expect them to" },
 ];
 
 const initialState = {
@@ -51,6 +53,7 @@ const initialState = {
   riskTolerance: "",
   salaryStage: "",
   sharedNumber: "",
+  toldNumber: "",
   currentTotalComp: "",
   additionalContext: "",
 };
@@ -280,6 +283,18 @@ export default function ApplyForm({ flow = "apply" }) {
                     Giving a number early is common and recoverable. Knowing it
                     lets us write the exact language to reset the conversation.
                   </p>
+                </div>
+              )}
+              {form.salaryStage === "told_number" && (
+                <div className="mt-4">
+                  <FieldLabel>What number or range did they tell you?</FieldLabel>
+                  <input
+                    type="text"
+                    className={inputClass}
+                    value={form.toldNumber}
+                    onChange={(e) => update("toldNumber", e.target.value)}
+                    placeholder="e.g. $95,000 to $110,000"
+                  />
                 </div>
               )}
             </div>

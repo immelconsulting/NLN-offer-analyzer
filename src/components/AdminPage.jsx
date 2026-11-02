@@ -613,6 +613,7 @@ export default function AdminPage() {
               <Field label="Years of experience" value={f.yearsExperience} />
               <Field label="Salary question stage" value={f.salaryStage} />
               <Field label="Number already shared" value={f.sharedNumber} />
+              <Field label="Number recruiter told them" value={f.toldNumber} />
               {/* Offer-soon fields */}
               <Field label="Compensation status" value={f.compStatus} />
               <Field

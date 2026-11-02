@@ -26,6 +26,7 @@ const SHARED = [
   "riskTolerance",
   "salaryStage",
   "sharedNumber",
+  "toldNumber",
   "additionalContext",
   "jobDescriptionText",
 ];
