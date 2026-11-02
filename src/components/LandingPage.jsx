@@ -76,10 +76,10 @@ export default function LandingPage() {
             href={TRUSTPILOT_REVIEWS_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-navy-600 hover:bg-navy-800 px-4 py-1.5 text-sm text-white transition"
+            className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#00B67A] hover:bg-[#00A36D] px-4 py-1.5 text-sm font-medium text-navy-950 transition"
           >
             <span aria-hidden="true">★</span>
-            100% 5-star reviews on Trustpilot (20 verified)
+            100% 5-star reviews on Trustpilot
           </a>
         </div>
       </header>

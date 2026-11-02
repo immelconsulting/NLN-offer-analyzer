@@ -313,6 +313,28 @@ describe("the free preview", () => {
     expect(h.lastMessage).toContain("stop immediately after the first line marked 🗣️");
   });
 
+  it("the screening script stops at the question and never shows an answer", async () => {
+    h.records.sub_S = { id: "sub_S", flow: "apply", form: applyForm, analysis: { market_range: null } };
+    h.modelText = '## 5. The Script\n\n### Q: "What are your salary expectations?"\n\n**Option A:** 🗣️ "Paid answer."';
+    await askPreview("sub_S");
+    await settle();
+    const ready = await askPreview("sub_S");
+    expect(ready.body.preview).toBe('## 5. The Script\n\n### Q: "What are your salary expectations?"');
+    expect(ready.body.preview).not.toContain("🗣");
+    expect(h.lastMessage).toContain('stop immediately after the line that asks "What are your salary expectations?"');
+    expect(ready.body.headings[0]).toBe("Your word-for-word answers to the salary question");
+  });
+
+  it("stops short of the response when the recruiter told them the number", async () => {
+    h.records.sub_T = { id: "sub_T", flow: "interview", form: { ...applyForm, salaryStage: "told_number" }, analysis: { market_range: null } };
+    h.modelText = '### When the recruiter already told you the number\n\nThey spoke first.\n\n🗣️ "Paid response."\n\n### Q: "What are your salary expectations?"';
+    await askPreview("sub_T");
+    await settle();
+    const ready = await askPreview("sub_T");
+    expect(ready.body.preview).toBe("### When the recruiter already told you the number\n\nThey spoke first.");
+    expect(ready.body.headings[0]).toBe("How to respond to the number they told you");
+  });
+
   it("only runs on a saved analysis, so nobody can spend model calls on made-up input", async () => {
     expect((await askPreview("sub_nope")).body.status).toBe("none");
     expect((await ask({ preview: true })).body.status).toBe("none");
