@@ -7,12 +7,15 @@ import { FLOW_IDS } from "./events.js";
 
 // The script path, top to bottom. Counts are PEOPLE who did the step in the
 // date range, not clicks, so refreshing a page doesn't inflate anything.
+// Email is optional and comes after results, so not everyone passes through
+// it. `compareTo` measures those steps against everyone who saw results rather
+// than the optional step above, or the percentages would be meaningless.
 export const SCRIPT_FUNNEL = [
   { key: "visited", label: "Visited the site", group: "Attract", events: "*" },
-  { key: "gave_email", label: "Gave their email", group: "Attract", events: ["lead_captured"] },
   { key: "started_analysis", label: "Started an analysis", group: "Inform", events: ["analysis_submitted"] },
   { key: "saw_results", label: "Saw their results", group: "Inform", events: ["results_viewed"] },
-  { key: "opened_offer", label: "Opened the $47 script offer", group: "Convert", events: ["proof_viewed"] },
+  { key: "gave_email", label: "Gave their email (optional)", group: "Inform", events: ["lead_captured"], compareTo: "saw_results", compareNote: "of results seen" },
+  { key: "opened_offer", label: "Opened the $47 script offer", group: "Convert", events: ["proof_viewed"], compareTo: "saw_results", compareNote: "of results seen" },
   { key: "started_checkout", label: "Started checkout", group: "Convert", events: ["script_checkout_clicked"] },
   { key: "bought_script", label: "Bought a script", group: "Convert", events: ["script_purchased"] },
 ];
@@ -95,21 +98,31 @@ const newestFirst = (list) =>
     .slice(0, STEP_PEOPLE_LIMIT);
 
 export function funnelCounts(people, steps) {
+  const reachedBy = {};
   let previous = null;
+  let previousLabel = null;
   return steps.map((s) => {
     const reached = people.filter((p) => did(p, s.events));
-    // Did the step above but not this one: where the funnel leaks.
-    const droppedOff = previous ? previous.filter((p) => !did(p, s.events)) : [];
-    previous = reached;
-    return {
+    const baseStep = s.compareTo ? steps.find((x) => x.key === s.compareTo) : null;
+    const base = baseStep ? reachedBy[baseStep.key] : previous;
+    // Did the step it's measured against, but not this one: where it leaks.
+    const droppedOff = base ? base.filter((p) => !did(p, s.events)) : [];
+    const row = {
       key: s.key,
       label: s.label,
       group: s.group,
       count: reached.length,
+      previousCount: base ? base.length : null,
+      previousLabel: baseStep ? baseStep.label : previousLabel,
+      compareNote: s.compareNote || null,
       droppedCount: droppedOff.length,
       people: newestFirst(reached),
       droppedOff: newestFirst(droppedOff),
     };
+    reachedBy[s.key] = reached;
+    previous = reached;
+    previousLabel = s.label;
+    return row;
   });
 }
 

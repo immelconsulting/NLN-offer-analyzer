@@ -9,6 +9,8 @@ import { buildComparablesSummary } from "./_lib/comparables.js";
 import { extractTextFromUpload } from "./_lib/extract.js";
 import { runSearchAnalysis, SOURCES_SCHEMA } from "./_lib/analysis.js";
 import { rejectIfOverLimit } from "./_lib/rateLimit.js";
+import { isVisitorId } from "./_lib/events.js";
+import { afterAnalysisSaved } from "./_lib/resultsEmail.js";
 import { loadPrompt } from "./_lib/prompts.js";
 
 // The system prompt lives in system-prompt.md so it can be edited without
@@ -202,6 +204,8 @@ export default async function handler(req, res) {
         // Files stay out of storage — only the extracted text is kept.
         const {
           leadEmail,
+          requestRef,
+          vid,
           resumeFile,
           jobDescriptionFile,
           jobDescriptionText: _jdRaw,
@@ -210,6 +214,7 @@ export default async function handler(req, res) {
         await saveSubmission(redis, {
           id,
           email: (leadEmail || "").trim().toLowerCase(),
+          vid: isVisitorId(vid) ? vid : undefined,
           timestamp: new Date().toISOString(),
           form: formFields,
           analysis,
@@ -220,6 +225,10 @@ export default async function handler(req, res) {
           scriptGeneratedAt: null,
         });
         analysis.submissionId = id;
+        // If they asked for an emailed copy during the wait, send it now.
+        await afterAnalysisSaved(redis, requestRef, id).catch((err) =>
+          console.error("Sending requested results failed:", err)
+        );
       } catch (err) {
         console.error("Failed to store submission:", err);
       }

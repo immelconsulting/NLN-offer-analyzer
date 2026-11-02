@@ -150,7 +150,7 @@ const toAttachment = (filename, text) => ({
 
 // Returns { text, attachments } to append to the alert. Never throws: a
 // storage problem just means the alert goes out without the extra context.
-export async function buildClientContext(redis, email) {
+export async function buildClientContext(redis, email, { submissionId } = {}) {
   const header = "── FROM THE JOB OFFER ANALYZER ──";
   const notFound = {
     text: [
@@ -159,12 +159,20 @@ export async function buildClientContext(redis, email) {
     ].join("\n"),
     attachments: [],
   };
-  if (!redis || !email) return notFound;
+  if (!redis || (!email && !submissionId)) return notFound;
 
   try {
-    const ids = await listSubmissionIdsByEmail(redis, email, 10);
-    if (!ids.length) return notFound;
-    const sub = await getSubmission(redis, ids[0]);
+    // The payment names its analysis (client_reference_id) whenever the buyer
+    // came through the tool, so this works with no email in the analyzer.
+    // Otherwise fall back to the checkout email.
+    let sub = submissionId ? await getSubmission(redis, submissionId) : null;
+    let ids = [];
+    if (!sub) {
+      if (!email) return notFound;
+      ids = await listSubmissionIdsByEmail(redis, email, 10);
+      if (!ids.length) return notFound;
+      sub = await getSubmission(redis, ids[0]);
+    }
     if (!sub) return notFound;
 
     const flow = sub.flow || "offer";

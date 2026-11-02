@@ -82,6 +82,13 @@ describe("people", () => {
 });
 
 describe("funnels and KPIs (people, not clicks)", () => {
+  it("keeps the agreed order, with email after results", () => {
+    expect(SCRIPT_FUNNEL.map((s) => s.key)).toEqual([
+      "visited", "started_analysis", "saw_results", "gave_email", "opened_offer", "started_checkout", "bought_script",
+    ]);
+    expect(SESSION_FUNNEL.map((s) => s.key)).toEqual(["viewed_session", "session_checkout", "booked_session"]);
+  });
+
   const visible = filterPeople(everyone, {});
 
   it("counts each person once per step, so refreshes don't inflate", () => {
@@ -96,9 +103,15 @@ describe("funnels and KPIs (people, not clicks)", () => {
     const steps = funnelCounts(visible, SCRIPT_FUNNEL);
     const gaveEmail = steps.find((x) => x.key === "gave_email");
     expect(gaveEmail.people.map((p) => p.email)).toEqual(["pat@example.com"]);
-    // Sam visited but never gave an email: he's in the drop-off list.
-    expect(gaveEmail.droppedCount).toBe(2);
-    expect(gaveEmail.droppedOff.some((p) => p.key === "visitor:vid-sam-0002" && p.email === null)).toBe(true);
+    // Email is optional, so it's measured against everyone who saw results,
+    // and so is the offer page right after it.
+    expect(gaveEmail.previousLabel).toBe("Saw their results");
+    expect(gaveEmail.previousCount).toBe(2);
+    const openedOffer = steps.find((x) => x.key === "opened_offer");
+    expect(openedOffer.previousLabel).toBe("Saw their results");
+    expect(openedOffer.previousCount).toBe(2);
+    expect(steps.find((x) => x.key === "started_checkout").previousLabel).toBe("Opened the $47 script offer");
+    expect(steps.find((x) => x.key === "saw_results").droppedOff).toEqual([]);
     expect(steps[0].droppedOff).toEqual([]);
     expect(gaveEmail.people[0]).toMatchObject({ name: "Pat Example", flows: ["apply"] });
     expect(gaveEmail.people[0].lastSeen).toBe("2026-10-21T09:07:00Z");
@@ -133,5 +146,25 @@ describe("funnels and KPIs (people, not clicks)", () => {
     const j = journey(visible.find((p) => p.email === "pat@example.com"));
     expect(j.events.map((e) => e.e)[0]).toBe("landing_viewed");
     expect(j.events.at(-1)).toMatchObject({ e: "script_purchased", amount: 4700 });
+  });
+});
+
+describe("someone who only gives an email at checkout", () => {
+  it("stays one person from first visit to purchase once linked", () => {
+    const events = [
+      { t: t(1), e: "landing_viewed", vid: "vid-anon-0001" },
+      { t: t(2), e: "analysis_submitted", vid: "vid-anon-0001", flow: "offer" },
+      { t: t(3), e: "results_viewed", vid: "vid-anon-0001", flow: "offer" },
+      { t: t(4), e: "proof_viewed", vid: "vid-anon-0001", flow: "offer" },
+      { t: t(5), e: "script_checkout_clicked", vid: "vid-anon-0001", flow: "offer" },
+      { t: t(6), e: "script_purchased", vid: "vid-anon-0001", email: "buyer@example.com", flow: "offer", amount: 4700 },
+    ];
+    const people = groupPeople(events, { "vid-anon-0001": "buyer@example.com" }, {});
+    expect(people).toHaveLength(1);
+    const c = counts(people, SCRIPT_FUNNEL);
+    expect(c).toMatchObject({ visited: 1, started_analysis: 1, saw_results: 1, gave_email: 0, opened_offer: 1, started_checkout: 1, bought_script: 1 });
+    // Skipping the optional email isn't counted as stopping at it.
+    const offer = funnelCounts(people, SCRIPT_FUNNEL).find((s) => s.key === "opened_offer");
+    expect(offer.droppedCount).toBe(0);
   });
 });

@@ -9,8 +9,8 @@
 //
 // Each browser gets a random visitor id (localStorage "nln:vid"). Events
 // carry it plus the flow of the page they came from. The id isn't personal
-// on its own; once the visitor enters their email on the landing page,
-// /api/lead links the two so the admin dashboard can follow a person's
+// on its own; once the visitor asks for their results by email,
+// /api/results links the two so the admin dashboard can follow a person's
 // journey (disclosed in the privacy policy). No email or name is ever sent
 // from here.
 

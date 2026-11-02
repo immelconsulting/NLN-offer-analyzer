@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { encodeResult } from "../lib/encodeResult.js";
 import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
 import SiteHeader from "./SiteHeader.jsx";
-import { track } from "../lib/track.js";
+import { track, getVisitorId } from "../lib/track.js";
+import { newRequestRef, linkRequestToAnalysis } from "../lib/resultsEmail.js";
 import AnalysisLoading, { loadingSteps } from "./AnalysisLoading.jsx";
 
 const INDUSTRIES = [
@@ -121,6 +122,7 @@ export default function OfferForm() {
     () => loadDraft().jobDescriptionText || ""
   );
   const [loading, setLoading] = useState(false);
+  const [requestRef, setRequestRef] = useState(null);
   const [error, setError] = useState("");
 
   function update(field, value) {
@@ -152,10 +154,12 @@ export default function OfferForm() {
       return;
     }
     setError("");
+    const ref = newRequestRef();
+    setRequestRef(ref);
     setLoading(true);
     try {
-      // Attach the email captured on the landing page (if any) so the
-      // submission can be stored under it — invisible to the user.
+      // Attach their email if they already gave one this session (an earlier
+      // analysis); the analysis never needs it.
       let leadEmail = "";
       try {
         leadEmail = JSON.parse(sessionStorage.getItem("nln:lead"))?.email || "";
@@ -170,6 +174,8 @@ export default function OfferForm() {
         body: JSON.stringify({
           ...form,
           leadEmail,
+          requestRef: ref,
+          vid: getVisitorId(),
           resumeFile,
           jobDescriptionFile,
           jobDescriptionText,
@@ -180,6 +186,7 @@ export default function OfferForm() {
         throw new Error(body.error || "Something went wrong analyzing your offer.");
       }
       const analysis = await res.json();
+      linkRequestToAnalysis(ref, analysis.submissionId);
       const encoded = encodeResult({ form, analysis });
       navigate(`/results?d=${encoded}`);
     } catch (err) {
@@ -191,7 +198,7 @@ export default function OfferForm() {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      {loading && <AnalysisLoading title="Researching your offer…" steps={loadingSteps("offer", { role: form.role, location: form.location, industry: form.industry })} />}
+      {loading && <AnalysisLoading requestRef={requestRef} flow={"offer"} title="Researching your offer…" steps={loadingSteps("offer", { role: form.role, location: form.location, industry: form.industry })} />}
       <SiteHeader />
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">

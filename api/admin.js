@@ -282,6 +282,7 @@ export default async function handler(req, res) {
     // One person's journey: asked for directly, or the search narrowed the
     // people down to exactly one.
     const personEmail = String(req.query.person || "").trim().toLowerCase();
+    const personKeyOf = (s) => s.email || vidmap[s.vid] || (s.vid ? `visitor:${s.vid}`.toLowerCase() : "");
     const focus = personEmail
       ? everyone.find((p) => p.email === personEmail || p.key === personEmail)
       : people.length === 1
@@ -304,12 +305,14 @@ export default async function handler(req, res) {
       byFlow: byFlow(people),
       journey: focus ? journey(focus) : null,
       submissionsCapped: all.length >= LIST_LIMIT,
-      submissions: (personEmail ? filtered.filter((s) => s.email === personEmail) : filtered).map((s) => ({
+      submissions: (personEmail ? filtered.filter((s) => personKeyOf(s) === personEmail) : filtered).map((s) => ({
         id: s.id,
         timestamp: s.timestamp,
         flow: flowOf(s),
-        email: s.email,
-        name: names[s.email] || null,
+        email: s.email || vidmap[s.vid] || "",
+        // Email is optional, so someone may only be known by their visitor id.
+        personKey: personKeyOf(s) || null,
+        name: names[s.email || vidmap[s.vid]] || null,
         role: roleOf(s),
         company: companyOf(s),
         location: s.form?.location,

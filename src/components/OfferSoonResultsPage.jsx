@@ -2,6 +2,8 @@ import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { track } from "../lib/track.js";
 import { decodeResult } from "../lib/encodeResult.js";
+import { rememberAnalysis } from "../lib/checkoutUrl.js";
+import { EmailResultsOffer } from "./EmailResults.jsx";
 import { getFlow } from "../lib/flows.js";
 import ShareButton from "./ShareButton.jsx";
 import SiteHeader from "./SiteHeader.jsx";
@@ -37,6 +39,7 @@ export default function OfferSoonResultsPage() {
   // order stays stable across the no-data early return below.
   useEffect(() => {
     if (data?.analysis) {
+      rememberAnalysis(data.analysis.submissionId);
       track("results_viewed");
     }
   }, [data]);
@@ -136,6 +139,8 @@ export default function OfferSoonResultsPage() {
           negotiation methodology, using market data researched at the time of
           your request.
         </p>
+
+        <EmailResultsOffer submissionId={analysis.submissionId} flow={"offer_soon"} />
       </main>
     </div>
   );

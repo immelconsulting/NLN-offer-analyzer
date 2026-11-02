@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { TRUSTPILOT_REVIEWS_URL } from "../lib/config.js";
-import { track, getVisitorId } from "../lib/track.js";
+import { track } from "../lib/track.js";
 
 const STAGES = [
   {
@@ -42,39 +42,15 @@ export default function LandingPage() {
   }, []);
 
   const navigate = useNavigate();
-  const [stage, setStage] = useState("");
-  const [email, setEmail] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
-  async function handleContinue(e) {
-    e.preventDefault();
-    if (!stage) {
-      setError("Please select where you are in your job search.");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-    setError("");
-    setSubmitting(true);
-
-    const lead = { email: email.trim(), stage, marketingOptIn };
-    sessionStorage.setItem("nln:lead", JSON.stringify(lead));
-
-    // Store the lead, but never block the visitor on storage problems.
+  // Straight to the form: no email before the analysis. The stage is kept for
+  // the older /thanks page.
+  function chooseStage(stage) {
     try {
-      await fetch("/api/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...lead, vid: getVisitorId() }),
-      });
+      sessionStorage.setItem("nln:lead", JSON.stringify({ stage }));
     } catch {
-      // Ignore — the visitor continues either way.
+      // Only used by /thanks; carry on without it.
     }
-
     navigate(STAGE_ROUTES[stage] || "/thanks");
   }
 
@@ -91,8 +67,10 @@ export default function LandingPage() {
             Only 42% of job seekers negotiate. Nearly 9 in 10 who do, win.
           </h1>
           <p className="text-slate-700 mt-4 max-w-xl">
-            See exactly where your offer has room to grow. Free, no strings
-            attached.
+            See exactly where your offer has room to grow.
+          </p>
+          <p className="text-slate-700 mt-2 max-w-xl font-medium">
+            Free. No sign-up. Your analysis is ready in about 3 minutes.
           </p>
           <a
             href={TRUSTPILOT_REVIEWS_URL}
@@ -107,10 +85,7 @@ export default function LandingPage() {
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-10">
-        <form
-          onSubmit={handleContinue}
-          className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6"
-        >
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
           <div>
             <h2 className="text-lg font-serif font-semibold text-navy-900 mb-1">
               Where are you in your job search right now?
@@ -124,12 +99,8 @@ export default function LandingPage() {
                 <button
                   key={s.value}
                   type="button"
-                  onClick={() => setStage(s.value)}
-                  className={`text-left rounded-lg border p-4 transition ${
-                    stage === s.value
-                      ? "border-navy-600 ring-1 ring-navy-600 bg-navy-50"
-                      : "border-slate-300 bg-white hover:border-navy-300"
-                  }`}
+                  onClick={() => chooseStage(s.value)}
+                  className="text-left rounded-lg border p-4 transition border-slate-300 bg-white hover:border-navy-600 hover:bg-navy-50"
                 >
                   <span className="block font-medium text-navy-900">
                     {s.label}
@@ -142,57 +113,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-navy-800 mb-1.5">
-              Enter your email so we can send you the right resources for your
-              stage<span className="text-rose-600 ml-0.5">*</span>
-            </label>
-            <input
-              type="email"
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 shadow-sm focus:border-navy-600 focus:outline-none focus:ring-1 focus:ring-navy-600 transition"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
-            <p className="text-sm text-slate-500 mt-1.5">
-              No spam, just your results and relevant resources.
-            </p>
-            <label className="flex items-start gap-2 mt-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={marketingOptIn}
-                onChange={(e) => setMarketingOptIn(e.target.checked)}
-                className="mt-px h-4 w-4 rounded border-slate-300 text-navy-600 focus:ring-navy-600"
-              />
-              <span className="text-xs text-slate-400">
-                Also send me occasional negotiation tips and resources
-              </span>
-            </label>
-            <p className="text-xs text-slate-400 mt-2">
-              See our{" "}
-              <Link
-                to="/privacy"
-                className="underline hover:text-navy-600 transition"
-              >
-                Privacy Policy
-              </Link>
-            </p>
-          </div>
-
-          {error && (
-            <div className="rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-sm px-4 py-3">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full bg-navy-900 hover:bg-navy-600 disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium rounded-md px-6 py-3.5 transition shadow-sm"
-          >
-            {submitting ? "One moment…" : "Continue"}
-          </button>
-
           <p className="text-center text-sm text-slate-500">
             This tool uses AI, guided by NLN's negotiation methodology, to
             generate your offer analysis and script. Submissions are saved so
@@ -204,11 +124,7 @@ export default function LandingPage() {
             </Link>
             .
           </p>
-        </form>
-
-        <p className="text-center text-sm text-slate-500 mt-6">
-          Your information is used only to send you relevant resources.
-        </p>
+        </div>
       </main>
     </div>
   );
