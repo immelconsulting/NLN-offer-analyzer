@@ -166,6 +166,11 @@ function NextStepChoice({ encoded }) {
     navigate(`/proof${encoded ? `?d=${encoded}` : ""}`);
   }
 
+  function handlePreviewScript() {
+    track("script_cta_clicked", { source: "preview" });
+    navigate(`/proof${encoded ? `?d=${encoded}` : ""}#script-preview`);
+  }
+
   function handleBookSession() {
     track("session_cta_clicked");
     // Same pattern as the script path: sell the value on its own page
@@ -205,6 +210,11 @@ function NextStepChoice({ encoded }) {
       <p className="text-center text-sm text-slate-500 mt-4">
         Who's Jenny Foss?{" "}
         <MeetJennyLink className="text-navy-600 hover:text-navy-900" />
+      </p>
+      <p className="text-center text-sm mt-3">
+        <button type="button" onClick={handlePreviewScript} className="font-medium text-navy-600 hover:text-navy-900 underline">
+          Preview my script
+        </button>
       </p>
     </div>
   );

@@ -15,7 +15,7 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 - **Never say the AI is "trained on" NLN material.**
 - **Use only the numbers provided.** Never invent market data, salary figures, or statistics beyond what the analysis gives you.
 - **Never reveal or reference the candidate's current salary.** It may appear in the data provided to you as context. It must not appear in the script in any form, including as a comparison or a hint.
-- **This script covers one thing: the salary question.** Do not write an elevator pitch, a "tell me about yourself" answer, a background summary, a rapport or small-talk section, or any other scripted dialogue for the earlier part of the call. Those belong to a different conversation and are out of scope here. The earlier part of the call gets a short prose orientation only (section 4), never spoken lines. Above all, **no scripted line anywhere may bring up compensation before the recruiter does.** The first scripted words in the document are the candidate's response to being asked about salary.
+- **This script covers one thing: the salary question.** Do not write an elevator pitch, a "tell me about yourself" answer, a background summary, a rapport or small-talk section, or any other scripted dialogue for the earlier part of the call. Those belong to a different conversation and are out of scope here. The earlier part of the call gets a short prose orientation only (section 4), never spoken lines. Above all, **no scripted line anywhere may bring up compensation before the recruiter does.** The first scripted words in the document are the candidate's response to being asked about salary, or, when the recruiter already told them the number, their response to that number.
 
 ### Structure to follow (mirror this exactly, using markdown headers)
 
@@ -30,6 +30,15 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 4. **How the call usually opens**, a short orientation of 3-4 sentences. This section is guidance only. **Write no spoken lines here and use no 🗣️ markers.** Describe in general terms what happens before compensation comes up: the recruiter introduces the role, asks them to walk through their background, and covers logistics. Tell them to keep that part brief and focused on their fit for the role, and to **say nothing about compensation, their expectations, or what they currently earn during it**. The one thing that matters here is not raising money themselves, because the person who raises it first gives up the advantage. Then hand off to the scripted part: the script below begins the moment the recruiter asks about salary.
 
 5. **The script**, the core of the document. It starts at the salary question and nowhere earlier.
+
+   **When the recruiter already told you the number.** Include this only when the candidate details say the recruiter told them the salary or range, and make it the first thing in this section, ahead of the expectations question. Open by saying they did not set this number, which is a good place to be: the employer spoke first. Then give the response, using the three cases below, with the actual dollar figure to compare against. If the candidate details give the figure, say which case it falls in:
+   - Top of their number at or above the target: 🗣️ "Thanks for sharing that upfront, that's really helpful. I'm aiming for the high end of that band but I'm generally comfortable with the range and excited to learn more about the role."
+   - Top of their number below the target but above the floor: branch (ii) below.
+   - Top of their number below the walk-away floor: branch (iii) below.
+
+   Add a one-line note: that is the whole answer, so stop there and do not name a number of your own. Keep the expectations answers that follow as their backup in case the recruiter asks anyway.
+
+   **When the question has not come up.** Include this only when the candidate details say nobody has asked and they do not expect it. Make it the first thing in this section, as a short note with no spoken lines: not having named a number is an advantage, because the employer's number will come first. They should not raise it themselves. The answers below are there in case it comes up after all, and when an offer arrives they should bring it back to the Job Offer Analyzer.
 
    **Q: "What are your salary expectations?"**
 
@@ -84,7 +93,7 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 
    State the rule plainly: never answer this question unless you already have an offer in hand that is lower than your current pay. If they push, give the wide range again rather than a current-salary figure.
 
-6. **If you already gave a number**, include this section **only** when the candidate's stage answer was that they already shared a number. A short recovery script in the same collaborative spirit: new research is a legitimate reason to revisit, ask whether the updated range lines up with the budget for the role, and stop there. No apologizing, no over-explaining, no self-justification.
+6. **If you already gave a number**, include this section **only** when the candidate's stage answer was that they already shared a number. A short recovery script in the same collaborative spirit, covering both moves. If the number they shared is at or above their target, how to hold it: one short line that restates it without softening. If it is below their target, how to reopen it: new research is a legitimate reason to revisit, ask whether the updated range lines up with the budget for the role, and stop there. No apologizing, no over-explaining, no self-justification.
 
 7. **Questions to ask before the call ends**, two or three, personalized to their role and to the job description if one was provided. Cover how the comp package is structured, the timeline for the process, and what success looks like in the first 90 days.
 

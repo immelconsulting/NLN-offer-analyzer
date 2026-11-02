@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { decodeResult } from "../lib/encodeResult.js";
 import { isKnownFlow, usesTargetFields } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import MeetJennyLink from "./MeetJennyLink.jsx";
+import ScriptMarkdown from "./ScriptMarkdown.jsx";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import { track, getVisitorId } from "../lib/track.js";
@@ -16,38 +15,14 @@ import { buildScriptPdf, scriptPdfFilename } from "../lib/scriptPdf.js";
 // localStorage by the results page before checkout. The server keeps the
 // first script written for each payment, so this same link (it's also in the
 // buyer's email) reopens that script on any device, without the stash.
+//
+// The server writes the script as a background job, and this page just keeps
+// asking how it's going. So a refresh, a closed tab or a phone switching apps
+// loses nothing: coming back picks up wherever the job has got to.
 
-// Brand styling for the markdown-formatted script.
-const markdownComponents = {
-  h1: (props) => (
-    <h1 className="text-2xl font-serif font-semibold text-navy-900 mt-8 mb-3 first:mt-0" {...props} />
-  ),
-  h2: (props) => (
-    <h2 className="text-xl font-serif font-semibold text-navy-900 mt-8 mb-3 first:mt-0 border-b border-slate-200 pb-2" {...props} />
-  ),
-  h3: (props) => (
-    <h3 className="text-lg font-serif font-semibold text-navy-900 mt-6 mb-2" {...props} />
-  ),
-  p: (props) => <p className="text-slate-800 leading-relaxed mb-4" {...props} />,
-  ul: (props) => <ul className="list-disc pl-6 mb-4 space-y-2 text-slate-800" {...props} />,
-  ol: (props) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-slate-800" {...props} />,
-  li: (props) => <li className="leading-relaxed" {...props} />,
-  strong: (props) => <strong className="font-semibold text-navy-900" {...props} />,
-  blockquote: (props) => (
-    <blockquote className="border-l-4 border-navy-200 pl-4 italic text-slate-700 mb-4" {...props} />
-  ),
-  hr: () => <hr className="border-slate-200 my-6" />,
-  table: (props) => (
-    <div className="overflow-x-auto mb-4">
-      <table className="w-full text-sm border border-slate-200 rounded-lg" {...props} />
-    </div>
-  ),
-  thead: (props) => <thead className="bg-navy-50 text-navy-900" {...props} />,
-  th: (props) => (
-    <th className="text-left font-semibold px-4 py-2 border-b border-slate-200" {...props} />
-  ),
-  td: (props) => <td className="px-4 py-2 border-b border-slate-100" {...props} />,
-};
+const CHECK_EVERY_MS = 4000;
+const SLOW_AFTER_MS = 3 * 60 * 1000;
+const MISSED_CHECKS_ALLOWED = 8;
 
 const FLOW_COPY = {
   offer: {
@@ -196,6 +171,8 @@ export default function ScriptPage() {
   const [notFound, setNotFound] = useState(false);
   const [loading, setLoading] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [preview, setPreview] = useState(""); // the opening they already saw
+  const [slow, setSlow] = useState(false);
 
   // A script reopened from another device knows its flow only from the server.
   const shownFlow = isKnownFlow(saved?.flow) ? saved.flow : flow;
@@ -212,11 +189,19 @@ export default function ScriptPage() {
       : "");
 
   useEffect(() => {
-    if (!sessionId) return;
+    if (!sessionId) return undefined;
     let cancelled = false;
+    let timer;
+    let waited = false;
+    let missed = 0;
+    const slowTimer = setTimeout(() => setSlow(true), SLOW_AFTER_MS);
 
-    async function generate() {
-      setLoading(true);
+    function checkAgainSoon(ms = CHECK_EVERY_MS) {
+      clearTimeout(timer);
+      timer = setTimeout(check, ms);
+    }
+
+    async function check() {
       setError("");
       try {
         const res = await fetch("/api/generate-script", {
@@ -228,32 +213,64 @@ export default function ScriptPage() {
             form: data?.form,
             analysis: data?.analysis,
             vid: getVisitorId(),
+            waited,
+            retry: attempt > 0 && !waited,
           }),
         });
         const body = await res.json().catch(() => ({}));
+        if (cancelled) return;
         if (res.status === 404) {
-          if (!cancelled) setNotFound(true);
+          setNotFound(true);
+          setLoading(false);
           return;
         }
         if (!res.ok) {
           throw new Error(body.error || "Something went wrong generating your script.");
         }
-        if (!cancelled) {
+        missed = 0;
+        if (body.script) {
           setScript(body.script);
           setSaved({ flow: body.flow, subtitle: body.subtitle, emailedTo: body.emailedTo });
+          setLoading(false);
           // Reopening a saved script isn't a new delivery for the funnel.
           if (!body.reopened) track("script_generated");
+        } else if (body.status === "failed") {
+          setSaved({ flow: body.flow, subtitle: body.subtitle });
+          setError(body.error);
+          setLoading(false);
+        } else {
+          waited = true;
+          setSaved({ flow: body.flow, subtitle: body.subtitle });
+          if (body.preview) setPreview(body.preview);
+          checkAgainSoon();
         }
       } catch (err) {
-        if (!cancelled) setError(err.message || "Something went wrong. Please try again.");
-      } finally {
-        if (!cancelled) setLoading(false);
+        if (cancelled) return;
+        // Mid-wait, a dropped connection is normal on a phone: the job is
+        // still running, so keep asking. Only give up after a good while.
+        missed += 1;
+        if (waited && missed <= MISSED_CHECKS_ALLOWED) {
+          checkAgainSoon(CHECK_EVERY_MS * 2);
+        } else {
+          setError(err.message || "Something went wrong. Please try again.");
+          setLoading(false);
+        }
       }
     }
 
-    generate();
+    // Back from another app: don't make them wait for the next timer.
+    function onVisible() {
+      if (document.visibilityState === "visible" && waited) checkAgainSoon(0);
+    }
+    document.addEventListener("visibilitychange", onVisible);
+
+    setLoading(true);
+    check();
     return () => {
       cancelled = true;
+      clearTimeout(timer);
+      clearTimeout(slowTimer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [sessionId, data, attempt, flow]);
 
@@ -294,7 +311,26 @@ export default function ScriptPage() {
           </div>
         )}
 
-        {loading && (
+        {loading && preview && (
+          <>
+            <div className="bg-navy-900 text-white rounded-xl p-5 flex items-center gap-4" role="status">
+              <div className="shrink-0 h-8 w-8 rounded-full border-4 border-navy-600 border-t-white animate-spin" />
+              <div>
+                <p className="font-semibold">Finishing your script, about a minute</p>
+                <p className="text-sm text-navy-100 mt-0.5">
+                  {slow
+                    ? "This is taking longer than usual. We'll email it to you as soon as it's ready."
+                    : "It's safe to close this page. We'll email it to you too."}
+                </p>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
+              <ScriptMarkdown>{preview}</ScriptMarkdown>
+            </div>
+          </>
+        )}
+
+        {loading && !preview && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-10 flex flex-col items-center text-center">
             <img src={icon} alt="NLN" className="h-12 w-auto animate-pulse mb-6" />
             <div className="h-10 w-10 rounded-full border-4 border-navy-100 border-t-navy-600 animate-spin mb-6" />
@@ -302,7 +338,9 @@ export default function ScriptPage() {
               {copy.loading}
             </p>
             <p className="text-slate-600 text-sm mt-2 max-w-xs">
-              {copy.loadingNote}
+              {slow
+                ? "This is taking longer than usual. We'll email it to you as soon as it's ready."
+                : `${copy.loadingNote} It's safe to close this page. We'll email it to you too.`}
             </p>
           </div>
         )}
@@ -329,15 +367,13 @@ export default function ScriptPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 -mb-4 print:hidden">
               <p className="text-sm text-slate-600">
                 {saved?.emailedTo
-                  ? `We've also emailed a copy to ${saved.emailedTo}.`
+                  ? `A copy is on its way to ${saved.emailedTo}.`
                   : "Bookmark this page to come back to your script any time."}
               </p>
               <DownloadPdfButton script={script} title={copy.title} subtitle={subtitle} />
             </div>
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:border-0 print:shadow-none print:p-0">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                {script}
-              </ReactMarkdown>
+              <ScriptMarkdown>{script}</ScriptMarkdown>
             </div>
             <div className="text-center print:hidden">
               <DownloadPdfButton script={script} title={copy.title} subtitle={subtitle} />

@@ -23,6 +23,7 @@ const FLOW_NAMES = {
 const EVENT_LABELS = {
   landing_viewed: "Visited the site",
   lead_captured: "Gave their email",
+  script_preview_viewed: "Saw the script preview",
   analysis_submitted: "Started an analysis",
   results_viewed: "Saw their results",
   script_cta_clicked: "Clicked “Get my script”",

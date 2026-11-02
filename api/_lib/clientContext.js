@@ -20,6 +20,8 @@ const SALARY_STAGE_LABELS = {
   call_scheduled: "A recruiter call is scheduled or coming up",
   dodged: "A recruiter asked and they dodged it",
   gave_number: "They already gave a number",
+  told_number: "The recruiter told them the salary or range",
+  not_asked: "They haven't been asked and don't expect to be",
 };
 
 const COMP_STATUS_LABELS = {
@@ -120,6 +122,7 @@ function preOfferSummary(flow, form, analysis) {
       : line("Salary question", SALARY_STAGE_LABELS[form.salaryStage]),
     line("Recruiter's range", recruiterRange),
     line("Number they already shared", form.sharedNumber),
+    line("Number the recruiter told them", form.toldNumber),
     isOfferSoon ? line("Other opportunities", OTHER_PROCESS_LABELS[form.otherProcesses]) : null,
     isOfferSoon ? line("Expected comp elsewhere", form.otherCompExpected) : null,
     isOfferSoon ? line("Offer call timing", CALL_TIMING_LABELS[form.callTiming]) : null,

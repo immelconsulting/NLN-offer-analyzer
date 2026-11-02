@@ -4,6 +4,7 @@ import { strategySessionTier } from "./_lib/payment.js";
 import { sendEmail } from "./_lib/email.js";
 import { buildClientContext } from "./_lib/clientContext.js";
 import { recordPurchaseOnce, linkVisitor } from "./_lib/events.js";
+import { startScriptFromPayment } from "./_lib/scriptJob.js";
 import { CONTACT_EMAIL } from "../src/lib/config.js";
 
 // Emails JobJenny the moment someone buys a strategy session, so Alisa can
@@ -12,8 +13,8 @@ import { CONTACT_EMAIL } from "../src/lib/config.js";
 // payment notifications only go to people with a login on NLN's account.
 //
 // Stripe calls this for checkout.session.completed (and
-// async_payment_succeeded, for payment methods that clear later). The $47
-// script and anything else that isn't a session tier is ignored.
+// async_payment_succeeded, for payment methods that clear later). A $47 script
+// gets no alert, but this does start writing it (api/_lib/scriptJob.js).
 //
 // Authenticity: rather than trusting the posted body, we re-fetch the event
 // from Stripe by id with our own secret key — a forged post can name an event
@@ -65,6 +66,13 @@ export default async function handler(req, res) {
   }
   const tier = strategySessionTier(session);
   if (!tier) {
+    // A $47 script (the only other thing that carries an analysis reference).
+    // Starting it here means it gets written and emailed even if they closed
+    // the tab at Stripe and never come back. Anything going wrong here is
+    // harmless: the script page starts the same job when they return.
+    await startScriptFromPayment(getRedis(), session).catch((err) =>
+      console.error("Webhook: starting the script failed:", err)
+    );
     return res.status(200).json({ ignored: "not a strategy session" });
   }
 

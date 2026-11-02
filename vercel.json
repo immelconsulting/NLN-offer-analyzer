@@ -9,7 +9,11 @@
       "includeFiles": "*-prompt.md"
     },
     "api/generate-script.js": {
-      "maxDuration": 120,
+      "maxDuration": 300,
+      "includeFiles": "*-prompt.md"
+    },
+    "api/stripe-webhook.js": {
+      "maxDuration": 300,
       "includeFiles": "*-prompt.md"
     },
     "api/analyze-offer-soon.js": {

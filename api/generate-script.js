@@ -1,326 +1,53 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { getRedis, getSubmission, updateSubmission, attachEmail } from "./_lib/store.js";
+import { getRedis, getSubmission } from "./_lib/store.js";
 import { verifyPayment } from "./_lib/payment.js";
-import { loadPrompt } from "./_lib/prompts.js";
-import { sendScriptEmail } from "./_lib/email.js";
-import { stripEmDashes } from "./_lib/text.js";
-import { isVisitorId, recordPurchaseOnce } from "./_lib/events.js";
-import { STRATEGY_SESSION_URL } from "../src/lib/config.js";
+import { PRE_OFFER_FLOWS } from "./_lib/scriptMessages.js";
+import {
+  readSavedScript,
+  readRunningJob,
+  startScriptJob,
+  writeScriptNow,
+  previewStatus,
+  subtitleFor,
+  canRunAgain,
+  allowRetry,
+  isTestJobId,
+  FAILED_MESSAGE,
+} from "./_lib/scriptJob.js";
 
-// Generates the paid counter-offer script. The client sends the Stripe
-// Checkout session id from the Payment Link redirect plus the offer data it
-// kept in localStorage; we confirm the session is actually paid before
-// calling the model.
+export { applyFloors, recruiterRangeCheck, wideRangeAnswer } from "./_lib/scriptMessages.js";
+
+// The $47 script, in two parts (api/_lib/scriptJob.js does the work):
+//
+// { preview: true, submissionId }: the free opening shown on the offer page.
+// Written once per analysis. No payment needed, but it only ever runs on a
+// saved analysis, so nobody can spend model calls on arbitrary input.
+//
+// { sessionId, ... }: the paid script. The client sends the Stripe Checkout
+// session id from the Payment Link redirect; we confirm it's paid, then start
+// a background job and answer straight away. The page asks again every few
+// seconds, so a refresh, a closed tab or a phone switching apps can't lose
+// anything: the job carries on either way, and the same link picks it back up.
 //
 // One payment = one script. The first script for a checkout session is kept
-// under nln:script:<session id>, and every later request for that session
-// (a reload, another device, the link in the buyer's email) gets that same
-// script back without the offer data, without a new model call. The buyer is
-// emailed a copy with that link the first time it's written.
+// under nln:script:<session id>, and every later request for that session (a
+// reload, another device, the link in the buyer's email) gets that same script
+// back, without the offer data and without a new model call.
 
-const SITE_URL = new URL(STRATEGY_SESSION_URL).origin;
-const SCRIPT_TTL_SECONDS = 60 * 60 * 24 * 365 * 2;
-const scriptKey = (sessionId) => `nln:script:${sessionId}`;
-
-// Same titles the script page shows, used for the emailed copy.
-const SCRIPT_TITLES = {
-  offer: "Your Counter-Offer Script",
-  apply: "Your Recruiter Screening Call Script",
-  interview: "Your Recruiter Screening Call Script",
-  offer_soon: "Your Offer Call Script",
-};
-
-// One prompt file per flow.
-const PROMPT_FILES = {
-  offer: "script-generator-prompt.md",
-  // Applying and Interviewing face the same moment and share one screening
-  // call prompt, so a voice change is a single edit rather than two.
-  apply: "apply-script-generator-prompt.md",
-  interview: "apply-script-generator-prompt.md",
-  // Expecting-an-offer-soon coaches the offer call instead, so it has its own.
-  offer_soon: "offer-soon-script-generator-prompt.md",
-};
-
-// Flows whose form uses targetRole/targetCompany rather than role/company.
-const PRE_OFFER_FLOWS = ["apply", "interview", "offer_soon"];
-const SCREENING_FLOWS = ["apply", "interview"];
-
-function loadSystemPrompt(flow = "offer") {
-  // The prompt's sign-off links out to the paid strategy session. That URL
-  // stays in src/lib/config.js rather than being duplicated in the prompt,
-  // so changing the booking link is a one-line edit. It stays an absolute
-  // external URL (not /session) because the script gets downloaded as a
-  // standalone PDF, where an in-app relative link would be dead.
-  return loadPrompt(PROMPT_FILES[flow] || PROMPT_FILES.offer).replaceAll(
-    "{{strategy_session_url}}",
-    STRATEGY_SESSION_URL
-  );
+function generating(job) {
+  return { status: "generating", preview: job.preview || null, flow: job.flow, subtitle: job.subtitle };
 }
 
-const STAGE_LABELS = {
-  no_call: "No recruiter call yet",
-  call_scheduled: "A call is scheduled or coming up",
-  dodged: "A recruiter asked and I dodged it",
-  gave_number: "I already gave a number",
-};
-
-const parseMoney = (value) => {
-  const n = Number(String(value ?? "").replace(/[^0-9.]/g, ""));
-  return Number.isFinite(n) && n > 0 ? n : null;
-};
-
-const fmtMoney = (n) => `$${Math.round(n).toLocaleString("en-US")}`;
-
-// Applying flow. The walk-away floor is the low end of the researched range,
-// raised to what the candidate already earns so nobody is scripted to accept
-// a pay cut. The current figure itself is never passed to the model as such.
-//
-// The form asks for TOTAL annual compensation, so it may only be compared
-// against the total_comp range. Comparing it to base would silently inflate
-// the base floor, since total comp normally sits well above base.
-export function applyFloors(form, analysis) {
-  const range = analysis.market_range;
-  const currentTotal = parseMoney(form.currentTotalComp);
-  const baseFloor = range?.base?.low ?? null;
-  let totalFloor = range?.total_comp?.low ?? null;
-  let note = "";
-
-  if (currentTotal !== null && (totalFloor === null || currentTotal > totalFloor)) {
-    totalFloor = currentTotal;
-    note =
-      " (set by what they already earn in total, which is above the researched low end; state it only as their floor, never as their current pay)";
-  }
-  // Total compensation is always at least base, so a total floor below the
-  // base floor is incoherent — it would appear when someone's current total
-  // comp sits under the researched base low, which is itself a sign they're
-  // underpaid. The base floor already protects them, so drop the total one.
-  if (totalFloor !== null && baseFloor !== null && totalFloor < baseFloor) {
-    totalFloor = null;
-    note = "";
-  }
-  return { baseFloor, totalFloor, note };
-}
-
-const STAGE_SITUATIONS = {
-  apply: "Applying: actively applying to roles, so the recruiter screening call is the next compensation moment ahead of them.",
-  interview:
-    "Interviewing: already in the process, so the salary question is either imminent or has already come up at least once.",
-};
-
-function buildApplyUserMessage(form, analysis, flow = "apply") {
-  const { baseFloor, totalFloor, note } = applyFloors(form, analysis);
-
-  const lines = [
-    `Job-search stage: ${STAGE_SITUATIONS[flow] || STAGE_SITUATIONS.apply} Reference this naturally in the intro.`,
-    `Target role: ${form.targetRole}`,
-    form.targetCompany ? `Target company: ${form.targetCompany}` : null,
-    `Location: ${form.location}`,
-    `Years of experience: ${form.yearsExperience}`,
-    `Where they are with the salary question: ${STAGE_LABELS[form.salaryStage] || form.salaryStage}`,
-    form.salaryStage === "gave_number" && form.sharedNumber
-      ? `Number they already shared: $${form.sharedNumber} — include the recovery section`
-      : null,
-    baseFloor !== null
-      ? `WALK-AWAY FLOOR (base): ${fmtMoney(baseFloor)}`
-      : "WALK-AWAY FLOOR (base): unavailable — no researched range, use fill-in blanks",
-    totalFloor !== null
-      ? `WALK-AWAY FLOOR (total compensation): ${fmtMoney(totalFloor)}${note}`
-      : null,
-    form.additionalContext
-      ? `Additional context from the candidate: ${form.additionalContext}`
-      : null,
-  ].filter(Boolean);
-
-  const strategyName =
-    { Cautious: "cautious", Balanced: "balanced", Aggressive: "aggressive" }[
-      form.riskTolerance
-    ] || "balanced";
-
-  return [
-    "Write the recruiter screening call script for this candidate.",
-    "",
-    "CANDIDATE DETAILS:",
-    lines.join("\n"),
-    "",
-    `RECOMMENDED STRATEGY: ${strategyName} (from their stated risk tolerance${form.riskTolerance ? `: "${form.riskTolerance}"` : ""}) — use it to set the width of the wide-range answer`,
-    "",
-    "PRE-OFFER ANALYSIS THEY RECEIVED:",
-    JSON.stringify(analysis, null, 2),
-  ].join("\n");
-}
-
-const COMP_STATUS_LABELS = {
-  not_discussed: "They have not talked numbers yet",
-  recruiter_shared_range: "The recruiter shared a range",
-  i_shared_number: "The candidate already shared a number or range",
-  both_shared: "Both sides have shared numbers",
-};
-
-const OTHER_PROCESS_LABELS = {
-  none: "No other active processes. This is their only one, so write NO lines about other opportunities or competing offers anywhere in the script",
-  interviewing_elsewhere:
-    "Interviewing elsewhere, no offer yet. They may truthfully say they are in consideration for other roles, never that they have an offer",
-  expecting_offer: "Expecting another offer in the next 1-2 weeks",
-  have_offer: "Already has another offer in hand",
-};
-
-const CALL_TIMING_LABELS = {
-  scheduled: "The offer call is scheduled",
-  any_day: "Expecting the call any day now",
-  not_sure: "Not sure when the call will come",
-};
-
-// Compares the recruiter's stated band against the researched range. Only
-// emitted when the recruiter actually shared one; the script uses it to
-// explain that a low band is an opening position, not the market.
-export function recruiterRangeCheck(form, analysis) {
-  const high = parseMoney(form.recruiterRangeHigh);
-  if (high === null) return null;
-  const base = analysis.market_range?.base;
-  if (!base) return null;
-  if (typeof base.low === "number" && high < base.low) {
-    return "RECRUITER RANGE CHECK: the top of the recruiter's range is below the walk-away floor";
-  }
-  if (typeof base.target === "number" && high < base.target) {
-    return "RECRUITER RANGE CHECK: the top of the recruiter's range is below the market target";
-  }
-  return null;
-}
-
-// Only the candidate sharing a number triggers the recovery section. The
-// recruiter sharing a range is a different situation and must not, which the
-// model got wrong when left to interpret compStatus itself.
-const CANDIDATE_SHARED = ["i_shared_number", "both_shared"];
-
-// The wide-range answer's two numbers, computed here rather than left to the
-// model. Asking it to pick "the floor" vs "the target" off a strategy label
-// produced the wrong low end for aggressive, so the values are handed over
-// already resolved.
-export function wideRangeAnswer(analysis, strategy, baseFloor, totalFloor) {
-  const range = analysis.market_range;
-  if (!range?.base) return null;
-
-  const useTotal = Boolean(range.total_comp);
-  const points = useTotal ? range.total_comp : range.base;
-  const floor = (useTotal ? totalFloor : baseFloor) ?? points.low;
-
-  // Cautious and balanced open at the walk-away floor; only aggressive lifts
-  // the low end to the target.
-  const low = strategy === "aggressive" ? points.target : floor;
-  const measure = useTotal ? "total compensation" : "base salary";
-  return `WIDE RANGE ANSWER: LOW = ${fmtMoney(low)}, HIGH = ${fmtMoney(points.stretch)} (these are ${measure} figures, already resolved for the ${strategy} strategy — use them exactly as given, do not recompute, and say which measure you quoted)`;
-}
-
-function buildOfferSoonUserMessage(form, analysis) {
-  const { baseFloor, totalFloor, note } = applyFloors(form, analysis);
-
-  const recruiterRange =
-    form.recruiterRangeLow || form.recruiterRangeHigh
-      ? `Recruiter's stated range: $${form.recruiterRangeLow || "?"} to $${form.recruiterRangeHigh || "?"}`
-      : null;
-
-  const priorities =
-    Array.isArray(form.priorities) && form.priorities.length
-      ? `What matters beyond base salary (prioritize the call questions around these): ${form.priorities.join(", ")}`
-      : null;
-
-  const lines = [
-    "Job-search stage: Expecting an offer soon. The next call is the offer call itself.",
-    `Role: ${form.targetRole}`,
-    `Company: ${form.targetCompany}`,
-    `Location: ${form.location}`,
-    `Years of experience: ${form.yearsExperience}`,
-    `Where compensation stands: ${COMP_STATUS_LABELS[form.compStatus] || form.compStatus}`,
-    recruiterRange,
-    form.sharedNumber
-      ? `Number or range they already shared: ${form.sharedNumber} — include the "if you already shared a number" section`
-      : null,
-    `Other opportunities: ${OTHER_PROCESS_LABELS[form.otherProcesses] || form.otherProcesses}`,
-    form.otherCompExpected
-      ? `Total comp they expect from the other opportunity: $${form.otherCompExpected} — use this figure only in the competing-offer line`
-      : null,
-    form.callTiming ? CALL_TIMING_LABELS[form.callTiming] : null,
-    priorities,
-    baseFloor !== null
-      ? `WALK-AWAY FLOOR (base): ${fmtMoney(baseFloor)}`
-      : "WALK-AWAY FLOOR (base): unavailable — no researched range, use fill-in blanks",
-    totalFloor !== null
-      ? `WALK-AWAY FLOOR (total compensation): ${fmtMoney(totalFloor)}${note}`
-      : null,
-    recruiterRangeCheck(form, analysis),
-    CANDIDATE_SHARED.includes(form.compStatus)
-      ? "RECOVERY SECTION: include it — the candidate shared a number themselves"
-      : "RECOVERY SECTION: omit it entirely — the candidate has NOT shared a number of their own",
-    form.otherProcesses === "none"
-      ? "LEVERAGE: they have no other opportunities. Write NOTHING anywhere in the script about other offers, competing offers, or other opportunities, not even to note that they lack them. Their leverage is the company's investment in them plus the market data, and that is how you phrase it."
-      : null,
-    form.additionalContext
-      ? `Additional context from the candidate: ${form.additionalContext}`
-      : null,
-  ].filter(Boolean);
-
-  const strategyName =
-    { Cautious: "cautious", Balanced: "balanced", Aggressive: "aggressive" }[
-      form.riskTolerance
-    ] || "balanced";
-
-  const wide = wideRangeAnswer(analysis, strategyName, baseFloor, totalFloor);
-  if (wide) lines.push(wide);
-
-  return [
-    "Write the offer call script for this candidate.",
-    "",
-    "CANDIDATE DETAILS:",
-    lines.join("\n"),
-    "",
-    `RECOMMENDED STRATEGY: ${strategyName} (from their stated risk tolerance${form.riskTolerance ? `: "${form.riskTolerance}"` : ""}) — use it to pick the recommended approach in Scenario B and to set the width of the wide-range answer`,
-    "",
-    "EXPECTING-AN-OFFER-SOON ANALYSIS THEY RECEIVED:",
-    JSON.stringify(analysis, null, 2),
-  ].join("\n");
-}
-
-function buildUserMessage(form, analysis) {
-  const offerLines = [
-    `Role: ${form.role}`,
-    form.company ? `Company: ${form.company}` : null,
-    `Location: ${form.location}`,
-    `Industry: ${form.industry}`,
-    form.currentSalary ? `Current salary: $${form.currentSalary}` : "Current salary: not provided",
-    `Offer base salary: $${form.offerBaseSalary}`,
-    form.hasBonus ? `Bonus: yes — ${form.bonusAmount}` : "Bonus: no",
-    form.hasSignOnBonus
-      ? `Sign-on bonus: yes — ${form.signOnBonusAmount}`
-      : "Sign-on bonus: no",
-    form.hasEquity ? `Equity: yes — ${form.equityAmount}` : "Equity: no",
-    `Top priority: ${form.topPriority}`,
-    form.hasLeverage
-      ? `Competing offer / leverage: yes${form.leverageDetails ? ` — ${form.leverageDetails}` : ""}`
-      : "Competing offer / leverage: no",
-    form.offerDeadline ? `Offer deadline: ${form.offerDeadline}` : null,
-    form.additionalContext
-      ? `Additional context from the candidate: ${form.additionalContext}`
-      : null,
-  ].filter(Boolean);
-
-  // The user's stated risk tolerance selects the strategy; older result
-  // links predate the question and fall back to Balanced.
-  const strategyName =
-    { Cautious: "Conservative", Balanced: "Balanced", Aggressive: "Aggressive" }[
-      form.riskTolerance
-    ] || "Balanced";
-
-  return [
-    "Write the counter-offer script for this candidate.",
-    "",
-    "OFFER DETAILS:",
-    offerLines.join("\n"),
-    "",
-    `SELECTED STRATEGY: ${strategyName} (chosen based on the candidate's stated risk tolerance${form.riskTolerance ? `: "${form.riskTolerance}"` : ""})`,
-    "",
-    "NEGOTIATION ANALYSIS THEY RECEIVED:",
-    JSON.stringify(analysis, null, 2),
-  ].join("\n");
+function ready(saved, { waited }) {
+  return {
+    status: "ready",
+    script: saved.script,
+    flow: saved.flow,
+    subtitle: saved.subtitle,
+    // Only someone who just waited for it is told where it went; this link
+    // may be opened later, and needn't show their address.
+    emailedTo: waited ? saved.emailTo || null : undefined,
+    reopened: waited ? undefined : true,
+  };
 }
 
 export default async function handler(req, res) {
@@ -334,21 +61,32 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Server is misconfigured (missing API key)." });
   }
 
-  const { sessionId, vid } = req.body || {};
+  const redis = getRedis();
+  const { sessionId, vid, waited, retry, preview: wantsPreview, submissionId } = req.body || {};
   let { form, analysis, flow: rawFlow } = req.body || {};
+
+  if (wantsPreview) {
+    try {
+      return res.status(200).json(await previewStatus(redis, apiKey, submissionId));
+    } catch (err) {
+      // The offer page just carries on without a preview.
+      console.error("Script preview failed:", err);
+      return res.status(200).json({ status: "none" });
+    }
+  }
+
   if (!sessionId) {
     return res.status(400).json({ error: "Missing payment session." });
   }
 
-  // The shared test id is used by everyone, so it's never cached or emailed.
+  // Saved or already being written: no need to ask Stripe again on every poll.
   const isRealPayment = sessionId !== "test_skip_payment";
-  const redis = getRedis();
   if (isRealPayment && redis) {
     try {
-      const saved = await redis.get(scriptKey(sessionId));
-      if (saved?.script) {
-        return res.status(200).json({ script: stripEmDashes(saved.script), flow: saved.flow, subtitle: saved.subtitle, reopened: true });
-      }
+      const saved = await readSavedScript(redis, sessionId);
+      if (saved) return res.status(200).json(ready(saved, { waited }));
+      const job = await readRunningJob(redis, sessionId);
+      if (job) return res.status(200).json(generating(job));
     } catch (err) {
       console.error("Saved script lookup failed:", err);
     }
@@ -402,127 +140,39 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Missing offer details." });
   }
 
+  const context = { apiKey, flow, form, analysis, session: payment.session, vid };
+
+  // The shared test id is used by everyone, so a test run is kept per analysis
+  // (briefly, never emailed), and only when there is an analysis to key it on.
+  const jobId = isRealPayment
+    ? sessionId
+    : analysis.submissionId
+      ? `test-${analysis.submissionId}`
+      : null;
+
+  if (redis && jobId) {
+    try {
+      if (isTestJobId(jobId)) {
+        const saved = await readSavedScript(redis, jobId);
+        if (saved) return res.status(200).json(ready(saved, { waited: true }));
+        const job = await readRunningJob(redis, jobId);
+        if (job) return res.status(200).json(generating(job));
+      }
+      if (retry) await allowRetry(redis, jobId);
+      if (!(await canRunAgain(redis, jobId))) {
+        return res.status(200).json({ status: "failed", error: FAILED_MESSAGE, flow, subtitle: subtitleFor(flow, form) });
+      }
+      const job = await startScriptJob(redis, jobId, context);
+      return res.status(200).json(generating(job || (await readRunningJob(redis, jobId)) || { flow, subtitle: subtitleFor(flow, form) }));
+    } catch (err) {
+      // Storage trouble: write it right here instead, as the page always did.
+      console.error("Couldn't start the script job; writing it directly:", err);
+    }
+  }
+
   try {
-    const client = new Anthropic({ apiKey });
-
-    // Optional resume/JD context was extracted and stored at analysis time
-    // (files can't travel through the URL-encoded results). Missing record
-    // or storage trouble simply means the script goes without it.
-    let userMessage;
-    if (flow === "offer_soon") {
-      userMessage = buildOfferSoonUserMessage(form, analysis);
-    } else if (SCREENING_FLOWS.includes(flow)) {
-      userMessage = buildApplyUserMessage(form, analysis, flow);
-    } else {
-      userMessage = buildUserMessage(form, analysis);
-    }
-    if (analysis.submissionId) {
-      try {
-        const record = redis
-          ? await getSubmission(redis, analysis.submissionId)
-          : null;
-        if (record?.resumeText) {
-          userMessage +=
-            isPreOffer
-              ? `\n\nCANDIDATE RESUME (optional context — use it to make the closing questions specific to their background):\n${record.resumeText}`
-              : `\n\nCANDIDATE RESUME (optional context — use it to make the value headline and counter specific to their background):\n${record.resumeText}`;
-        }
-        if (record?.jobDescriptionText) {
-          userMessage += `\n\nJOB DESCRIPTION (optional context):\n${record.jobDescriptionText}`;
-        }
-      } catch (err) {
-        console.error("Failed to load stored context for script:", err);
-      }
-    }
-
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 8192,
-      system: loadSystemPrompt(flow),
-      messages: [{ role: "user", content: userMessage }],
-    });
-
-    const script = stripEmDashes(
-      response.content
-        .filter((b) => b.type === "text")
-        .map((b) => b.text)
-        .join("\n")
-        .trim()
-    );
-    if (!script) {
-      throw new Error("Empty script response from model.");
-    }
-
-    // Attach the script to the stored submission (id travels inside the
-    // analysis object from /api/analyze). Never blocks the user on failure.
-    const role = isPreOffer ? form.targetRole : form.role;
-    const company = isPreOffer ? form.targetCompany : form.company;
-    const subtitle = `${role}${company ? ` at ${company}` : ""} · ${form.location}`;
-
-    let emailedTo = null;
-    if (isRealPayment && redis) {
-      try {
-        // NX: if two tabs raced, the first saved script wins and is the one
-        // everyone sees from now on.
-        const first = await redis.set(
-          scriptKey(sessionId),
-          { script, flow, subtitle, createdAt: new Date().toISOString() },
-          { nx: true, ex: SCRIPT_TTL_SECONDS }
-        );
-        if (!first) {
-          const saved = await redis.get(scriptKey(sessionId));
-          if (saved?.script) {
-            return res.status(200).json({ script: stripEmDashes(saved.script), flow: saved.flow, subtitle: saved.subtitle, reopened: true });
-          }
-        }
-        const buyerEmail = payment.session?.customer_details?.email;
-        if (first) {
-          // The dashboard's "Bought a script" step. Tied to the email they
-          // used in the tool when there is one, so it lands on the same
-          // person as their visits; recorded before the email so a Resend
-          // failure can't hide a sale.
-          const submission = analysis.submissionId
-            ? await attachEmail(redis, analysis.submissionId, buyerEmail).catch(() => null)
-            : null;
-          await recordPurchaseOnce(redis, sessionId, {
-            e: "script_purchased",
-            email: (submission?.email || buyerEmail || "").toLowerCase() || undefined,
-            // The visitor who ran the analysis, even if they paid on another device.
-            vid: submission?.vid || (isVisitorId(vid) ? vid : undefined),
-            flow,
-            amount: payment.session?.amount_total ?? undefined,
-            name: payment.session?.customer_details?.name || undefined,
-          }).catch((err) => console.error("Recording the script sale failed:", err));
-        }
-        if (first && buyerEmail) {
-          await sendScriptEmail({
-            to: buyerEmail,
-            title: SCRIPT_TITLES[flow],
-            script,
-            scriptUrl: `${SITE_URL}/script?session_id=${encodeURIComponent(sessionId)}`,
-          });
-          emailedTo = buyerEmail;
-        }
-      } catch (err) {
-        // Never block the buyer from seeing their script.
-        console.error("Saving or emailing the script failed:", err);
-      }
-    }
-
-    if (analysis.submissionId) {
-      try {
-        if (redis) {
-          await updateSubmission(redis, analysis.submissionId, {
-            script,
-            scriptGeneratedAt: new Date().toISOString(),
-          });
-        }
-      } catch (err) {
-        console.error("Failed to attach script to submission:", err);
-      }
-    }
-
-    return res.status(200).json({ script, flow, subtitle, emailedTo });
+    const saved = await writeScriptNow(redis, isRealPayment ? sessionId : null, context);
+    return res.status(200).json({ status: "ready", script: saved.script, flow, subtitle: saved.subtitle, emailedTo: saved.emailTo || null });
   } catch (err) {
     console.error("Script generation failed:", err);
     return res.status(502).json({

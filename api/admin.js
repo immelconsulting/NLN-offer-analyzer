@@ -219,7 +219,7 @@ export default async function handler(req, res) {
 
     if (req.query.export === "full") {
       const lines = [
-        "timestamp,flow,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script,has_resume,has_job_description,years_experience,salary_stage,shared_number,range_low,range_target,range_stretch,range_confidence,comp_status,recruiter_range_low,recruiter_range_high,other_processes,other_comp_expected,call_timing,priorities",
+        "timestamp,flow,email,role,company,location,industry,current_salary,offer_base_salary,bonus,sign_on,equity,top_priority,risk_tolerance,deadline,has_leverage,leverage_details,additional_context,offer_score,internal_data_used,has_script,has_resume,has_job_description,years_experience,salary_stage,shared_number,range_low,range_target,range_stretch,range_confidence,comp_status,recruiter_range_low,recruiter_range_high,other_processes,other_comp_expected,call_timing,priorities,told_number",
       ];
       for (const s of subs) {
         const f = s.form || {};
@@ -245,6 +245,7 @@ export default async function handler(req, res) {
             f.compStatus, f.recruiterRangeLow, f.recruiterRangeHigh,
             f.otherProcesses, f.otherCompExpected, f.callTiming,
             Array.isArray(f.priorities) ? f.priorities.join("; ") : "",
+            f.toldNumber,
           ])
         );
       }
