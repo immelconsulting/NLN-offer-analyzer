@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { waitUntil } from "@vercel/functions";
 import { getSubmission, updateSubmission, attachEmail } from "./store.js";
 import { sendEmail, sendScriptEmail } from "./email.js";
+import { promoCodeUsed } from "./payment.js";
 import { stripEmDashes } from "./text.js";
 import { isVisitorId, recordPurchaseOnce } from "./events.js";
 import { buildScriptMessage, loadSystemPrompt, SCREENING_FLOWS } from "./scriptMessages.js";
@@ -322,6 +323,7 @@ async function saveAndDeliver(redis, id, context, script) {
       vid: submission?.vid || (isVisitorId(vid) ? vid : undefined),
       flow,
       amount: session?.amount_total ?? undefined,
+      promo: await promoCodeUsed(session),
       name: session?.customer_details?.name || undefined,
     });
   } catch (err) {

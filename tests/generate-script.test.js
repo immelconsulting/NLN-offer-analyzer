@@ -39,7 +39,7 @@ vi.mock("../api/_lib/store.js", () => ({
   updateSubmission: async () => {},
   attachEmail: async (_r, id) => h.records[id] || null,
 }));
-vi.mock("../api/_lib/payment.js", () => ({ verifyPayment: async () => h.payment }));
+vi.mock("../api/_lib/payment.js", () => ({ verifyPayment: async () => h.payment, promoCodeUsed: async () => h.promo }));
 vi.mock("../api/_lib/email.js", () => ({
   sendScriptEmail: async (a) => {
     if (h.failEmail) throw new Error("resend down");
@@ -132,6 +132,13 @@ describe("one payment = one script", () => {
     const sales = h.events.filter((e) => e.e === "script_purchased");
     expect(sales).toHaveLength(1);
     expect(sales[0]).toMatchObject({ email: "pat@example.com", amount: 4700, flow: "offer", vid: "vid-pat-0001" });
+  });
+
+  it("records which promo code the sale used", async () => {
+    h.promo = "NLNVIP98";
+    await call({ sessionId: "cs_promo", form: offerForm, analysis: {} });
+    h.promo = undefined;
+    expect(h.events.find((e) => e.e === "script_purchased").promo).toBe("NLNVIP98");
   });
 
   it("never saves or emails the shared test session", async () => {

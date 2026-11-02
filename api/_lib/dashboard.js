@@ -172,6 +172,7 @@ export function purchases(people) {
           tier: ev.tier || null,
           flow: ev.flow || null,
           amountCents: Number(ev.amount) || 0,
+          promo: ev.promo || null,
           key: p.key,
           email: p.email,
           name: p.name,
@@ -195,6 +196,6 @@ export function journey(person) {
     flows: [...person.flows],
     events: [...person.events]
       .sort((a, b) => String(a.t).localeCompare(String(b.t)))
-      .map((ev) => ({ t: ev.t, e: ev.e, flow: ev.flow || null, amount: ev.amount ?? null, tier: ev.tier || null })),
+      .map((ev) => ({ t: ev.t, e: ev.e, flow: ev.flow || null, amount: ev.amount ?? null, tier: ev.tier || null, promo: ev.promo || null })),
   };
 }
