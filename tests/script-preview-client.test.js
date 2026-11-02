@@ -14,7 +14,7 @@ describe("the offer page's preview loader", () => {
     vi.unstubAllGlobals();
   });
 
-  it("keeps a finished preview: the 30 second limit doesn't fire afterwards", async () => {
+  it("keeps a finished preview: the time limit doesn't fire afterwards", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn()
@@ -25,18 +25,20 @@ describe("the offer page's preview loader", () => {
     await vi.advanceTimersByTimeAsync(3000);
     expect(onDone).toHaveBeenCalledTimes(1);
     expect(onDone.mock.calls[0][0].status).toBe("ready");
-    await vi.advanceTimersByTimeAsync(60_000);
+    await vi.advanceTimersByTimeAsync(120_000);
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it("gives up quietly after 30 seconds and stops asking", async () => {
+  it("gives up quietly after a minute and stops asking", async () => {
     const fetchMock = vi.fn(() => reply({ status: "generating" }));
     vi.stubGlobal("fetch", fetchMock);
     watchPreview("sub_1", onDone);
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTimeAsync(59_000);
+    expect(onDone).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1_000);
     expect(onDone).toHaveBeenCalledWith({ status: "none" });
     const asked = fetchMock.mock.calls.length;
-    await vi.advanceTimersByTimeAsync(30_000);
+    await vi.advanceTimersByTimeAsync(60_000);
     expect(fetchMock.mock.calls.length).toBe(asked);
     expect(onDone).toHaveBeenCalledTimes(1);
   });
@@ -59,7 +61,7 @@ describe("the offer page's preview loader", () => {
     const cancel = watchPreview("sub_1", onDone);
     await vi.advanceTimersByTimeAsync(0);
     cancel();
-    await vi.advanceTimersByTimeAsync(60_000);
+    await vi.advanceTimersByTimeAsync(120_000);
     expect(onDone).not.toHaveBeenCalled();
   });
 });

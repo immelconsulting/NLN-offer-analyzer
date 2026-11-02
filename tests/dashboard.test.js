@@ -84,7 +84,7 @@ describe("people", () => {
 describe("funnels and KPIs (people, not clicks)", () => {
   it("keeps the agreed order, with email after results", () => {
     expect(SCRIPT_FUNNEL.map((s) => s.key)).toEqual([
-      "visited", "started_analysis", "saw_results", "gave_email", "opened_offer", "saw_preview", "started_checkout", "bought_script",
+      "visited", "started_analysis", "saw_results", "gave_email", "saw_preview", "opened_offer", "started_checkout", "bought_script",
     ]);
     expect(SESSION_FUNNEL.map((s) => s.key)).toEqual(["viewed_session", "session_checkout", "booked_session"]);
   });
@@ -110,7 +110,7 @@ describe("funnels and KPIs (people, not clicks)", () => {
     const openedOffer = steps.find((x) => x.key === "opened_offer");
     expect(openedOffer.previousLabel).toBe("Saw their results");
     expect(openedOffer.previousCount).toBe(2);
-    expect(steps.find((x) => x.key === "started_checkout").previousLabel).toBe("Opened the $47 script offer");
+    expect(steps.find((x) => x.key === "started_checkout").previousLabel).toBe("Saw their results");
     expect(steps.find((x) => x.key === "saw_results").droppedOff).toEqual([]);
     expect(steps[0].droppedOff).toEqual([]);
     expect(gaveEmail.people[0]).toMatchObject({ name: "Pat Example", flows: ["apply"] });

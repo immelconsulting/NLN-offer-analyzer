@@ -1,8 +1,8 @@
 // Asks the server for the free script preview until it's ready, gives up after
-// about 30 seconds, and reports once. Any failure just means no preview.
+// a minute, and reports once. Any failure just means no preview.
 
 const CHECK_EVERY_MS = 3000;
-const GIVE_UP_MS = 30_000;
+const GIVE_UP_MS = 60_000;
 
 // Calls onDone once, with { status: "ready", preview, headings, flow } or
 // { status: "none" }. Returns a function that cancels it.

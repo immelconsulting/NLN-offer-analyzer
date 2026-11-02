@@ -10,6 +10,8 @@
 // Stripe only accepts letters, digits, "-" and "_" (max 200) in the
 // reference, so anything else is left off rather than breaking checkout.
 
+import { track } from "./track.js";
+
 const VALID_REFERENCE = /^[A-Za-z0-9_-]{1,200}$/;
 
 function leadEmail() {
@@ -52,4 +54,17 @@ export function checkoutUrl(paymentLink, { submissionId } = {}) {
   } catch {
     return paymentLink;
   }
+}
+
+// Sends someone to pay for their script, from the results page or the proof
+// page. The stash covers the usual same-browser return; the reference on the
+// link covers everything else.
+export function startScriptCheckout(paymentLink, encoded, submissionId) {
+  track("script_checkout_clicked");
+  try {
+    if (encoded) localStorage.setItem("nln:pendingScript", encoded);
+  } catch {
+    // The payment's reference still finds their analysis.
+  }
+  window.location.href = checkoutUrl(paymentLink, { submissionId });
 }
