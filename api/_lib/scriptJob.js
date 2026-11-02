@@ -96,7 +96,7 @@ export function remainingHeadings(flow, form = {}) {
 }
 
 export function previewInstruction() {
-  return "\n\nPREVIEW ONLY: for now, write only the beginning of this script, in order from the top, and stop immediately after the first line marked 🗣️ (including the question or setup just before it). Use the same markdown headers you would use in the full script. Write nothing after that line: no other options, no notes, no later sections, no sign-off, and no note saying more is coming.";
+  return "\n\nPREVIEW ONLY: for now, write only the beginning of this script, in order from the top, and stop immediately after the first line marked 🗣️ (including the question or setup just before it). Write everything exactly as it would appear in the full script, with the same markdown headers and any label on that line, such as Option A. Write nothing after that line: no other options, no notes, no later sections, no sign-off, and no note saying more is coming.";
 }
 
 export function restInstruction(opening) {
