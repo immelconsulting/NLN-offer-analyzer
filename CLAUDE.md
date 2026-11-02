@@ -480,7 +480,8 @@ person's journey). Components in `src/components/AdminDashboard.jsx`.
   way and looked missing). Exclusions apply to KPIs, funnels, the tables and CSVs.
 - **Purchases table:** every script and session sale (`purchases()` in `dashboard.js`), including
   session buyers who never ran an analysis (they have no submission row). "Paid" is the amount
-  actually charged. The by-flow breakdown also shows sessions sold, and the submissions table has
+  actually charged. "Promo code" comes from `promoCodeUsed()` (`api/_lib/payment.js`), recorded with the sale from
+  Nov 2, 2026; a discount it can't identify shows "Discount applied". The by-flow breakdown also shows sessions sold, and the submissions table has
   a "Session" column.
 - Detailed tracking starts Oct 18, 2026 (`TRACKING_SINCE` in `api/admin.js`); earlier activity was
   anonymous only. Disclosed in the privacy policy (usage data line, effective Oct 18).

@@ -124,6 +124,9 @@ describe("funnels and KPIs (people, not clicks)", () => {
       ["session", "jo@example.com", 32900],
     ]);
     expect(sales[1]).toMatchObject({ tier: "60 minutes", name: "Jo Buyer" });
+    expect(sales[0].promo).toBeNull(); // older sales recorded none
+    const withCode = groupPeople([{ t: t(1), e: "script_purchased", email: "a@b.com", amount: 94, promo: "NLNVIP98" }]);
+    expect(purchases(withCode)[0]).toMatchObject({ amountCents: 94, promo: "NLNVIP98" });
   });
 
   it("can bring back hidden people, and says who was auto-hidden", () => {

@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { getRedis, attachEmail } from "./_lib/store.js";
-import { strategySessionTier } from "./_lib/payment.js";
+import { strategySessionTier, promoCodeUsed } from "./_lib/payment.js";
 import { sendEmail } from "./_lib/email.js";
 import { buildClientContext } from "./_lib/clientContext.js";
 import { recordPurchaseOnce, linkVisitor } from "./_lib/events.js";
@@ -103,6 +103,7 @@ export default async function handler(req, res) {
       flow: linked ? linked.flow || "offer" : undefined,
       tier: tier.label,
       amount: session.amount_total ?? undefined,
+      promo: await promoCodeUsed(session),
       name: session.customer_details?.name || undefined,
     }).catch((err) => console.error("Webhook: recording the session sale failed:", err));
   }

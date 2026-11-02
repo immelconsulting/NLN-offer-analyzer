@@ -393,6 +393,7 @@ export function JourneyPanel({ journey, onClose }) {
                 </span>
                 {ev.tier ? ` (${ev.tier})` : ""}
                 {ev.amount ? ` · ${money(ev.amount)}` : ""}
+                {ev.promo ? ` · ${ev.promo}` : ""}
                 {ev.flow ? <span className="text-slate-500"> · {FLOW_NAMES[ev.flow]}</span> : null}
               </p>
               <p className="text-xs text-slate-500">{new Date(ev.t).toLocaleString()}</p>
@@ -424,7 +425,7 @@ export function PurchasesTable({ rows, onPerson }) {
           <table className="min-w-full border-collapse">
             <thead className="bg-navy-50">
               <tr>
-                {["Date", "Person", "Bought", "Flow", "Paid"].map((h) => (
+                {["Date", "Person", "Bought", "Flow", "Paid", "Promo code"].map((h) => (
                   <th key={h} scope="col" className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 border-b border-slate-200">
                     {h}
                   </th>
@@ -450,6 +451,7 @@ export function PurchasesTable({ rows, onPerson }) {
                   </td>
                   <td className={`${cell} text-slate-700`}>{p.flow ? FLOW_NAMES[p.flow] : "—"}</td>
                   <td className={`${cell} text-slate-700 tabular-nums`}>{money(p.amountCents)}</td>
+                  <td className={`${cell} text-slate-700`}>{p.promo || "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -458,6 +460,7 @@ export function PurchasesTable({ rows, onPerson }) {
       )}
       <p className="text-xs text-slate-500 mt-3">
         &ldquo;Paid&rdquo; is what was actually charged, so 99%-off test purchases show a few dollars.
+        Promo codes are recorded from Nov 2, 2026, so earlier sales show a dash.
       </p>
     </div>
   );

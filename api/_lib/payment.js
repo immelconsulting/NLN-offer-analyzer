@@ -60,3 +60,27 @@ export function strategySessionTier(session) {
   const price = session?.line_items?.data?.[0]?.price;
   return SESSION_TIERS[price?.lookup_key || PRICE_AMOUNT_KEYS[price?.unit_amount]] || null;
 }
+
+// The promo code a Checkout Session used, for the admin purchases table, e.g.
+// "NLNVIP98". Undefined if there was no discount. A discount whose code can't be
+// worked out is labelled rather than lost. Never throws, because it runs while
+// a sale is being recorded.
+export const UNKNOWN_DISCOUNT = "Discount applied";
+
+export async function promoCodeUsed(session) {
+  if (!session?.total_details?.amount_discount) return undefined;
+  try {
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    let promo = session.discounts?.find((d) => d.promotion_code)?.promotion_code;
+    if (!promo) {
+      const full = await stripe.checkout.sessions.retrieve(session.id, { expand: ["total_details.breakdown"] });
+      promo = full.total_details?.breakdown?.discounts?.map((d) => d.discount?.promotion_code).find(Boolean);
+    }
+    if (!promo) return UNKNOWN_DISCOUNT;
+    if (typeof promo === "object") return promo.code || UNKNOWN_DISCOUNT;
+    return (await stripe.promotionCodes.retrieve(promo)).code || UNKNOWN_DISCOUNT;
+  } catch (err) {
+    console.error("Looking up the promo code failed:", err);
+    return UNKNOWN_DISCOUNT;
+  }
+}
