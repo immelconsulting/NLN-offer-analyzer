@@ -32,12 +32,12 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
 
 ## Funnel (script path verified end-to-end, including a real Stripe payment)
 
-1. `/` **LandingPage** — hero + required email + job-search stage question + an unchecked
-   marketing opt-in checkbox (compliance: email is required only to deliver results; marketing
-   needs the explicit opt-in). Every lead (email/stage/marketingOptIn/timestamp) is POSTed to
-   `/api/lead` (Upstash Redis list `nln:leads`). CSV export: `GET /api/leads?token=<LEADS_EXPORT_TOKEN>`
-   (pre-checkbox leads export as opt-in "no"). Privacy Policy lives at `/privacy`
-   (`src/components/PrivacyPolicy.jsx`), linked near the email field.
+1. `/` **LandingPage** — hero and the four stage cards; picking one goes straight to that form
+   (Nov 1, 2026: **no email before the analysis**, "Free. No sign-up."). Email is optional
+   everywhere and is collected only by the "Email me my results" offer or by Stripe; see
+   "Optional email" below. Leads still land in the `nln:leads` list. CSV export:
+   `GET /api/leads?token=<LEADS_EXPORT_TOKEN>` (pre-checkbox leads export as opt-in "no").
+   Privacy Policy lives at `/privacy` (`src/components/PrivacyPolicy.jsx`).
 2. Branch (`STAGE_ROUTES` in LandingPage): **"Received an offer"** → `/offer`, **"Applying"** →
    `/apply`, **"Interviewing"** → `/interview` (those two share one flow, below), **"Expecting
    an offer soon"** → `/offer-soon` (its own flow, below). All four stages now have a real
@@ -91,7 +91,7 @@ anywhere in the funnel; every "talk to a human" CTA leads to a paid tier.
    Resend (`sendScriptEmail` in `api/_lib/email.js`). `test_skip_payment` is never saved or
    emailed. **The payment says which analysis it bought:** the proof page sends buyers to Stripe
    via `checkoutUrl()` (`src/lib/checkoutUrl.js`), which adds `client_reference_id=<submissionId>`
-   and `prefilled_email=<landing-page email>`. The generator loads that submission record and
+   and `prefilled_email=<their email, if they gave one>`. The generator loads that submission record and
    prefers it over the localStorage stash, so the first visit works on another device/browser and
    can't pick up a second analysis from another tab. Payments without a reference (pre-Oct 18)
    fall back to the stash. Session tier links get `prefilled_email` too, so Jenny's alert matches
@@ -332,11 +332,39 @@ before your next negotiation call." It replaced "Founding member / early access 
 read as too new; keep urgency honest (no countdowns, no crossed-out prices). Session mentions
 say Jenny **helps them prepare before** their calls, never that she's on the call.
 
+## Optional email (Nov 1, 2026)
+
+The analysis never depends on an email: a submission can be saved with `email: ""`, and its
+**analysis id is the stable key**. Email comes from one of two places, unchecked opt-in beside it:
+
+- **"Email me my results"** (`src/components/EmailResults.jsx`): on the wait screen, and again on
+  the results page below the buy buttons for anyone who skipped it. The wait screen asks before an
+  id exists, so the browser sends a random `requestRef` with both the analysis and the email;
+  `api/_lib/resultsEmail.js` stores each half (`nln:ref:<ref>`, `nln:pending-results:<ref>`, 1h) and
+  whichever arrives second sends, so closing the tab mid-wait still works. `attachEmail()` adds it to
+  the record (an existing email is kept) and a lock sends once per analysis and address. The email
+  holds only what the free page shows, **never the pre-offer strategies**, plus a link
+  `/r/<id>?t=<resultsToken>` (`ResultsLinkPage.jsx`, `GET /api/results`) because `?d=` is too long
+  for an email and Vercel rejects very long URLs on a fresh load. The token is per record.
+- **Stripe at checkout.** `/api/generate-script` and the webhook attach the buyer's email to the
+  analysis named by `client_reference_id`.
+
+Jenny's alert (`buildClientContext(redis, email, { submissionId })`) prefers the analysis the payment
+names and falls back to the checkout email. Session links get the id from `rememberedAnalysis()`
+(latest analysis this browser viewed); the $47 link keeps using its page's own id, never the
+remembered one, so an old link can't buy a different analysis.
+
+**Funnel order:** visited, started analysis, saw results, gave email (optional), opened offer, started
+checkout, bought. Optional steps use `compareTo` in `SCRIPT_FUNNEL`, so they're measured against "saw
+results" rather than the step above. Data before Nov 1 has `lead_captured` before the analysis, so
+"gave email" can exceed "saw results" in old date ranges. Submissions with no email show "No email
+given" in the admin table and open by visitor id.
+
 ## Submission storage & admin (added July 26, 2026)
 
 Every successful analysis persists to Upstash: `nln:sub:<id>` records (form + analysis +
 script when generated), indexed by `nln:subs` (newest first) and `nln:subs:email:<email>`.
-Append-only history; email comes from the landing-page session (`leadEmail` in the analyze
+Append-only history; email, when known, comes from the browser session (`leadEmail` in the analyze
 payload). `analysis.submissionId` rides inside the encoded `?d=` data so `/api/generate-script`
 can attach the script to the same record. Storage failures never block users.
 **The Upstash database is on the free plan: no automatic backups** (Alex's choice, Oct 18, 2026).
@@ -374,7 +402,7 @@ identifying details into another user's analysis — aggregates only.
   team page; linked via `MeetJennyLink.jsx` on every "book a session with Jenny" decision
   point), and the `FREE_TEST_MODE` flag.
 - `api/analyze.js`, `api/analyze-apply.js`, `api/analyze-offer-soon.js`,
-  `api/generate-script.js`, `api/verify-payment.js`, `api/lead.js`, `api/leads.js`,
+  `api/generate-script.js`, `api/verify-payment.js`, `api/results.js`, `api/leads.js`,
   `api/admin.js`, `api/login.js`, `api/event.js`, `api/stripe-webhook.js` — **11 Vercel
   functions; the Hobby plan caps at 12**, so only one slot remains before the plan matters. Shared helpers live in `api/_lib/` (underscore = not deployed as functions):
   `store.js` (Upstash), `comparables.js`, `extract.js`, `email.js` (Resend), `analysis.js` (the shared web-search
@@ -392,8 +420,9 @@ person's journey). Components in `src/components/AdminDashboard.jsx`.
 
 - **Tracking** (`src/lib/track.js` → `/api/event` → `api/_lib/events.js`): every event carries a
   random visitor id (`localStorage["nln:vid"]`) and the flow from the URL. Stored one Redis list
-  per UTC day (`nln:ev:<day>`, ~13-month TTL). `/api/lead` links visitor id → email
-  (`nln:vidmap`) and records `lead_captured`. Purchases are recorded **server-side only**, once
+  per UTC day (`nln:ev:<day>`, ~13-month TTL). `/api/results` links visitor id → email
+  (`nln:vidmap`) and records `lead_captured`; a purchase links them too (`recordPurchaseOnce`), so
+  someone whose first email is at checkout stays one person. Purchases are recorded **server-side only**, once
   per checkout (`recordPurchaseOnce`): `script_purchased` in `generate-script.js` (email = the
   submission's analyzer email, else Stripe's) and `session_purchased` in the webhook. Buyer names
   from Stripe go to `nln:names`. The browser can't send purchase events (`CLIENT_EVENTS`

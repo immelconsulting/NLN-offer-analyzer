@@ -44,6 +44,20 @@ export async function getSubmission(redis, id) {
   return typeof raw === "string" ? JSON.parse(raw) : raw;
 }
 
+// Email is optional, so it can arrive after the analysis: on the results
+// offer, or from Stripe at checkout. An existing email is kept. Returns the
+// record, or null if it doesn't exist.
+export async function attachEmail(redis, id, email) {
+  const existing = await getSubmission(redis, id);
+  if (!existing) return null;
+  if (existing.email || !email) return existing;
+  const clean = email.trim().toLowerCase();
+  const updated = { ...existing, email: clean };
+  await redis.set(subKey(id), JSON.stringify(updated));
+  await redis.lpush(emailKey(clean), id);
+  return updated;
+}
+
 export async function updateSubmission(redis, id, patch) {
   const existing = await getSubmission(redis, id);
   if (!existing) return null;

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { getRedis, getSubmission, updateSubmission } from "./_lib/store.js";
+import { getRedis, getSubmission, updateSubmission, attachEmail } from "./_lib/store.js";
 import { verifyPayment } from "./_lib/payment.js";
 import { loadPrompt } from "./_lib/prompts.js";
 import { sendScriptEmail } from "./_lib/email.js";
@@ -482,12 +482,13 @@ export default async function handler(req, res) {
           // person as their visits; recorded before the email so a Resend
           // failure can't hide a sale.
           const submission = analysis.submissionId
-            ? await getSubmission(redis, analysis.submissionId).catch(() => null)
+            ? await attachEmail(redis, analysis.submissionId, buyerEmail).catch(() => null)
             : null;
           await recordPurchaseOnce(redis, sessionId, {
             e: "script_purchased",
             email: (submission?.email || buyerEmail || "").toLowerCase() || undefined,
-            vid: isVisitorId(vid) ? vid : undefined,
+            // The visitor who ran the analysis, even if they paid on another device.
+            vid: submission?.vid || (isVisitorId(vid) ? vid : undefined),
             flow,
             amount: payment.session?.amount_total ?? undefined,
             name: payment.session?.customer_details?.name || undefined,

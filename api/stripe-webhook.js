@@ -1,9 +1,9 @@
 import Stripe from "stripe";
-import { getRedis } from "./_lib/store.js";
+import { getRedis, attachEmail } from "./_lib/store.js";
 import { strategySessionTier } from "./_lib/payment.js";
 import { sendEmail } from "./_lib/email.js";
 import { buildClientContext } from "./_lib/clientContext.js";
-import { recordPurchaseOnce } from "./_lib/events.js";
+import { recordPurchaseOnce, linkVisitor } from "./_lib/events.js";
 import { CONTACT_EMAIL } from "../src/lib/config.js";
 
 // Emails JobJenny the moment someone buys a strategy session, so Alisa can
@@ -69,6 +69,21 @@ export default async function handler(req, res) {
   }
 
   const redis = getRedis();
+  const buyerEmail = session.customer_details?.email?.toLowerCase();
+  const submissionId = session.client_reference_id || undefined;
+
+  // The analysis this buyer came from, when the payment names one. Their
+  // checkout email joins the record and their visits, so the alert, journey
+  // and dashboard all see one person even if they never gave an email earlier.
+  let linked = null;
+  if (redis && submissionId) {
+    try {
+      linked = await attachEmail(redis, submissionId, buyerEmail);
+      if (linked && buyerEmail) await linkVisitor(redis, linked.vid, buyerEmail);
+    } catch (err) {
+      console.error("Webhook: linking the analysis failed:", err);
+    }
+  }
 
   // The dashboard's "Bought a session" step, recorded once per checkout and
   // independently of the alert email below, so a failed email can't hide a
@@ -76,7 +91,8 @@ export default async function handler(req, res) {
   if (redis) {
     await recordPurchaseOnce(redis, session.id, {
       e: "session_purchased",
-      email: session.customer_details?.email?.toLowerCase() || undefined,
+      email: buyerEmail || undefined,
+      flow: linked ? linked.flow || "offer" : undefined,
       tier: tier.label,
       amount: session.amount_total ?? undefined,
       name: session.customer_details?.name || undefined,
@@ -90,7 +106,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await sendAlert(session, tier, await buildClientContext(redis, session.customer_details?.email));
+    await sendAlert(session, tier, await buildClientContext(redis, session.customer_details?.email, { submissionId }));
   } catch (err) {
     console.error("Webhook: alert email failed:", session.id, err.message);
     // Release the lock so Stripe's retry gets another go.

@@ -3,9 +3,9 @@
 // - client_reference_id: the analysis this purchase is for. Stripe keeps it
 //   on the checkout session, so /api/generate-script can load the right
 //   analysis from storage even on a different device or browser.
-// - prefilled_email: the email they gave on the landing page, so the
-//   receipt, the emailed script, and Jenny's session alert all line up with
-//   their analyzer history. They can still change it at checkout.
+// - prefilled_email: the email they gave for their results, if any, so the
+//   receipt and the emailed script go to the same place. They can still
+//   change it at checkout.
 //
 // Stripe only accepts letters, digits, "-" and "_" (max 200) in the
 // reference, so anything else is left off rather than breaking checkout.
@@ -17,6 +17,26 @@ function leadEmail() {
     return JSON.parse(sessionStorage.getItem("nln:lead"))?.email || "";
   } catch {
     return "";
+  }
+}
+
+// The session page isn't tied to one result, so the latest analysis this
+// browser saw is what a session purchase refers back to (Jenny's alert).
+const ANALYSIS_KEY = "nln:lastAnalysis";
+
+export function rememberAnalysis(submissionId) {
+  try {
+    if (submissionId) localStorage.setItem(ANALYSIS_KEY, submissionId);
+  } catch {
+    // The alert falls back to matching on the checkout email.
+  }
+}
+
+export function rememberedAnalysis() {
+  try {
+    return localStorage.getItem(ANALYSIS_KEY) || undefined;
+  } catch {
+    return undefined;
   }
 }
 

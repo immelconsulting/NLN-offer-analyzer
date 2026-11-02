@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import icon from "../assets/nln-icon.png";
+import { WaitScreenEmailOffer } from "./EmailResults.jsx";
 
 // Full-screen wait while an analysis runs (70-90 seconds). Instead of one
 // static line, it cycles through what the analyzer is actually doing, built
@@ -65,7 +66,7 @@ export function loadingSteps(flow, { role, location, company, industry, years } 
   return steps.filter(Boolean);
 }
 
-export default function AnalysisLoading({ title, steps }) {
+export default function AnalysisLoading({ title, steps, requestRef, flow }) {
   const [i, setI] = useState(0);
 
   useEffect(() => {
@@ -74,7 +75,9 @@ export default function AnalysisLoading({ title, steps }) {
   }, [steps.length]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center px-6 text-center">
+    <div className="fixed inset-0 z-50 bg-white/95 backdrop-blur-sm overflow-y-auto">
+    {/* Scrolls on a phone, where the email offer and keyboard won't fit. */}
+    <div className="min-h-full flex flex-col items-center justify-center px-6 py-8 text-center">
       <img src={icon} alt="NLN" className="h-14 w-auto animate-pulse mb-8" />
       <div className="h-10 w-10 rounded-full border-4 border-navy-100 border-t-navy-600 animate-spin mb-6" />
       <p className="text-xl font-serif font-semibold text-navy-900">{title}</p>
@@ -90,6 +93,8 @@ export default function AnalysisLoading({ title, steps }) {
       <p className="text-slate-500 text-sm mt-5 max-w-xs">
         Real research takes up to two minutes. It's worth the wait for real numbers.
       </p>
+      {requestRef && <WaitScreenEmailOffer requestRef={requestRef} flow={flow} />}
+    </div>
     </div>
   );
 }

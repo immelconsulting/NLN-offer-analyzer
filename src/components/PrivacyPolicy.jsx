@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
 
-const EFFECTIVE_DATE = "October 18, 2026";
+const EFFECTIVE_DATE = "November 1, 2026";
 
 function SectionHeading({ children }) {
   return (
@@ -34,7 +34,11 @@ export default function PrivacyPolicy() {
 
           <SectionHeading>Information we collect</SectionHeading>
           <ul className="list-disc pl-6 space-y-2 text-slate-700">
-            <li>Your email address, provided when you use our tool</li>
+            <li>
+              Your email address, which is optional. You can use our free
+              analysis without giving it. We collect it only if you ask us to
+              email your results, or when you give it to Stripe at checkout
+            </li>
             <li>
               Details you enter about your job offer (role, location, salary
               figures, and any additional context you provide), used only to
@@ -105,10 +109,11 @@ export default function PrivacyPolicy() {
               JobJenny. If you book one, we share your name, email address,
               phone number if you gave one, and the session you purchased with
               JobJenny so they can schedule and run it. To help them prepare,
-              we also share your most recent Job Offer Analyzer submission made
-              with the same email address: your answers, your analysis, the
-              text of any resume or job description you uploaded, and any
-              script you purchased
+              we also share your Job Offer Analyzer submission: the one you
+              most recently viewed in the browser you booked from, or otherwise
+              your most recent one made with the same email address. That
+              includes your answers, your analysis, the text of any resume or
+              job description you uploaded, and any script you purchased
             </li>
             <li>We do not sell your personal information to third parties</li>
           </ul>

@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { track } from "../lib/track.js";
 import MeetJennyLink from "./MeetJennyLink.jsx";
 import { decodeResult } from "../lib/encodeResult.js";
+import { rememberAnalysis } from "../lib/checkoutUrl.js";
+import { EmailResultsOffer } from "./EmailResults.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import OpportunityList from "./OpportunityList.jsx";
 import StrategyCards from "./StrategyCards.jsx";
@@ -27,6 +29,7 @@ export default function ResultsPage() {
   // order stays stable across the no-data early return below.
   useEffect(() => {
     if (data?.analysis) {
+      rememberAnalysis(data.analysis.submissionId);
       track("results_viewed", { offerScore: data.analysis.offerScore });
     }
   }, [data]);
@@ -119,6 +122,8 @@ export default function ResultsPage() {
           {analysis.internalDataUsed &&
             " Market context includes anonymized data from offers previously analyzed by NLN."}
         </p>
+
+        <EmailResultsOffer submissionId={analysis.submissionId} flow={"offer"} />
       </main>
     </div>
   );

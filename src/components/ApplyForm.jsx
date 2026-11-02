@@ -5,7 +5,8 @@ import { loadDraft, saveDraft, withDraft } from "../lib/formDraft.js";
 import { getFlow } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import { CONTACT_EMAIL } from "../lib/config.js";
-import { track } from "../lib/track.js";
+import { track, getVisitorId } from "../lib/track.js";
+import { newRequestRef, linkRequestToAnalysis } from "../lib/resultsEmail.js";
 import AnalysisLoading, { loadingSteps } from "./AnalysisLoading.jsx";
 
 // Pre-offer form, shared by the Applying and Interviewing stages (see
@@ -91,6 +92,7 @@ export default function ApplyForm({ flow = "apply" }) {
     () => loadDraft().jobDescriptionText || ""
   );
   const [loading, setLoading] = useState(false);
+  const [requestRef, setRequestRef] = useState(null);
   const [error, setError] = useState("");
 
   function update(field, value) {
@@ -122,10 +124,12 @@ export default function ApplyForm({ flow = "apply" }) {
       return;
     }
     setError("");
+    const ref = newRequestRef();
+    setRequestRef(ref);
     setLoading(true);
     try {
-      // Attach the email captured on the landing page (if any) so the
-      // submission can be stored under it — invisible to the user.
+      // Attach their email if they already gave one this session (an earlier
+      // analysis); the analysis never needs it.
       let leadEmail = "";
       try {
         leadEmail = JSON.parse(sessionStorage.getItem("nln:lead"))?.email || "";
@@ -141,6 +145,8 @@ export default function ApplyForm({ flow = "apply" }) {
           ...form,
           flow: stage.id,
           leadEmail,
+          requestRef: ref,
+          vid: getVisitorId(),
           resumeFile,
           jobDescriptionFile,
           jobDescriptionText,
@@ -153,6 +159,7 @@ export default function ApplyForm({ flow = "apply" }) {
       const analysis = await res.json();
       // flow rides inside the encoded payload so the results, proof, and
       // script pages all know which path they're on.
+      linkRequestToAnalysis(ref, analysis.submissionId);
       const encoded = encodeResult({ flow: stage.id, form, analysis });
       navigate(`${stage.resultsPath}?d=${encoded}`);
     } catch (err) {
@@ -164,7 +171,7 @@ export default function ApplyForm({ flow = "apply" }) {
 
   return (
     <div className="min-h-screen bg-navy-50">
-      {loading && <AnalysisLoading title="Researching your market rate…" steps={loadingSteps(flow, { role: form.targetRole, location: form.location, years: form.yearsExperience })} />}
+      {loading && <AnalysisLoading requestRef={requestRef} flow={flow} title="Researching your market rate…" steps={loadingSteps(flow, { role: form.targetRole, location: form.location, years: form.yearsExperience })} />}
       <SiteHeader />
       <header>
         <div className="max-w-3xl mx-auto px-6 pt-10 pb-2">

@@ -179,7 +179,9 @@ export function FunnelChart({ steps, title, note, showGroups = true, compact = f
           ]
             .map((p) => p.join(","))
             .join(" ");
-          const prev = i === 0 ? null : steps[i - 1].count;
+          // Optional steps are measured against a named step, not the one above.
+          const prev = s.previousCount ?? null;
+          const prevNote = s.compareNote || (compact ? "of above" : "of step above");
           const isSelected = selected === i;
           const active = hover === i || isSelected;
           return (
@@ -202,7 +204,7 @@ export function FunnelChart({ steps, title, note, showGroups = true, compact = f
             >
               <title>
                 {`${s.label}: ${s.count.toLocaleString()} ${s.count === 1 ? "person" : "people"}`}
-                {prev !== null ? ` · ${pctOf(s.count, prev)} of the step above` : ""}
+                {prev !== null ? ` · ${pctOf(s.count, prev)} ${s.compareNote || "of the step above"}` : ""}
                 {` · ${pctOf(s.count, steps[0].count)} of the top`}
               </title>
               <polygon
@@ -219,7 +221,7 @@ export function FunnelChart({ steps, title, note, showGroups = true, compact = f
               </text>
               {prev !== null && (
                 <text x={top.right + 14} y={y + layerH / 2} dominantBaseline="middle" fill="#475569" fontSize="13">
-                  <tspan fontWeight="600" fill={INK}>{pctOf(s.count, prev)}</tspan>{compact ? " of above" : " of step above"}
+                  <tspan fontWeight="600" fill={INK}>{pctOf(s.count, prev)}</tspan>{" "}{prevNote}
                 </text>
               )}
             </g>
@@ -230,7 +232,7 @@ export function FunnelChart({ steps, title, note, showGroups = true, compact = f
         <StepPeople
           step={steps[selected]}
           isFirst={selected === 0}
-          previousLabel={selected > 0 ? steps[selected - 1].label : null}
+          previousLabel={steps[selected].previousLabel}
           onPerson={onPerson}
           onClose={() => setSelected(null)}
         />

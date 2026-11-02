@@ -339,12 +339,24 @@ function SubmissionsTable({ rows, sort, onSort, onOpen, onPerson }) {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onPerson(s.email);
+                        onPerson(s.personKey || s.email);
                       }}
                       className="underline decoration-navy-300 underline-offset-2 hover:text-navy-600"
                       title="Show this person's journey"
                     >
                       {s.name ? `${s.name} · ${s.email}` : s.email}
+                    </button>
+                  ) : s.personKey ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onPerson(s.personKey);
+                      }}
+                      className="font-normal text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-navy-600"
+                      title="Show this person's journey"
+                    >
+                      No email given
                     </button>
                   ) : (
                     "—"
@@ -845,9 +857,9 @@ export default function AdminPage() {
               sort={sort}
               onSort={toggleSort}
               onOpen={open}
-              onPerson={(email) => {
-                setQuery(email);
-                setPerson(email);
+              onPerson={(key) => {
+                setQuery(key.startsWith("visitor:") ? "" : key);
+                setPerson(key);
               }}
             />
             <p className="text-xs text-slate-500">

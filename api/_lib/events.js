@@ -87,6 +87,9 @@ export async function recordPurchaseOnce(redis, checkoutId, fields) {
   });
   if (!first) return false;
   await recordEvent(redis, fields);
+  // Email is optional, so a purchase can be the first time we learn who this
+  // visitor is. Linking them keeps their earlier steps on the same person.
+  await linkVisitor(redis, fields.vid, fields.email);
   if (fields.name) await rememberName(redis, fields.email, fields.name);
   return true;
 }

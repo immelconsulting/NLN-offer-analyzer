@@ -10,6 +10,8 @@ import {
   normalizeRange,
 } from "./_lib/analysis.js";
 import { rejectIfOverLimit } from "./_lib/rateLimit.js";
+import { isVisitorId } from "./_lib/events.js";
+import { afterAnalysisSaved } from "./_lib/resultsEmail.js";
 import { loadPrompt } from "./_lib/prompts.js";
 
 // Pre-offer analysis, shared by the Applying and Interviewing stages. No
@@ -202,6 +204,8 @@ export default async function handler(req, res) {
         // Files stay out of storage — only the extracted text is kept.
         const {
           leadEmail,
+          requestRef,
+          vid,
           resumeFile,
           jobDescriptionFile,
           jobDescriptionText: _jdRaw,
@@ -211,6 +215,7 @@ export default async function handler(req, res) {
           id,
           flow: normalizeFlow(form.flow),
           email: (leadEmail || "").trim().toLowerCase(),
+          vid: isVisitorId(vid) ? vid : undefined,
           timestamp: new Date().toISOString(),
           form: formFields,
           analysis,
@@ -221,6 +226,10 @@ export default async function handler(req, res) {
           scriptGeneratedAt: null,
         });
         analysis.submissionId = id;
+        // If they asked for an emailed copy during the wait, send it now.
+        await afterAnalysisSaved(redis, requestRef, id).catch((err) =>
+          console.error("Sending requested results failed:", err)
+        );
       } catch (err) {
         console.error("Failed to store apply submission:", err);
       }

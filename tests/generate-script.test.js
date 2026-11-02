@@ -26,6 +26,7 @@ vi.mock("../api/_lib/store.js", () => ({
   }),
   getSubmission: async (_r, id) => h.records[id] || null,
   updateSubmission: async () => {},
+  attachEmail: async (_r, id) => h.records[id] || null,
 }));
 vi.mock("../api/_lib/payment.js", () => ({ verifyPayment: async () => h.payment }));
 vi.mock("../api/_lib/email.js", () => ({ sendScriptEmail: async (a) => h.emails.push(a) }));

@@ -13,6 +13,7 @@ import BookingPage from "./components/BookingPage.jsx";
 import ScriptPage from "./components/ScriptPage.jsx";
 import PrivacyPolicy from "./components/PrivacyPolicy.jsx";
 import AdminPage from "./components/AdminPage.jsx";
+import ResultsLinkPage from "./components/ResultsLinkPage.jsx";
 import SiteFooter from "./components/SiteFooter.jsx";
 
 export default function App() {
@@ -45,6 +46,7 @@ export default function App() {
       <Route path="/offer-soon/proof" element={<ProofPage flow="offer_soon" />} />
 
       <Route path="/thanks" element={<ThankYou />} />
+      <Route path="/r/:id" element={<ResultsLinkPage />} />
       <Route path="/session" element={<SessionProofPage />} />
       <Route path="/booking" element={<BookingPage />} />
       <Route path="/script" element={<ScriptPage />} />
