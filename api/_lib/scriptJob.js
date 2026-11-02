@@ -4,7 +4,7 @@ import { getSubmission, updateSubmission, attachEmail } from "./store.js";
 import { sendEmail, sendScriptEmail } from "./email.js";
 import { stripEmDashes } from "./text.js";
 import { isVisitorId, recordPurchaseOnce } from "./events.js";
-import { buildScriptMessage, loadSystemPrompt } from "./scriptMessages.js";
+import { buildScriptMessage, loadSystemPrompt, SCREENING_FLOWS } from "./scriptMessages.js";
 import { CONTACT_EMAIL, STRATEGY_SESSION_URL } from "../../src/lib/config.js";
 
 // Writing the $47 script, in two parts: a free opening before payment, the rest
@@ -40,11 +40,12 @@ const scriptKey = (id) => `nln:script:${id}`;
 const jobKey = (id) => `nln:script-job:${id}`;
 const runsKey = (id) => `nln:script-runs:${id}`;
 const alertKey = (id) => `nln:script-alerted:${id}`;
-// v2: previews now run through the first spoken line.
-const previewKey = (id) => `nln:preview:v2:${id}`;
+// v3: where a preview stops has changed twice, so older ones are left behind.
+const previewKey = (id) => `nln:preview:v3:${id}`;
 const previewLockKey = (id) => `nln:preview-lock:${id}`;
 
 export const isTestJobId = (id) => id.startsWith("test-");
+const isScreening = (flow) => SCREENING_FLOWS.includes(flow);
 
 export const FAILED_MESSAGE =
   "Your payment is safe, and we've been alerted. We're having trouble writing your script right now, and we'll email it to you as soon as it's ready. You can also try again here.";
@@ -57,8 +58,7 @@ const SCRIPT_TITLES = {
   offer_soon: "Your Offer Call Script",
 };
 
-// Listed under the preview, which runs through the first spoken line, so people
-// can see what's still to come. Written here rather than asked of the model, so
+// Listed under the preview so people can see what's still to come. Written here rather than asked of the model, so
 // the preview stays one short call.
 export function remainingHeadings(flow, form = {}) {
   if (flow === "offer") {
@@ -85,7 +85,8 @@ export function remainingHeadings(flow, form = {}) {
     ];
   }
   return [
-    "Your other answer to the salary question",
+    ...(form.salaryStage === "told_number" ? ["How to respond to the number they told you"] : []),
+    "Your word-for-word answers to the salary question",
     "If the recruiter shares a range",
     "If they push for a number anyway",
     "If they ask for your current salary",
@@ -95,20 +96,34 @@ export function remainingHeadings(flow, form = {}) {
   ];
 }
 
-export function previewInstruction() {
-  return "\n\nPREVIEW ONLY: for now, write only the beginning of this script, in order from the top, and stop immediately after the first line marked 🗣️ (including the question or setup just before it). Write everything exactly as it would appear in the full script, with the same markdown headers and any label on that line, such as Option A. Write nothing after that line: no other options, no notes, no later sections, no sign-off, and no note saying more is coming.";
+export function previewInstruction(flow) {
+  const stop = isScreening(flow)
+    ? 'stop immediately after the line that asks "What are your salary expectations?". Do not write any answer to it, or any line marked 🗣️. If the script would reach a line marked 🗣️ before that question, stop just before that line instead.'
+    : "stop immediately after the first line marked 🗣️ (including the question or setup just before it).";
+  return `\n\nPREVIEW ONLY: for now, write only the beginning of this script, in order from the top, and ${stop} Write everything exactly as it would appear in the full script, with the same markdown headers and any label on that line, such as Option A. Write nothing after that: no other options, no notes, no later sections, no sign-off, and no note saying more is coming.`;
 }
 
 export function restInstruction(opening) {
   return `\n\nTHE OPENING IS ALREADY WRITTEN. The customer has read this opening word for word, and it will sit directly above what you write:\n\n<opening>\n${opening}\n</opening>\n\nContinue from exactly where it stops and write everything that comes after it, following the structure above. If it stops partway through a section, carry on with that section without repeating its header. Do not repeat, reword, or contradict the opening, do not introduce Alex again, and use the same numbers it uses. Start directly with whatever comes next.`;
 }
 
-// The preview ends at the first spoken line, whatever the model wrote past it,
-// so it can't give away more of the paid script than intended.
-export function cutAtFirstSpokenLine(text) {
+// Where the free part stops, whatever the model wrote past it, so it can't give
+// away more of the paid script than intended. Most scripts stop at their first
+// spoken line. On the screening script that line is the whole point of buying
+// it, so it stops at the question and never shows an answer. Null if there's
+// nothing to cut at.
+export function cutPreview(text, flow) {
   const lines = text.split("\n");
-  const at = lines.findIndex((line) => line.includes("🗣"));
-  return at === -1 ? null : lines.slice(0, at + 1).join("\n").trim();
+  const spoken = lines.findIndex((line) => line.includes("🗣"));
+  const upTo = (end) => lines.slice(0, end).join("\n").trim();
+  if (!isScreening(flow)) return spoken === -1 ? null : upTo(spoken + 1);
+
+  const question = lines.findIndex((line) => /\bQ:.*salary expectations/i.test(line));
+  if (question !== -1 && (spoken === -1 || question < spoken)) return upTo(question + 1);
+  if (spoken === -1) return null;
+  // No question first (they were told the number): stop short of the response,
+  // along with any bare label like "Option A:" left waiting for it.
+  return upTo(spoken).replace(/\n+\s*\**(?:Option [AB]|Response)\b[^\n]*$/i, "").trim();
 }
 
 // Puts the opening and the rest together. Drops a repeated first heading, the
@@ -156,12 +171,12 @@ async function writePreview(redis, apiKey, record) {
     const message = await buildScriptMessage(redis, flow, record.form, analysis);
     const { text, stopReason } = await callModel(apiKey, {
       system: loadSystemPrompt(flow),
-      message: message + previewInstruction(),
+      message: message + previewInstruction(flow),
       maxTokens: 2000,
       timeout: PREVIEW_TIMEOUT_MS,
       label: "preview",
     });
-    const preview = cutAtFirstSpokenLine(text);
+    const preview = cutPreview(text, flow);
     // Cut off before reaching a spoken line, it isn't fit to show or build on.
     if (!preview && stopReason === "max_tokens") throw new Error("Preview ran too long.");
     await redis.set(previewKey(id), { text: preview || text, createdAt: new Date().toISOString() }, { ex: PREVIEW_TTL_SECONDS });

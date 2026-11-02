@@ -364,14 +364,16 @@ given" in the admin table and open by visitor id.
 `/api/generate-script` has two modes; the work lives in `api/_lib/scriptJob.js`, and what the model is
 told in `api/_lib/scriptMessages.js`.
 
-- **Preview** (`{ preview: true, submissionId }`, no payment): the beginning of the script through its
-  **first 🗣️ line** (`cutAtFirstSpokenLine()` enforces that, whatever the model writes). Shown at the bottom
+- **Preview** (`{ preview: true, submissionId }`, no payment): the beginning of the script, cut by
+  `cutPreview()` whatever the model writes: through the **first 🗣️ line** on the counter-offer and offer-call
+  scripts, but on the **screening script it stops at the question "What are your salary expectations?" and
+  never shows an answer** (Alex, Nov 2: the answer is the whole point of buying it). Shown at the bottom
   of every results page by `ScriptOffer.jsx`, after the recommendations, with the remaining headings faded,
   "Unlock your full script, $47" (straight to Stripe) and "See what you get for $47" (a pop-up with the same
   `ProofContent.jsx` as `/proof`, which now mostly serves old links; opening it records `proof_viewed`). A
   session CTA always sits below. Until the preview is ready, or if it fails, the page shows today's two-button
   `NextStepChoice`, so a buy button and session button are always there. Stored once per analysis at
-  `nln:preview:v2:<id>` (a failure is remembered for an hour), so a reload makes no model call. It only runs
+  `nln:preview:v3:<id>` (a failure is remembered for an hour), so a reload makes no model call. It only runs
   on a saved analysis, never on input from the browser. The page gives up after 60s. Costs about $0.03 per
   results page, since everyone who sees results now gets one. The remaining headings are a fixed list
   (`remainingHeadings()`), not model output.
@@ -391,6 +393,10 @@ told in `api/_lib/scriptMessages.js`.
 **Salary question (`salaryStage`):** also `told_number` (with free-text `toldNumber`) and `not_asked`; the
 screening script prompt opens section 5 from those. `gave_number` shows a line on the proof page, and the
 prompt's section 6 covers holding the number as well as reopening it.
+
+**Results page notes** (`biggest_risk`, `call_status_note`, `range_rationale` and the offer-soon notes) are
+short paragraphs: the two analyze prompts ask for that, and `splitIntoParagraphs()` (`src/lib/readableText.js`)
+breaks up anything still in one block, which also covers old result links.
 
 ## Submission storage & admin (added July 26, 2026)
 

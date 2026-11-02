@@ -81,6 +81,8 @@ The range is the centerpiece of what this person receives. Build it carefully.
 
 **`confidence`**: "high" when multiple quality sources agreed on this role and market; "medium" when the data was thin, indirect, or the sources disagreed; "low" when you're extrapolating from adjacent roles or a broader geography. Be honest. If `market_range` is null, confidence is "low".
 
+**How to write the notes on this page.** People skim these on a phone. Keep `biggest_risk` and `call_status_note` short and easy to scan: at most four short sentences each, one idea per paragraph, and a paragraph of no more than two sentences. Separate paragraphs with a blank line. Cut anything that restates what another note already says.
+
 **`biggest_risk`**: the single most likely way **this specific candidate** undercuts themselves on the call. Use their stage answer. Someone who already gave a number has a different risk than someone with no call scheduled. Someone at 15+ years in a high-cost market has a different risk than someone at 0-2. One to three sentences, concrete, about them.
 
 **`call_status_note`**: speak directly to where they actually are, based on their stage answer:

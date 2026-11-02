@@ -1,3 +1,4 @@
+import { splitIntoParagraphs } from "../lib/readableText.js";
 import MeetJennyLink from "./MeetJennyLink.jsx";
 
 // Shared building blocks for the researched-range results pages
@@ -72,7 +73,7 @@ export function RangeCard({ analysis, noDataNote, floorNote }) {
         <h2 className="text-lg font-serif font-semibold text-navy-900 mb-2">
           We couldn't verify a market range for this role
         </h2>
-        <p className="text-slate-700">{analysis.range_rationale}</p>
+        <Paragraphs text={analysis.range_rationale} className="text-slate-700" />
         <p className="text-sm text-slate-500 mt-4">{noDataNote}</p>
       </div>
     );
@@ -87,7 +88,9 @@ export function RangeCard({ analysis, noDataNote, floorNote }) {
         </div>
       )}
 
-      <p className="text-slate-700 mt-6">{analysis.range_rationale}</p>
+      <div className="mt-6">
+        <Paragraphs text={analysis.range_rationale} className="text-slate-700" />
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1">
         <p className="text-xs text-slate-500">
@@ -105,6 +108,19 @@ export function RangeCard({ analysis, noDataNote, floorNote }) {
   );
 }
 
+// Model-written notes, broken into short paragraphs so they scan.
+function Paragraphs({ text, className }) {
+  return (
+    <div className="space-y-3">
+      {splitIntoParagraphs(text).map((paragraph, i) => (
+        <p key={i} className={className}>
+          {paragraph}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 export function Callout({ title, children, tone = "dark" }) {
   if (!children) return null;
   if (tone === "light") {
@@ -113,7 +129,7 @@ export function Callout({ title, children, tone = "dark" }) {
         <h2 className="text-lg font-serif font-semibold text-navy-900 mb-2">
           {title}
         </h2>
-        <p className="text-slate-700">{children}</p>
+        <Paragraphs text={children} className="text-slate-700" />
       </div>
     );
   }
@@ -122,7 +138,7 @@ export function Callout({ title, children, tone = "dark" }) {
       <p className="text-xs font-semibold uppercase tracking-wide text-navy-300 mb-2">
         {title}
       </p>
-      <p className="text-lg">{children}</p>
+      <Paragraphs text={children} className="text-lg" />
     </div>
   );
 }

@@ -8,7 +8,7 @@ const FLOW_COPY = {
   offer: {
     heading: "You're not the only one who wondered if this actually works.",
     proofPoints: [
-      "100% 5-star reviews on Trustpilot (20 verified reviews)",
+      "100% 5-star reviews on Trustpilot",
       "Real outcomes: an average 8% salary increase, with one client offer increasing by as much as $30,000",
       "5+ years and 200+ negotiations behind every script, not a generic AI template",
       "Delivered instantly: a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
@@ -18,7 +18,7 @@ const FLOW_COPY = {
     // on the apply page, which sells a different script.
     testimonial: {
       quote:
-        "His high-level script provided me with immense confidence during my negotiation call.",
+        "[The script] provided me with immense confidence during my negotiation call.",
       attribution: "VP of Finance, June 2024",
     },
   },
@@ -28,7 +28,7 @@ const FLOW_COPY = {
   apply: {
     heading: "The call that decides your salary happens before the offer.",
     proofPoints: [
-      "100% 5-star reviews on Trustpilot (20 verified reviews)",
+      "100% 5-star reviews on Trustpilot",
       "Word-for-word answers to the two questions that cost people the most: what are your expectations, and what do you make now",
       "5+ years and 200+ negotiations behind every script, not a generic AI template",
       "Delivered instantly: a fully customized script ready in under 5 minutes, because recruiter calls don't wait for a good time",
@@ -53,7 +53,7 @@ FLOW_COPY.interview = {
 FLOW_COPY.offer_soon = {
   heading: "The offer call is where most people leave money on the table.",
   proofPoints: [
-    "100% 5-star reviews on Trustpilot (20 verified reviews)",
+    "100% 5-star reviews on Trustpilot",
     "Word-for-word lines for the moment the number lands: how to respond, what to ask, and how to buy time without losing momentum",
     "5+ years and 200+ negotiations behind every script, not a generic AI template",
     "Delivered instantly: a fully customized script in under 5 minutes, because offer calls don't wait for a good time",
@@ -104,11 +104,11 @@ export default function ProofContent({ flow = "offer", form, onCheckout, heading
           href={TRUSTPILOT_REVIEWS_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 font-medium text-navy-600 hover:text-navy-900 transition"
+          className="inline-flex items-center gap-2 font-medium text-[#00B67A] hover:text-[#00A36D] underline transition"
         >
           {/* Trustpilot brand green */}
-          <span className="text-[#00B67A]" aria-hidden="true">★★★★★</span>
-          Read all 20 reviews on Trustpilot →
+          <span aria-hidden="true">★★★★★</span>
+          Read our reviews on Trustpilot →
         </a>
       </div>
 
