@@ -31,7 +31,7 @@ const PREVIEW_TTL_SECONDS = 60 * 60 * 24 * 365;
 // A run is two tries of at most 130s, inside the function's 300s limit, so a
 // slow model still reaches the alert. The job key outlives the function.
 const MODEL_TIMEOUT_MS = 130_000;
-const PREVIEW_TIMEOUT_MS = 45_000;
+const PREVIEW_TIMEOUT_MS = 60_000;
 const TRIES_PER_RUN = 2;
 const JOB_SECONDS = 310;
 const MAX_RUNS = 3;
@@ -40,7 +40,8 @@ const scriptKey = (id) => `nln:script:${id}`;
 const jobKey = (id) => `nln:script-job:${id}`;
 const runsKey = (id) => `nln:script-runs:${id}`;
 const alertKey = (id) => `nln:script-alerted:${id}`;
-const previewKey = (id) => `nln:preview:${id}`;
+// v2: previews now run through the first spoken line.
+const previewKey = (id) => `nln:preview:v2:${id}`;
 const previewLockKey = (id) => `nln:preview-lock:${id}`;
 
 export const isTestJobId = (id) => id.startsWith("test-");
@@ -56,22 +57,12 @@ const SCRIPT_TITLES = {
   offer_soon: "Your Offer Call Script",
 };
 
-// What the opening is, per flow. The offer flow's first section already holds
-// the comp table. Elsewhere the intro alone is only a few sentences, so the
-// opening runs through the numbers table right after it.
-const OPENING = {
-  offer: { parts: "section 1 (the personalized intro, the anchor table, and the trust-your-gut note)", next: 2 },
-  apply: { parts: "sections 1 and 2 (the personalized intro and the Your numbers table)", next: 3 },
-  interview: { parts: "sections 1 and 2 (the personalized intro and the Your numbers table)", next: 3 },
-  offer_soon: { parts: "sections 1 and 2 (the personalized intro, the Your numbers table, and How to read the offer)", next: 3 },
-};
-
-// Listed under the preview so people can see what they'd be getting. Written
-// here rather than asked of the model, so the preview stays one short call.
+// Listed under the preview, which runs through the first spoken line, so people
+// can see what's still to come. Written here rather than asked of the model, so
+// the preview stays one short call.
 export function remainingHeadings(flow, form = {}) {
   if (flow === "offer") {
     return [
-      "Opening and rapport",
       "Clearing up open questions",
       "Sharing your value headline",
       "Delivering your counter",
@@ -83,30 +74,41 @@ export function remainingHeadings(flow, form = {}) {
   }
   if (flow === "offer_soon") {
     return [
-      "Your game plan for this call",
-      "What each side wants",
-      "The script",
+      "If the recruiter asks for your expectations first",
+      "When the recruiter shares an offer",
+      "If they ask for your expectations again",
+      "If they ask for your current salary",
+      "Handling pushback on your timeline",
       ...(["i_shared_number", "both_shared"].includes(form.compStatus) ? ["If you already shared a number"] : []),
       "Closing the call",
       "Sign-off",
     ];
   }
   return [
-    "Why recruiters ask",
-    "How the call usually opens",
-    "The script",
+    "Your other answer to the salary question",
+    "If the recruiter shares a range",
+    "If they push for a number anyway",
+    "If they ask for your current salary",
     ...(form.salaryStage === "gave_number" ? ["If you already gave a number"] : []),
     "Questions to ask before the call ends",
     "Sign-off",
   ];
 }
 
-export function previewInstruction(flow) {
-  return `\n\nPREVIEW ONLY: for now, write only the opening of this script: ${OPENING[flow].parts}. Use the same markdown headers you would use in the full script. Stop there. Write no later sections, no sign-off, and no note saying more is coming.`;
+export function previewInstruction() {
+  return "\n\nPREVIEW ONLY: for now, write only the beginning of this script, in order from the top, and stop immediately after the first line marked 🗣️ (including the question or setup just before it). Use the same markdown headers you would use in the full script. Write nothing after that line: no other options, no notes, no later sections, no sign-off, and no note saying more is coming.";
 }
 
-export function restInstruction(flow, opening) {
-  return `\n\nTHE OPENING IS ALREADY WRITTEN. The customer has read this opening word for word, and it will sit directly above what you write:\n\n<opening>\n${opening}\n</opening>\n\nWrite everything that comes after it, starting at section ${OPENING[flow].next}. Do not repeat, reword, or contradict the opening, do not introduce Alex again, and use the same numbers it uses. Start directly with the next section's header.`;
+export function restInstruction(opening) {
+  return `\n\nTHE OPENING IS ALREADY WRITTEN. The customer has read this opening word for word, and it will sit directly above what you write:\n\n<opening>\n${opening}\n</opening>\n\nContinue from exactly where it stops and write everything that comes after it, following the structure above. If it stops partway through a section, carry on with that section without repeating its header. Do not repeat, reword, or contradict the opening, do not introduce Alex again, and use the same numbers it uses. Start directly with whatever comes next.`;
+}
+
+// The preview ends at the first spoken line, whatever the model wrote past it,
+// so it can't give away more of the paid script than intended.
+export function cutAtFirstSpokenLine(text) {
+  const lines = text.split("\n");
+  const at = lines.findIndex((line) => line.includes("🗣"));
+  return at === -1 ? null : lines.slice(0, at + 1).join("\n").trim();
 }
 
 // Puts the opening and the rest together. Drops a repeated first heading, the
@@ -154,14 +156,15 @@ async function writePreview(redis, apiKey, record) {
     const message = await buildScriptMessage(redis, flow, record.form, analysis);
     const { text, stopReason } = await callModel(apiKey, {
       system: loadSystemPrompt(flow),
-      message: message + previewInstruction(flow),
-      maxTokens: 1200,
+      message: message + previewInstruction(),
+      maxTokens: 2000,
       timeout: PREVIEW_TIMEOUT_MS,
       label: "preview",
     });
-    // Cut off mid-way, it isn't fit to show or to build the script on.
-    if (stopReason === "max_tokens") throw new Error("Preview ran too long.");
-    await redis.set(previewKey(id), { text, createdAt: new Date().toISOString() }, { ex: PREVIEW_TTL_SECONDS });
+    const preview = cutAtFirstSpokenLine(text);
+    // Cut off before reaching a spoken line, it isn't fit to show or build on.
+    if (!preview && stopReason === "max_tokens") throw new Error("Preview ran too long.");
+    await redis.set(previewKey(id), { text: preview || text, createdAt: new Date().toISOString() }, { ex: PREVIEW_TTL_SECONDS });
   } catch (err) {
     // Stops the page reloading its way into more model calls for a while.
     console.error("Writing the script preview failed:", err);
@@ -183,7 +186,7 @@ export async function previewStatus(redis, apiKey, submissionId) {
   if (stored?.text) {
     return { status: "ready", preview: stored.text, headings: remainingHeadings(flow, record.form), flow };
   }
-  const first = await redis.set(previewLockKey(submissionId), 1, { nx: true, ex: 60 });
+  const first = await redis.set(previewLockKey(submissionId), 1, { nx: true, ex: 90 });
   if (first) waitUntil(writePreview(redis, apiKey, record));
   return { status: "generating" };
 }
@@ -219,7 +222,7 @@ async function writeFullScript(redis, { apiKey, flow, form, analysis }, opening)
   const message = await buildScriptMessage(redis, flow, form, analysis);
   const { text } = await callModel(apiKey, {
     system: loadSystemPrompt(flow),
-    message: opening ? message + restInstruction(flow, opening) : message,
+    message: opening ? message + restInstruction(opening) : message,
     maxTokens: 8192,
     timeout: MODEL_TIMEOUT_MS,
     label: opening ? "rest of script" : "full script",

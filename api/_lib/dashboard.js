@@ -15,9 +15,9 @@ export const SCRIPT_FUNNEL = [
   { key: "started_analysis", label: "Started an analysis", group: "Inform", events: ["analysis_submitted"] },
   { key: "saw_results", label: "Saw their results", group: "Inform", events: ["results_viewed"] },
   { key: "gave_email", label: "Gave their email (optional)", group: "Inform", events: ["lead_captured"], compareTo: "saw_results", compareNote: "of results seen" },
-  { key: "opened_offer", label: "Opened the $47 script offer", group: "Convert", events: ["proof_viewed"], compareTo: "saw_results", compareNote: "of results seen" },
-  { key: "saw_preview", label: "Saw the script preview", group: "Convert", events: ["script_preview_viewed"], compareTo: "opened_offer", compareNote: "of offer page" },
-  { key: "started_checkout", label: "Started checkout", group: "Convert", events: ["script_checkout_clicked"], compareTo: "opened_offer", compareNote: "of offer page" },
+  { key: "saw_preview", label: "Saw the script preview", group: "Convert", events: ["script_preview_viewed"], compareTo: "saw_results", compareNote: "of results seen" },
+  { key: "opened_offer", label: "Opened the $47 script details", group: "Convert", events: ["proof_viewed"], compareTo: "saw_results", compareNote: "of results seen" },
+  { key: "started_checkout", label: "Started checkout", group: "Convert", events: ["script_checkout_clicked"], compareTo: "saw_results", compareNote: "of results seen" },
   { key: "bought_script", label: "Bought a script", group: "Convert", events: ["script_purchased"] },
 ];
 

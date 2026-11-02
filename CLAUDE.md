@@ -364,12 +364,17 @@ given" in the admin table and open by visitor id.
 `/api/generate-script` has two modes; the work lives in `api/_lib/scriptJob.js`, and what the model is
 told in `api/_lib/scriptMessages.js`.
 
-- **Preview** (`{ preview: true, submissionId }`, no payment): the script's opening, shown on the proof
-  page by `ScriptPreview.jsx` below the buy buttons, with the remaining headings faded and "Unlock your
-  full script, $47". Offer flow: section 1. Other flows: sections 1 and 2. Stored once per analysis at
-  `nln:preview:<id>` (a failure is remembered for an hour), so a reload makes no model call. It only runs
-  on a saved analysis, never on input from the browser. The page gives up after 30s and hides it. The
-  remaining headings are a fixed list (`remainingHeadings()`), not model output.
+- **Preview** (`{ preview: true, submissionId }`, no payment): the beginning of the script through its
+  **first 🗣️ line** (`cutAtFirstSpokenLine()` enforces that, whatever the model writes). Shown at the bottom
+  of every results page by `ScriptOffer.jsx`, after the recommendations, with the remaining headings faded,
+  "Unlock your full script, $47" (straight to Stripe) and "See what you get for $47" (a pop-up with the same
+  `ProofContent.jsx` as `/proof`, which now mostly serves old links; opening it records `proof_viewed`). A
+  session CTA always sits below. Until the preview is ready, or if it fails, the page shows today's two-button
+  `NextStepChoice`, so a buy button and session button are always there. Stored once per analysis at
+  `nln:preview:v2:<id>` (a failure is remembered for an hour), so a reload makes no model call. It only runs
+  on a saved analysis, never on input from the browser. The page gives up after 60s. Costs about $0.03 per
+  results page, since everyone who sees results now gets one. The remaining headings are a fixed list
+  (`remainingHeadings()`), not model output.
 - **Paid script** (`{ sessionId }`): starts a background job (`waitUntil`) and answers at once; the page
   asks every 4s. `nln:script-job:<id>` says one is running and holds the opening to show meanwhile (it
   outlives the 300s function, so a dead run clears itself). With a preview, the model writes only the

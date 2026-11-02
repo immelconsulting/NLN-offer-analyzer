@@ -3,9 +3,9 @@ import ScriptMarkdown from "./ScriptMarkdown.jsx";
 import { track } from "../lib/track.js";
 import { watchPreview } from "../lib/scriptPreview.js";
 
-// The free opening of their script on the $47 page. Everything here is extra:
-// the page and its buy buttons never wait for it, and if it fails or takes too
-// long this simply disappears and the page is what it was before.
+// The free beginning of their script, through its first spoken line, at the
+// bottom of the results page. Everything here is extra: the buttons never wait
+// for it, and if it fails or takes too long it simply disappears.
 
 export function useScriptPreview(submissionId) {
   const [state, setState] = useState(submissionId ? { status: "loading" } : { status: "none" });
@@ -18,7 +18,7 @@ export function useScriptPreview(submissionId) {
   return state;
 }
 
-export default function ScriptPreview({ state, onUnlock }) {
+export default function ScriptPreview({ state, onUnlock, onDetails }) {
   const shownRef = useRef(null);
   const ready = state.status === "ready";
 
@@ -43,9 +43,9 @@ export default function ScriptPreview({ state, onUnlock }) {
 
   if (state.status === "loading") {
     return (
-      <section id="script-preview" className="scroll-mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 text-center">
+      <section id="script-preview" className="scroll-mt-6 print:hidden bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 text-center">
         <p className="text-sm font-medium text-navy-600 animate-pulse" role="status">
-          Writing a preview of your script…
+          Writing the start of your script…
         </p>
       </section>
     );
@@ -53,9 +53,9 @@ export default function ScriptPreview({ state, onUnlock }) {
   if (!ready) return null;
 
   return (
-    <section id="script-preview" className="scroll-mt-6 bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
+    <section id="script-preview" className="scroll-mt-6 print:hidden bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
       <p className="text-sm font-semibold uppercase tracking-wider text-navy-600 mb-4">
-        A preview of your script
+        The start of your script
       </p>
       <div ref={shownRef}>
         <ScriptMarkdown>{state.preview}</ScriptMarkdown>
@@ -78,6 +78,13 @@ export default function ScriptPreview({ state, onUnlock }) {
       >
         Unlock your full script, $47
       </button>
+      {onDetails && (
+        <p className="text-center text-sm mt-3">
+          <button type="button" onClick={onDetails} className="font-medium text-navy-600 hover:text-navy-900 underline">
+            See what you get for $47
+          </button>
+        </p>
+      )}
     </section>
   );
 }

@@ -304,6 +304,15 @@ describe("the free preview", () => {
     expect(h.lastMessage).toContain("PREVIEW ONLY");
   });
 
+  it("stops at the first spoken line, even if the model keeps going", async () => {
+    h.modelText = "## Intro\n\nHi.\n\n## Script\n\n**Option A:** 🗣️ \"First line.\"\n\n**Option B:** 🗣️ \"Paid line.\"\n\n## More";
+    await askPreview();
+    await settle();
+    const ready = await askPreview();
+    expect(ready.body.preview).toBe("## Intro\n\nHi.\n\n## Script\n\n**Option A:** 🗣️ \"First line.\"");
+    expect(h.lastMessage).toContain("stop immediately after the first line marked 🗣️");
+  });
+
   it("only runs on a saved analysis, so nobody can spend model calls on made-up input", async () => {
     expect((await askPreview("sub_nope")).body.status).toBe("none");
     expect((await ask({ preview: true })).body.status).toBe("none");
@@ -339,6 +348,7 @@ describe("the free preview", () => {
     await settle();
     expect(h.lastMessage).toContain("THE OPENING IS ALREADY WRITTEN");
     expect(h.lastMessage).toContain("## A Note From Alex");
+    expect(h.lastMessage).toContain("Continue from exactly where it stops");
     expect(h.modelCalls).toBe(2);
     const done = await ask({ sessionId: "cs_prev", waited: true });
     expect(done.body.script).toBe("## A Note From Alex\n\nHi.\n\n## Opening and rapport\n\nHello.");

@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { track } from "../lib/track.js";
 import { decodeResult } from "../lib/encodeResult.js";
 import { rememberAnalysis } from "../lib/checkoutUrl.js";
@@ -10,11 +10,11 @@ import SiteHeader from "./SiteHeader.jsx";
 import {
   BrokenResultNotice,
   Callout,
-  NextStepChoice,
   RangeCard,
   SourceList,
 } from "./RangeBlocks.jsx";
 import PrintButton from "./PrintButton.jsx";
+import ScriptOffer from "./ScriptOffer.jsx";
 
 // Screening-call results, shared by the Applying and Interviewing stages.
 // Mirrors ResultsPage's visual language and stateless ?d= encoding, but the
@@ -23,7 +23,6 @@ import PrintButton from "./PrintButton.jsx";
 export default function ApplyResultsPage({ flow = "apply" }) {
   const [searchParams] = useSearchParams();
   const encoded = searchParams.get("d");
-  const navigate = useNavigate();
   const stage = getFlow(flow);
 
   const data = useMemo(() => {
@@ -103,20 +102,12 @@ export default function ApplyResultsPage({ flow = "apply" }) {
             away free removes the reason to buy it. They stay in the analysis
             payload because the script generator builds from them. */}
 
-        <NextStepChoice
+        <ScriptOffer
+          flow={flow}
+          encoded={encoded}
+          form={form}
+          submissionId={analysis.submissionId}
           scriptBlurb="Word-for-word answers for your recruiter screening call"
-          onGetScript={() => {
-            track("script_cta_clicked");
-            navigate(`${stage.proofPath}${encoded ? `?d=${encoded}` : ""}`);
-          }}
-          onPreviewScript={() => {
-            track("script_cta_clicked", { source: "preview" });
-            navigate(`${stage.proofPath}${encoded ? `?d=${encoded}` : ""}#script-preview`);
-          }}
-          onBookSession={() => {
-            track("session_cta_clicked");
-            navigate("/session");
-          }}
         />
 
         <p className="text-center text-sm text-slate-500 -mt-4">
