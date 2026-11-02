@@ -47,3 +47,17 @@ describe("prompt files", () => {
     }
   });
 });
+
+describe("the told-the-number section of the screening script", () => {
+  const prompt = loadPrompt("apply-script-generator-prompt.md");
+  const section = prompt.slice(
+    prompt.indexOf("**When the recruiter already told you the number.**"),
+    prompt.indexOf("**When the question has not come up.**")
+  );
+
+  it("spells the lines out instead of pointing at labels the customer never sees", () => {
+    expect(section.length).toBeGreaterThan(200);
+    expect(section).not.toMatch(/branch \(/);
+    expect(section).toMatch(/Never mention branches/);
+  });
+});

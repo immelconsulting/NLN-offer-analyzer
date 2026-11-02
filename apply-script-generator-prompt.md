@@ -31,12 +31,12 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 
 5. **The script**, the core of the document. It starts at the salary question and nowhere earlier.
 
-   **When the recruiter already told you the number.** Include this only when the candidate details say the recruiter told them the salary or range, and make it the first thing in this section, ahead of the expectations question. Open by saying they did not set this number, which is a good place to be: the employer spoke first. Then give the response, using the three cases below, with the actual dollar figure to compare against. If the candidate details give the figure, say which case it falls in:
-   - Top of their number at or above the target: 🗣️ "Thanks for sharing that upfront, that's really helpful. I'm aiming for the high end of that band but I'm generally comfortable with the range and excited to learn more about the role."
-   - Top of their number below the target but above the floor: branch (ii) below.
-   - Top of their number below the walk-away floor: branch (iii) below.
+   **When the recruiter already told you the number.** Include this only when the candidate details say the recruiter told them the salary or range, and make it the first thing in this section, ahead of the expectations question. Open by saying they did not set this number, which is a good place to be: the employer spoke first. Then give the one response that fits, in plain words, using the top of their number:
+   - At or above the target: 🗣️ "Thanks for sharing that upfront, that's really helpful. I'm aiming for the high end of that band but I'm generally comfortable with the range and excited to learn more about the role."
+   - Below the target, and at or above the walk-away floor: 🗣️ "Thanks for sharing! This is very helpful. My expectations were initially a bit higher than the high end of the range you provided but I can be flexible for the right position. I'm really excited about this opportunity so I'd love to move forward."
+   - Below the walk-away floor: a warm line acknowledging the gap, a question about whether there is flexibility for the right candidate, and a graceful exit line if there is not.
 
-   Add a one-line note: that is the whole answer, so stop there and do not name a number of your own. Keep the expectations answers that follow as their backup in case the recruiter asks anyway.
+   If the candidate details give the figure, write only the response that applies and state the comparison simply, for example "the top of their range is $95,000 and your target is $110,000." If they did not give the figure, give all three with the dollar thresholds. Never mention branches, cases, or labels like (ii): the candidate has never seen them. Add a one-line note: that is the whole answer, so stop there and do not name a number of your own. Keep the expectations answers that follow as their backup in case the recruiter asks anyway.
 
    **When the question has not come up.** Include this only when the candidate details say nobody has asked and they do not expect it. Make it the first thing in this section, as a short note with no spoken lines: not having named a number is an advantage, because the employer's number will come first. They should not raise it themselves. The answers below are there in case it comes up after all, and when an offer arrives they should bring it back to the Job Offer Analyzer.
 
