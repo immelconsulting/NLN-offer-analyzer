@@ -84,7 +84,7 @@ The range is the centerpiece of what this person receives.
 
 **`confidence`**: "high" when multiple quality sources agreed, ideally including company-specific data; "medium" when the data was thin, indirect, or the sources disagreed; "low" when you're extrapolating from adjacent roles or a broader geography. If there is no range, confidence is "low".
 
-**How to write the notes on this page.** People skim these on a phone. Keep `offer_benchmark_note`, `biggest_risk`, `leverage_read` and `call_status_note` short and easy to scan: at most four short sentences each, one idea per paragraph, and a paragraph of no more than two sentences. Separate paragraphs with a blank line. Cut anything that restates what another note already says.
+**How to write the notes on this page.** People skim these on a phone. Keep `offer_benchmark_note`, `biggest_risk`, `leverage_read` and `call_status_note` short and easy to scan: at most four sentences each, no sentence over about 20 words, one idea per paragraph, and a paragraph of no more than two sentences. Separate paragraphs with a blank line. Cut anything that restates what another note already says.
 
 **`offer_benchmark_note`**: two or three sentences that tell them how to read the number the moment they hear it, using the range. At or above target means a strong starting point, and they still ask for time. Between low and target means solid room to negotiate once it's in writing. Below low means a real gap worth addressing in the counter. Whatever they hear, the response on the call is the same: appreciation, questions, and a request for time. If there is no range, tell them to set their own floor before the call so they can recognize a low offer instantly.
 
