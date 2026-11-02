@@ -192,10 +192,7 @@ export default function ProofPage({ flow = "offer" }) {
 
           <div className="mt-10 text-center">
             <p className="text-4xl font-serif font-bold text-navy-900">$47</p>
-            <p className="text-sm font-medium text-navy-600 mt-1">
-              Limited-time price
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               One-time price. Your script is saved, so you can reopen it on any device.
             </p>
           </div>

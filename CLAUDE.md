@@ -327,9 +327,8 @@ time to talk it through, never a call made only to schedule another call (Alex, 
 the example in `system-prompt.md` and the `recommendedNextStep` schema description all say so;
 `tests/prompts.test.js` guards it.
 
-**Script price copy** (ProofPage): "Limited-time price" / "One-time price. Your script is saved, so
-you can reopen it on any device." (Nov 2026). The first line replaced "Founding member / early access price", which
-read as too new; keep urgency honest (no countdowns, no crossed-out prices). Session mentions
+**Script price copy** (ProofPage): "One-time price. Your script is saved, so you can reopen it on any
+device." (Nov 2026; Alex dropped "Limited-time price" as contradictory). Keep urgency honest (no countdowns, no crossed-out prices). Session mentions
 say Jenny **helps them prepare before** their calls, never that she's on the call.
 
 ## Optional email (Nov 1, 2026)
