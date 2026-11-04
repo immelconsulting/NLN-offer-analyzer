@@ -325,7 +325,7 @@ export async function buildScriptMessage(redis, flow, form, analysis) {
         message +=
           flow !== "offer"
             ? `\n\nCANDIDATE RESUME (optional context — use it to make the closing questions specific to their background):\n${record.resumeText}`
-            : `\n\nCANDIDATE RESUME (optional context — use it to make the value headline and counter specific to their background):\n${record.resumeText}`;
+            : `\n\nCANDIDATE RESUME (optional context: use it to make their one-line pitch and counter specific to their background):\n${record.resumeText}`;
       }
       if (record?.jobDescriptionText) {
         message += `\n\nJOB DESCRIPTION (optional context):\n${record.jobDescriptionText}`;

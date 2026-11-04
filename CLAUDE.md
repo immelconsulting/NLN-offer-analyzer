@@ -314,6 +314,10 @@ markdown `---` are untouched. Site copy is also dash-free; `tests/no-em-dashes.t
 all three (the private admin page is exempt). Write new copy with commas, periods, colons or
 parentheses instead.
 
+**Script preview (Nov 2, 2026 JobJenny sync, Alex's decisions):** `ScriptPreview.jsx` shows the opening readable (only it is written before payment, and it becomes the top of their script), then every later section's header in the clear with lorem blurred under it, so visitors see the whole structure. No real text is ever under the blur. An unlock button sits above and below. The paid `/script` page is never blurred.
+
+**"Value headline" is banned (Jenny, same sync: jargon).** Section header: "Your one-line case for why you're worth more" (`ONE_LINE_CASE_HEADER` in `api/_lib/text.js`). In sentences: "your one-line pitch". `cleanForCustomers()` applies this and `stripEmDashes` to every analysis and script, including reopened older scripts; `tests/no-em-dashes.test.js` enforces it.
+
 **Loading screen** (`src/components/AnalysisLoading.jsx`, shared by all three forms): cycles
 every 7s through what the analyzer is doing, built from the form (role, location, company,
 years): BLS, Glassdoor, the specialist sources only when the role matches (Levels.fyi/Built In
@@ -368,7 +372,7 @@ told in `api/_lib/scriptMessages.js`.
   `cutPreview()` whatever the model writes: through the **first 🗣️ line** on the counter-offer and offer-call
   scripts, but on the **screening script it stops at the question "What are your salary expectations?" and
   never shows an answer** (Alex, Nov 2: the answer is the whole point of buying it). Shown at the bottom
-  of every results page by `ScriptOffer.jsx`, after the recommendations, with the remaining headings faded,
+  of every results page by `ScriptOffer.jsx`, after the recommendations, with the remaining headers over blurred placeholder text,
   "Unlock your full script, $47" (straight to Stripe) and "See what you get for $47" (a pop-up with the same
   `ProofContent.jsx` as `/proof`, which now mostly serves old links; opening it records `proof_viewed`). A
   session CTA always sits below. Until the preview is ready, or if it fails, the page shows today's two-button

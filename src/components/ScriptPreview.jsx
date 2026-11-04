@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import ScriptMarkdown from "./ScriptMarkdown.jsx";
 import { track } from "../lib/track.js";
-import { watchPreview } from "../lib/scriptPreview.js";
+import { previewSections, watchPreview } from "../lib/scriptPreview.js";
 
-// The free beginning of their script, through its first spoken line, at the
-// bottom of the results page. Everything here is extra: the buttons never wait
-// for it, and if it fails or takes too long it simply disappears.
+// What they'd be buying, at the bottom of the results page: the opening to read
+// (it's written before payment and becomes the top of their script), then every
+// later section's header in the clear with this placeholder blurred under it.
+// Nothing real is ever under the blur. Everything here is extra: the buttons never
+// wait for it, and if it fails or takes too long it simply disappears.
+
+// One line each, so the page stays short enough to reach the buy button on a phone.
+const PLACEHOLDERS = [
+  'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod.',
+  '🗣️ "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum."',
+  '🗣️ "Sed ut perspiciatis unde omnis iste natus error sit voluptatem."',
+];
 
 export function useScriptPreview(submissionId) {
   const [state, setState] = useState(submissionId ? { status: "loading" } : { status: "none" });
@@ -21,6 +30,7 @@ export function useScriptPreview(submissionId) {
 export default function ScriptPreview({ state, onUnlock, onDetails }) {
   const shownRef = useRef(null);
   const ready = state.status === "ready";
+  const sections = ready ? previewSections(state.preview, state.headings) : [];
 
   // Counted when it's actually on screen, not when it finishes loading below
   // the fold.
@@ -54,27 +64,35 @@ export default function ScriptPreview({ state, onUnlock, onDetails }) {
 
   return (
     <section id="script-preview" className="scroll-mt-6 print:hidden bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
-      <p className="text-sm font-semibold uppercase tracking-wider text-navy-600 mb-4">
-        The start of your script
+      <p className="text-sm font-semibold uppercase tracking-wider text-navy-600">
+        What's in your full script
       </p>
+      <p className="text-slate-700 mt-2 mb-4">Unlock it to read the rest, written around your numbers.</p>
+      <button
+        type="button"
+        onClick={onUnlock}
+        className="mb-8 w-full bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-6 py-4 transition shadow-sm"
+      >
+        Unlock your full script, $47
+      </button>
       <div ref={shownRef}>
-        <ScriptMarkdown>{state.preview}</ScriptMarkdown>
-      </div>
-
-      <div className="relative mt-6 border-t border-slate-200 pt-6">
-        <p className="text-sm font-semibold text-navy-900 mb-3">Still to come in your full script:</p>
-        <ul className="space-y-2 text-lg font-serif font-semibold text-navy-900">
-          {(state.headings || []).map((h) => (
-            <li key={h}>{h}</li>
-          ))}
-        </ul>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-b from-white/0 to-white" aria-hidden="true" />
+        {sections.map((section, i) => (
+          <div key={i} className="mt-6 first:mt-0">
+            {section.heading && <ScriptMarkdown>{section.heading}</ScriptMarkdown>}
+            {section.body && <ScriptMarkdown>{section.body}</ScriptMarkdown>}
+            {section.placeholder && (
+              <div data-blurred className="blur-[7px] select-none pointer-events-none" aria-hidden="true">
+                <ScriptMarkdown>{PLACEHOLDERS[i % PLACEHOLDERS.length]}</ScriptMarkdown>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       <button
         type="button"
         onClick={onUnlock}
-        className="mt-4 w-full bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-6 py-4 transition shadow-sm"
+        className="mt-6 w-full bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-6 py-4 transition shadow-sm"
       >
         Unlock your full script, $47
       </button>

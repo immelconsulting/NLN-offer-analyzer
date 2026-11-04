@@ -3,7 +3,7 @@ import { waitUntil } from "@vercel/functions";
 import { getSubmission, updateSubmission, attachEmail } from "./store.js";
 import { sendEmail, sendScriptEmail } from "./email.js";
 import { promoCodeUsed } from "./payment.js";
-import { stripEmDashes } from "./text.js";
+import { cleanForCustomers, ONE_LINE_CASE_HEADER } from "./text.js";
 import { isVisitorId, recordPurchaseOnce } from "./events.js";
 import { buildScriptMessage, loadSystemPrompt, SCREENING_FLOWS } from "./scriptMessages.js";
 import { CONTACT_EMAIL, STRATEGY_SESSION_URL } from "../../src/lib/config.js";
@@ -59,13 +59,13 @@ const SCRIPT_TITLES = {
   offer_soon: "Your Offer Call Script",
 };
 
-// Listed under the preview so people can see what's still to come. Written here rather than asked of the model, so
+// Shown under the preview so people can see the whole structure. Written here rather than asked of the model, so
 // the preview stays one short call.
 export function remainingHeadings(flow, form = {}) {
   if (flow === "offer") {
     return [
       "Clearing up open questions",
-      "Sharing your value headline",
+      ONE_LINE_CASE_HEADER,
       "Delivering your counter",
       "Handling objections",
       "Closing",
@@ -151,7 +151,7 @@ async function callModel(apiKey, { system, message, maxTokens, timeout, label })
   );
   // Logged so the real cost per preview and per script can be read off Vercel.
   console.log(`Script model usage (${label}):`, JSON.stringify(response.usage || {}));
-  const text = stripEmDashes(
+  const text = cleanForCustomers(
     response.content
       .filter((b) => b.type === "text")
       .map((b) => b.text)
@@ -220,7 +220,7 @@ async function readPreviewText(redis, submissionId) {
 
 export async function readSavedScript(redis, id) {
   const saved = await redis.get(scriptKey(id));
-  return saved?.script ? { ...saved, script: stripEmDashes(saved.script) } : null;
+  return saved?.script ? { ...saved, script: cleanForCustomers(saved.script) } : null;
 }
 
 export const readRunningJob = (redis, id) => redis.get(jobKey(id));

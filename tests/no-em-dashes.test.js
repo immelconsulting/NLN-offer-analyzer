@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
-import { stripEmDashes } from "../api/_lib/text.js";
+import { cleanForCustomers, stripEmDashes } from "../api/_lib/text.js";
 import { loadPrompt } from "../api/_lib/prompts.js";
 
 // Alex's rule: no em dashes anywhere customers can see (they read as AI-written).
@@ -58,5 +58,38 @@ describe("customer-facing site copy", () => {
 
   it.each(files)("src/%s has no em dashes", (f) => {
     expect(withoutComments(fs.readFileSync(new URL(f, dir), "utf8"))).not.toContain("—");
+  });
+});
+
+// Jenny's rule: "value headline" is jargon. Customers see "Your one-line case
+// for why you're worth more" as a header and "your one-line pitch" in sentences.
+const JARGON = /value[\s-]*headline/i;
+
+describe('no "value headline" anywhere customers can see', () => {
+  it.each(PROMPTS)("%s doesn't use it", (f) => {
+    expect(loadPrompt(f)).not.toMatch(JARGON);
+  });
+
+  const src = new URL("../src/", import.meta.url);
+  const siteFiles = ["components", "lib"].flatMap((d) =>
+    fs.readdirSync(new URL(`${d}/`, src)).filter((f) => /\.jsx?$/.test(f)).map((f) => new URL(`${d}/${f}`, src))
+  );
+  const serverFiles = ["scriptJob.js", "scriptMessages.js", "email.js", "clientContext.js", "resultsEmail.js"].map(
+    (f) => new URL(`../api/_lib/${f}`, import.meta.url)
+  );
+  it.each([...siteFiles, ...serverFiles].map((u) => [u.pathname.split("/").slice(-2).join("/"), u]))("%s doesn't use it", (_, u) => {
+    expect(withoutComments(fs.readFileSync(u, "utf8"))).not.toMatch(JARGON);
+  });
+
+  it("rewrites it in scripts and analyses that still have it", () => {
+    expect(cleanForCustomers("## 4. Sharing your value headline")).toBe("## 4. Your one-line case for why you're worth more");
+    expect(cleanForCustomers("### Value Headline")).toBe("### Your one-line case for why you're worth more");
+    expect(cleanForCustomers("Start with your value headline, then pause.")).toBe("Start with your one-line pitch, then pause.");
+    expect(cleanForCustomers("**Value headline:** say it")).toBe("**One-line pitch:** say it");
+    expect(cleanForCustomers({ notes: ["a value-headline"] })).toEqual({ notes: ["a one-line pitch"] });
+  });
+  it("still removes em dashes, and leaves other text alone", () => {
+    expect(cleanForCustomers("Solid — but low.")).toBe("Solid, but low.");
+    expect(cleanForCustomers("## The value you bring")).toBe("## The value you bring");
   });
 });
