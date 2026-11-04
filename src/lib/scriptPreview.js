@@ -2,6 +2,31 @@
 // a minute, and reports once. Any failure just means no preview.
 
 const CHECK_EVERY_MS = 3000;
+
+// Splits the written opening at its markdown headers and adds the sections not
+// written yet, so the page can show every header and hide everything else.
+// `body` is real text, `placeholder` means nothing is written for it yet.
+export function previewSections(preview, headings = []) {
+  const sections = [];
+  let current = null;
+  const start = (heading) => {
+    current = { heading, lines: [] };
+    sections.push(current);
+  };
+  for (const line of (preview || "").split("\n")) {
+    if (/^#{1,6}\s/.test(line)) start(line.trim());
+    else {
+      if (!current) start(null);
+      current.lines.push(line);
+    }
+  }
+  const opening = sections
+    .map(({ heading, lines }) => ({ heading, body: lines.join("\n").trim() }))
+    .filter(({ heading, body }) => heading || body);
+  const last = opening[opening.length - 1];
+  if (last && !last.body) last.placeholder = true;
+  return [...opening, ...headings.map((h) => ({ heading: `## ${h}`, body: "", placeholder: true }))];
+}
 const GIVE_UP_MS = 60_000;
 
 // Calls onDone once, with { status: "ready", preview, headings, flow } or

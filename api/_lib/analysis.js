@@ -1,4 +1,4 @@
-import { stripEmDashes } from "./text.js";
+import { cleanForCustomers } from "./text.js";
 
 // Shared web-search analysis loop, used by /api/analyze (offer stage),
 // /api/analyze-apply (screening-call stages) and /api/analyze-offer-soon.
@@ -80,7 +80,7 @@ export async function runSearchAnalysis({
     throw new Error(`Model never returned a ${submitTool.name} tool call.`);
   }
   // Every analysis the site shows comes through here.
-  return stripEmDashes(result);
+  return cleanForCustomers(result);
 }
 
 // Shape of the `sources` array, identical in both flows: the market-data

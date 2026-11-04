@@ -14,11 +14,31 @@ function fixString(s) {
     .replace(/,\s*([.,;:!?)])/g, "$1"); // never leave ", ." behind
 }
 
-export function stripEmDashes(value) {
-  if (typeof value === "string") return fixString(value);
-  if (Array.isArray(value)) return value.map(stripEmDashes);
+function mapStrings(value, fix) {
+  if (typeof value === "string") return fix(value);
+  if (Array.isArray(value)) return value.map((v) => mapStrings(v, fix));
   if (value && typeof value === "object") {
-    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, stripEmDashes(v)]));
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, mapStrings(v, fix)]));
   }
   return value;
+}
+
+export function stripEmDashes(value) {
+  return mapStrings(value, fixString);
+}
+
+// Jenny flagged this phrase as jargon (Nov 2026). The prompts no longer use it,
+// but scripts bought before the change still contain it, so they're rewritten
+// whenever they're read: as a section header, or as a phrase in running text.
+export const ONE_LINE_CASE_HEADER = "Your one-line case for why you're worth more";
+
+function fixJargon(s) {
+  return s
+    .replace(/^(#{1,6}[ \t]+(?:\d+\.[ \t]*)?)[^\n]*value[\s-]+headline[^\n]*$/gim, `$1${ONE_LINE_CASE_HEADER}`)
+    .replace(/value[\s-]+headline(s?)/gi, (match, plural) => `${match[0] === "V" ? "One" : "one"}-line pitch${plural}`);
+}
+
+// Everything a model writes passes through here before a customer sees it.
+export function cleanForCustomers(value) {
+  return mapStrings(value, (s) => fixJargon(fixString(s)));
 }
