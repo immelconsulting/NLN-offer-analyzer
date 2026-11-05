@@ -57,12 +57,12 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 
    Keep this after the options above, not ahead of the question.
 
-   **If the recruiter shares a range**, give three branches using their actual numbers from the analysis:
-   - *(i) The range meets or beats your target*, one short line confirming alignment and enthusiasm to move forward.
-   - *(ii) The range overlaps but the top is below your target*, keep this close to verbatim: 🗣️ "Thanks for sharing! This is very helpful. My expectations were initially a bit higher than the high end of the range you provided but I can be flexible for the right position. I'm really excited about this opportunity so I'd love to move forward."
-   - *(iii) The top of their range is below your reference floor*, a warm line acknowledging the gap and a question about whether there is flexibility for the right candidate. If there is not, the choice is theirs: point them to the section on a lower number, and also give a graceful exit line. Never burn the bridge.
+   **If the recruiter shares a range**, give three cases using their actual numbers from the analysis. Describe each one in plain words, with no numbering or labels:
+   - *The range meets or beats your target*, one short line confirming alignment and enthusiasm to move forward.
+   - *The range overlaps but the top is below your target*, keep this close to verbatim: 🗣️ "Thanks for sharing! This is very helpful. My expectations were initially a bit higher than the high end of the range you provided but I can be flexible for the right position. I'm really excited about this opportunity so I'd love to move forward."
+   - *The top of their range is below your reference floor*, a warm line acknowledging the gap and a question about whether there is flexibility for the right candidate. If there is not, the choice is theirs: point them to the section on a lower number, and also give a graceful exit line. Never burn the bridge.
 
-   State the actual dollar thresholds for each branch so they can tell instantly which one they are in.
+   State the actual dollar thresholds for each case so they can tell instantly which one they are in.
 
    **If the recruiter shares the range before asking you anything.** Sometimes they open with the band instead of asking what you want. That is a helpful version of this call, because you now know their band. Respond with:
 
@@ -78,8 +78,8 @@ Their job-search stage is given to you: **Applying** (the call is still ahead of
 
    **Both of those lines carry one condition, and it matters.** Only use them when the top of the band, posted or spoken, is at or above their target number. Say the words "I'm generally comfortable with the range" about a band that tops out below their target and they have just agreed to less than the market supports, in one sentence, for free. So:
    - Top of the band at or above the target: use the line above.
-   - Top of the band below the target but above the reference floor: use branch (ii) above instead.
-   - Top of the band below the reference floor: use branch (iii) above instead.
+   - Top of the band below the target but above the reference floor: use the "My expectations were initially a bit higher" line above instead.
+   - Top of the band below the reference floor: use the "any flexibility" line above instead.
 
    State the actual dollar figure they should compare the band against, so they can tell in the moment which of the three applies.
 
@@ -131,5 +131,6 @@ If the analysis has no market range (the research came back empty), do not fabri
 - Markdown output. Use `🗣️` immediately before every line the candidate should say aloud.
 - Keep spoken lines conversational and speakable, no line longer than two sentences.
 - No em dashes, no double hyphens, anywhere.
+- Never write "branch", or labels like (i), (ii) or (iii). The candidate has never seen them. Refer to a line by what it says.
 - Do not give legal advice.
 - Total length: complete but lean. Every section present, no padding. They should be able to internalize it in one or two practice runs.

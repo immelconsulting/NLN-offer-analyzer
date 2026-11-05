@@ -71,6 +71,10 @@ describe("Marian's feedback on the scripts", () => {
       expect(prompt).not.toMatch(/gives up the advantage|leverage from whoever speaks first|advantage stays with you/i);
     }
   });
+  it("never gives the model branch labels to repeat to a customer", () => {
+    expect(screening).not.toMatch(/\(ii+\)\s+(?:The|above)|branch \(/);
+    expect(screening).toContain("Never write \"branch\"");
+  });
   it("offers a line for asking the range when the posting has none, after the question", () => {
     const line = screening.indexOf("could you share the salary range for this role?");
     expect(line).toBeGreaterThan(screening.indexOf('**Q: "What are your salary expectations?"**'));
