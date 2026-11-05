@@ -1,3 +1,5 @@
+import { plainSourceNames } from "../../src/lib/readableText.js";
+
 // Safety net for Alex's "no em dashes" rule (they read as AI-written). The
 // prompts forbid them, but a model can still slip one in, so every analysis
 // and script passes through here before anyone sees it. Works on strings,
@@ -33,7 +35,7 @@ export function stripEmDashes(value) {
 export const ONE_LINE_CASE_HEADER = "Your one-line case for why you're worth more";
 
 function fixJargon(s) {
-  return s
+  return plainSourceNames(s)
     .replace(/^(#{1,6}[ \t]+(?:\d+\.[ \t]*)?)[^\n]*value[\s-]+headline[^\n]*$/gim, `$1${ONE_LINE_CASE_HEADER}`)
     .replace(/value[\s-]+headline(s?)/gi, (match, plural) => `${match[0] === "V" ? "One" : "one"}-line pitch${plural}`);
 }

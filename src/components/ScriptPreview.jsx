@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import AlexIntro from "./AlexIntro.jsx";
 import ScriptMarkdown from "./ScriptMarkdown.jsx";
 import { track } from "../lib/track.js";
 import { previewSections, watchPreview } from "../lib/scriptPreview.js";
@@ -63,10 +64,10 @@ export default function ScriptPreview({ state, onUnlock, onDetails }) {
   if (!ready) return null;
 
   return (
+    <>
+      <AlexIntro />
     <section id="script-preview" className="scroll-mt-6 print:hidden bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
-      <p className="text-sm font-semibold uppercase tracking-wider text-navy-600">
-        What's in your full script
-      </p>
+      <h2 className="text-2xl font-serif font-semibold text-navy-900">Now, let's get to your script</h2>
       <p className="text-slate-700 mt-2 mb-4">Unlock it to read the rest, written around your numbers.</p>
       <button
         type="button"
@@ -79,10 +80,10 @@ export default function ScriptPreview({ state, onUnlock, onDetails }) {
         {sections.map((section, i) => (
           <div key={i} className="mt-6 first:mt-0">
             {section.heading && <ScriptMarkdown>{section.heading}</ScriptMarkdown>}
-            {section.body && <ScriptMarkdown>{section.body}</ScriptMarkdown>}
+            {section.body && <ScriptMarkdown spokenBlocks>{section.body}</ScriptMarkdown>}
             {section.placeholder && (
               <div data-blurred className="blur-[7px] select-none pointer-events-none" aria-hidden="true">
-                <ScriptMarkdown>{PLACEHOLDERS[i % PLACEHOLDERS.length]}</ScriptMarkdown>
+                <ScriptMarkdown spokenBlocks>{PLACEHOLDERS[i % PLACEHOLDERS.length]}</ScriptMarkdown>
               </div>
             )}
           </div>
@@ -104,5 +105,6 @@ export default function ScriptPreview({ state, onUnlock, onDetails }) {
         </p>
       )}
     </section>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { track } from "../lib/track.js";
 import { decodeResult } from "../lib/encodeResult.js";
 import { rememberAnalysis } from "../lib/checkoutUrl.js";
+import { plainSourceNames } from "../lib/readableText.js";
 import { EmailResultsOffer } from "./EmailResults.jsx";
 import ScoreCard from "./ScoreCard.jsx";
 import OpportunityList from "./OpportunityList.jsx";
@@ -153,7 +154,7 @@ function SourceList({ sources }) {
             title={s.note}
             className="font-medium text-navy-600 hover:text-navy-900 underline transition"
           >
-            {s.name}
+            {plainSourceNames(s.name)}
           </a>
         </span>
       ))}

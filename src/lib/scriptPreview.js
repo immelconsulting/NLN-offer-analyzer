@@ -1,3 +1,5 @@
+import { curlyQuotes } from "./readableText.js";
+
 // Asks the server for the free script preview until it's ready, gives up after
 // a minute, and reports once. Any failure just means no preview.
 
@@ -6,6 +8,11 @@ const CHECK_EVERY_MS = 3000;
 // Splits the written opening at its markdown headers and adds the sections not
 // written yet, so the page can show every header and hide everything else.
 // `body` is real text, `placeholder` means nothing is written for it yet.
+// The page introduces Alex above the script, so the opening's own "I'm Alex..."
+// sentence would repeat it there. It stays in the paid script, which can be read
+// on its own.
+const ALEX_INTRO = /^(?:hi[,!]?\s+)?(?:i'm|i’m|i am|this is|my name is)\s+alex\b[^.!]*[.!]\s*/i;
+
 export function previewSections(preview, headings = []) {
   const sections = [];
   let current = null;
@@ -21,11 +28,12 @@ export function previewSections(preview, headings = []) {
     }
   }
   const opening = sections
-    .map(({ heading, lines }) => ({ heading, body: lines.join("\n").trim() }))
+    .map(({ heading, lines }) => ({ heading, body: curlyQuotes(lines.join("\n").trim()) }))
+    .map(({ heading, body }, i) => ({ heading: curlyQuotes(heading), body: i === 0 ? body.replace(ALEX_INTRO, "") : body }))
     .filter(({ heading, body }) => heading || body);
   const last = opening[opening.length - 1];
   if (last && !last.body) last.placeholder = true;
-  return [...opening, ...headings.map((h) => ({ heading: `## ${h}`, body: "", placeholder: true }))];
+  return [...opening, ...headings.map((h) => ({ heading: curlyQuotes(`## ${h}`), body: "", placeholder: true }))];
 }
 const GIVE_UP_MS = 60_000;
 
