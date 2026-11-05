@@ -49,9 +49,9 @@ const parseMoney = (value) => {
 
 const fmtMoney = (n) => `$${Math.round(n).toLocaleString("en-US")}`;
 
-// Applying flow. The walk-away floor is the low end of the researched range,
-// raised to what the candidate already earns so nobody is scripted to accept
-// a pay cut. The current figure itself is never passed to the model as such.
+// Applying flow. The reference floor is the low end of the researched range,
+// raised to what the candidate already earns. It's a reference point they
+// control, not a stance: the script also covers choosing to go below it. The current figure itself is never passed to the model as such.
 //
 // The form asks for TOTAL annual compensation, so it may only be compared
 // against the total_comp range. Comparing it to base would silently inflate
@@ -105,10 +105,10 @@ function buildApplyUserMessage(form, analysis, flow = "apply") {
       ? 'Nobody has asked them about salary and they do not expect it — open section 5 with "When the question has not come up"'
       : null,
     baseFloor !== null
-      ? `WALK-AWAY FLOOR (base): ${fmtMoney(baseFloor)}`
-      : "WALK-AWAY FLOOR (base): unavailable — no researched range, use fill-in blanks",
+      ? `REFERENCE FLOOR (base): ${fmtMoney(baseFloor)}`
+      : "REFERENCE FLOOR (base): unavailable, no researched range, use fill-in blanks",
     totalFloor !== null
-      ? `WALK-AWAY FLOOR (total compensation): ${fmtMoney(totalFloor)}${note}`
+      ? `REFERENCE FLOOR (total compensation): ${fmtMoney(totalFloor)}${note}`
       : null,
     form.additionalContext
       ? `Additional context from the candidate: ${form.additionalContext}`
@@ -163,7 +163,7 @@ export function recruiterRangeCheck(form, analysis) {
   const base = analysis.market_range?.base;
   if (!base) return null;
   if (typeof base.low === "number" && high < base.low) {
-    return "RECRUITER RANGE CHECK: the top of the recruiter's range is below the walk-away floor";
+    return "RECRUITER RANGE CHECK: the top of the recruiter's range is below the reference floor";
   }
   if (typeof base.target === "number" && high < base.target) {
     return "RECRUITER RANGE CHECK: the top of the recruiter's range is below the market target";
@@ -188,7 +188,7 @@ export function wideRangeAnswer(analysis, strategy, baseFloor, totalFloor) {
   const points = useTotal ? range.total_comp : range.base;
   const floor = (useTotal ? totalFloor : baseFloor) ?? points.low;
 
-  // Cautious and balanced open at the walk-away floor; only aggressive lifts
+  // Cautious and balanced open at the reference floor; only aggressive lifts
   // the low end to the target.
   const low = strategy === "aggressive" ? points.target : floor;
   const measure = useTotal ? "total compensation" : "base salary";
@@ -226,10 +226,10 @@ function buildOfferSoonUserMessage(form, analysis) {
     form.callTiming ? CALL_TIMING_LABELS[form.callTiming] : null,
     priorities,
     baseFloor !== null
-      ? `WALK-AWAY FLOOR (base): ${fmtMoney(baseFloor)}`
-      : "WALK-AWAY FLOOR (base): unavailable — no researched range, use fill-in blanks",
+      ? `REFERENCE FLOOR (base): ${fmtMoney(baseFloor)}`
+      : "REFERENCE FLOOR (base): unavailable, no researched range, use fill-in blanks",
     totalFloor !== null
-      ? `WALK-AWAY FLOOR (total compensation): ${fmtMoney(totalFloor)}${note}`
+      ? `REFERENCE FLOOR (total compensation): ${fmtMoney(totalFloor)}${note}`
       : null,
     recruiterRangeCheck(form, analysis),
     CANDIDATE_SHARED.includes(form.compStatus)

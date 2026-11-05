@@ -4,7 +4,7 @@ import { applyFloors, recruiterRangeCheck, wideRangeAnswer } from "../api/genera
 const range = (base, total = null) => ({ market_range: { base, total_comp: total } });
 const R = (low, target, stretch) => ({ low, target, stretch });
 
-describe("applyFloors: walk-away floors (CLAUDE.md: total comp only vs total comp)", () => {
+describe("applyFloors: reference floors (CLAUDE.md: total comp only vs total comp)", () => {
   it("base floor is the researched base low", () => {
     expect(applyFloors({}, range(R(90000, 100000, 110000))).baseFloor).toBe(90000);
   });
@@ -35,8 +35,8 @@ describe("applyFloors: walk-away floors (CLAUDE.md: total comp only vs total com
 
 describe("recruiterRangeCheck", () => {
   const a = range(R(100000, 120000, 140000));
-  it("flags a band topping out below the walk-away floor", () => {
-    expect(recruiterRangeCheck({ recruiterRangeHigh: "95,000" }, a)).toMatch(/below the walk-away floor/);
+  it("flags a band topping out below the reference floor", () => {
+    expect(recruiterRangeCheck({ recruiterRangeHigh: "95,000" }, a)).toMatch(/below the reference floor/);
   });
   it("flags a band topping out below the market target", () => {
     expect(recruiterRangeCheck({ recruiterRangeHigh: "110000" }, a)).toMatch(/below the market target/);

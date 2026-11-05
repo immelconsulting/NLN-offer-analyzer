@@ -5,6 +5,7 @@ import { isKnownFlow, usesTargetFields } from "../lib/flows.js";
 import SiteHeader from "./SiteHeader.jsx";
 import MeetJennyLink from "./MeetJennyLink.jsx";
 import ScriptMarkdown from "./ScriptMarkdown.jsx";
+import { curlyQuotes } from "../lib/readableText.js";
 import icon from "../assets/nln-icon.png";
 import { CONTACT_EMAIL } from "../lib/config.js";
 import { track, getVisitorId } from "../lib/track.js";
@@ -325,7 +326,7 @@ export default function ScriptPage() {
               </div>
             </div>
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8">
-              <ScriptMarkdown>{preview}</ScriptMarkdown>
+              <ScriptMarkdown spokenBlocks>{curlyQuotes(preview)}</ScriptMarkdown>
             </div>
           </>
         )}
@@ -373,7 +374,7 @@ export default function ScriptPage() {
               <DownloadPdfButton script={script} title={copy.title} subtitle={subtitle} />
             </div>
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-8 print:border-0 print:shadow-none print:p-0">
-              <ScriptMarkdown>{script}</ScriptMarkdown>
+              <ScriptMarkdown spokenBlocks>{curlyQuotes(script)}</ScriptMarkdown>
             </div>
             <div className="text-center print:hidden">
               <DownloadPdfButton script={script} title={copy.title} subtitle={subtitle} />

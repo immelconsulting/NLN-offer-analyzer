@@ -45,3 +45,12 @@ describe("script PDF", () => {
     expect(scriptPdfFilename("Your Counter-Offer Script")).toBe("Your-Counter-Offer-Script.pdf");
   });
 });
+
+describe("the Analyze your offer link in the PDF", () => {
+  it("shows the plain address, since a button can't work there", () => {
+    const doc = buildScriptPdf({ script: "Come back: [Analyze your offer](https://www.jobofferanalyzer.com/offer)", title: "T" });
+    const text = flatten(doc.content);
+    expect(text).toContain("https://www.jobofferanalyzer.com/offer");
+    expect(text).not.toContain("Analyze your offer");
+  });
+});

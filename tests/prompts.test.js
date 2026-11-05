@@ -61,3 +61,38 @@ describe("the told-the-number section of the screening script", () => {
     expect(section).toMatch(/Never mention branches/);
   });
 });
+
+describe("Marian's feedback on the scripts", () => {
+  const screening = loadPrompt("apply-script-generator-prompt.md");
+  const offerSoon = loadPrompt("offer-soon-script-generator-prompt.md");
+
+  it("drops the absolute 'whoever speaks first loses' wording", () => {
+    for (const prompt of [screening, offerSoon, loadPrompt("apply-analyze-prompt.md")]) {
+      expect(prompt).not.toMatch(/gives up the advantage|leverage from whoever speaks first|advantage stays with you/i);
+    }
+  });
+  it("offers a line for asking the range when the posting has none, after the question", () => {
+    const line = screening.indexOf("could you share the salary range for this role?");
+    expect(line).toBeGreaterThan(screening.indexOf('**Q: "What are your salary expectations?"**'));
+  });
+  it("points to the fallback straight after the first deflection", () => {
+    expect(screening).toContain('If they push for a number, see "When they insist on a number" below.');
+    expect(screening).toContain("**When they insist on a number**");
+  });
+  it.each([["screening", screening], ["offer call", offerSoon]])("%s: the floor is a reference point, and going below it is covered", (_, prompt) => {
+    expect(prompt).not.toMatch(/walk-away|not worth continuing/i);
+    expect(prompt).toContain("Where you set your own floor is up to you.");
+    expect(prompt).toContain("If a lower number works for you");
+    expect(prompt).toContain("compensation review at six months");
+  });
+  it("the offer call still never accepts on the call", () => {
+    expect(offerSoon).toContain("they still do not accept on the spot");
+  });
+  it("says the later scripts cover money that already came up", () => {
+    expect(screening).toContain("If money already came up");
+    expect(screening).toContain("the Offer Call and Counter-Offer scripts cover how to reopen");
+  });
+  it.each([["screening", screening], ["offer call", offerSoon]])("%s: links to the offer flow rather than asking to paste a URL", (_, prompt) => {
+    expect(prompt).toContain("[Analyze your offer](https://www.jobofferanalyzer.com/offer)");
+  });
+});

@@ -37,6 +37,8 @@ export const ONE_LINE_CASE_HEADER = "Your one-line case for why you're worth mor
 function fixJargon(s) {
   return plainSourceNames(s)
     .replace(/^(#{1,6}[ \t]+(?:\d+\.[ \t]*)?)[^\n]*value[\s-]+headline[^\n]*$/gim, `$1${ONE_LINE_CASE_HEADER}`)
+    .replace(/walk[\s-]away floor(s?)/g, "reference floor$1")
+    .replace(/Walk[\s-]Away Floor(s?)/g, "Reference Floor$1")
     .replace(/value[\s-]+headline(s?)/gi, (match, plural) => `${match[0] === "V" ? "One" : "one"}-line pitch${plural}`);
 }
 

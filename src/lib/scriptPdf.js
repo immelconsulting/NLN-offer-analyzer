@@ -1,4 +1,5 @@
 import { marked } from "marked";
+import { isOfferLink, OFFER_URL } from "./offerLink.js";
 
 // Turns a generated script (markdown) into a pdfmake document, so "Download
 // PDF" produces a real file instead of sending people through the browser's
@@ -41,6 +42,11 @@ function inline(tokens = [], style = {}) {
         runs.push(...inline(t.tokens, { ...style, decoration: "lineThrough" }));
         break;
       case "link":
+        // Buttons don't work in a PDF, and a printed copy needs the address.
+        if (isOfferLink(t.href)) {
+          runs.push({ text: OFFER_URL, ...style, color: NAVY_MID });
+          break;
+        }
         runs.push(
           ...inline(t.tokens, { ...style, link: t.href, color: NAVY_MID, decoration: "underline" })
         );
