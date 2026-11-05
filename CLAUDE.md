@@ -184,7 +184,8 @@ into both prompts so the coaching lands in the right place in the process.
   from the model.
 - **Current total comp is context only.** It is passed to the analyzer purely to sanity-check
   the range, is never echoed into the analysis or the script, and never drags the range below
-  what the market supports. The script generator computes **two walk-away floors** (`applyFloors`
+  what the market supports. The script generator computes **two reference floors (never "walk-away":
+  the floor is a reference point they control, and the scripts cover choosing to go below it)** (`applyFloors`
   in `generate-script.js`): a base floor (= base range low) and a total-comp floor
   (= max(total_comp low, current total comp)). **Total comp may only be compared against the
   total_comp range** — comparing it to base would inflate the base floor, since total comp sits
@@ -211,9 +212,10 @@ into both prompts so the coaching lands in the right place in the process.
 - **Scope: the salary question only.** No elevator pitch, "tell me about yourself" answer,
   background summary, or rapport scripting — those belong to a different conversation. The
   earlier part of the call gets a short prose orientation ("How the call usually opens") whose
-  whole job is telling them not to raise compensation first; it carries no 🗣️ lines. **The
-  scripted dialogue begins at "What are your salary expectations?" and nowhere earlier**, so no
-  scripted line ever brings up money before the recruiter does.
+  job is telling them it usually helps to let the recruiter raise pay; it carries no 🗣️ lines. **The
+  scripted dialogue begins at "What are your salary expectations?"** and the only line that may raise
+  money first is the range question for a posting with no range (Marian's feedback, Nov 2026). It comes
+  after the question, so the free preview still stops there. "Whoever speaks first loses" is banned.
 
 Shared search loop lives in `api/_lib/analysis.js` (`runSearchAnalysis` + `SOURCES_SCHEMA` +
 `RANGE_POINTS` + `STRATEGY_SCHEMA` + `RISK_TO_STRATEGY` + `normalizeRange`), used by all three
@@ -318,6 +320,8 @@ parentheses instead.
 
 **"Value headline" is banned (Jenny, same sync: jargon).** Section header: "Your one-line case for why you're worth more" (`ONE_LINE_CASE_HEADER` in `api/_lib/text.js`). In sentences: "your one-line pitch". `cleanForCustomers()` applies this and `stripEmDashes` to every analysis and script, including reopened older scripts; `tests/no-em-dashes.test.js` enforces it.
 
+**"Analyze your offer" link in scripts:** the prompts write it as a markdown link to `/offer`. The page and the email show a button (`isOfferLink()` in `src/lib/offerLink.js`, which also catches the bare URL in older scripts); the PDF shows the plain absolute URL. **Spoken lines** are shaded blocks with curly quotes on the preview and the paid page (`spokenBlocks` in `ScriptMarkdown`); the PDF has its own "Say:" treatment.
+
 **Loading screen** (`src/components/AnalysisLoading.jsx`, shared by all three forms): cycles
 every 7s through what the analyzer is doing, built from the form (role, location, company,
 years): BLS, Glassdoor, the specialist sources only when the role matches (Levels.fyi/Built In
@@ -377,7 +381,7 @@ told in `api/_lib/scriptMessages.js`.
   `ProofContent.jsx` as `/proof`, which now mostly serves old links; opening it records `proof_viewed`). A
   session CTA always sits below. Until the preview is ready, or if it fails, the page shows today's two-button
   `NextStepChoice`, so a buy button and session button are always there. Stored once per analysis at
-  `nln:preview:v3:<id>` (a failure is remembered for an hour), so a reload makes no model call. It only runs
+  `nln:preview:v4:<id>` (a failure is remembered for an hour), so a reload makes no model call. It only runs
   on a saved analysis, never on input from the browser. The page gives up after 60s. Costs about $0.03 per
   results page, since everyone who sees results now gets one. The remaining headings are a fixed list
   (`remainingHeadings()`), not model output.

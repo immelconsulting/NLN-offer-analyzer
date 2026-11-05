@@ -1,6 +1,7 @@
 import { Children } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { isOfferLink, OFFER_PATH, OFFER_URL } from "../lib/offerLink.js";
 
 // Brand styling for the markdown-formatted script, shared by the paid script
 // and the free preview so they look like the same document.
@@ -44,6 +45,7 @@ const SPOKEN_CLASS = "bg-navy-50 border-l-4 border-navy-600 rounded-r-lg px-4 py
 
 const previewComponents = {
   ...markdownComponents,
+  a: ScriptLink,
   p: ({ children, ...props }) =>
     isSpoken(children) ? (
       <p className={SPOKEN_CLASS} {...props}>{children}</p>
@@ -59,6 +61,28 @@ const previewComponents = {
       markdownComponents.li({ children, ...props })
     ),
 };
+
+// "Come back with your offer" in a script is a real button. It also catches the
+// bare URL in scripts written before this existed. It opens in a new tab, so
+// they don't lose their place in the script.
+function ScriptLink({ href, children, node: _node, ...props }) {
+  if (isOfferLink(href)) {
+    return (
+      <>
+        <a
+          href={OFFER_PATH}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-5 py-3 no-underline transition print:hidden"
+        >
+          Analyze your offer
+        </a>
+        <span className="hidden print:inline">{OFFER_URL}</span>
+      </>
+    );
+  }
+  return <a href={href} {...props}>{children}</a>;
+}
 
 export default function ScriptMarkdown({ children, spokenBlocks = false }) {
   return (

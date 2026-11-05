@@ -12,7 +12,7 @@ const KEY = "nln:formDraft";
 // Fields that mean the same thing in both forms and can be carried across.
 // currentSalary (offer: base only) and currentTotalComp (apply: everything)
 // are deliberately NOT shared — they are different questions, and crossing
-// them would silently corrupt the walk-away floor.
+// them would silently corrupt the reference floor.
 const SHARED = [
   "role",
   "targetRole",

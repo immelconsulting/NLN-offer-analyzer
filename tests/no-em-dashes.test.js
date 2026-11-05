@@ -88,6 +88,10 @@ describe('no "value headline" anywhere customers can see', () => {
     expect(cleanForCustomers("**Value headline:** say it")).toBe("**One-line pitch:** say it");
     expect(cleanForCustomers({ notes: ["a value-headline"] })).toEqual({ notes: ["a one-line pitch"] });
   });
+  it("rewrites the old floor wording in older scripts", () => {
+    expect(cleanForCustomers("| Walk-Away Floor | $90k |")).toBe("| Reference Floor | $90k |");
+    expect(cleanForCustomers("your walk-away floor")).toBe("your reference floor");
+  });
   it("still removes em dashes, and leaves other text alone", () => {
     expect(cleanForCustomers("Solid — but low.")).toBe("Solid, but low.");
     expect(cleanForCustomers("## The value you bring")).toBe("## The value you bring");

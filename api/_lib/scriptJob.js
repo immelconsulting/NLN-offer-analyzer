@@ -41,8 +41,9 @@ const scriptKey = (id) => `nln:script:${id}`;
 const jobKey = (id) => `nln:script-job:${id}`;
 const runsKey = (id) => `nln:script-runs:${id}`;
 const alertKey = (id) => `nln:script-alerted:${id}`;
-// v3: where a preview stops has changed twice, so older ones are left behind.
-const previewKey = (id) => `nln:preview:v3:${id}`;
+// v4: older openings carry wording that's since changed ("walk-away floor"),
+// and the rest of the script is written to follow on from the opening.
+const previewKey = (id) => `nln:preview:v4:${id}`;
 const previewLockKey = (id) => `nln:preview-lock:${id}`;
 
 export const isTestJobId = (id) => id.startsWith("test-");
@@ -80,6 +81,7 @@ export function remainingHeadings(flow, form = {}) {
       "If they ask for your expectations again",
       "If they ask for your current salary",
       "Handling pushback on your timeline",
+      "If a lower number works for you",
       ...(["i_shared_number", "both_shared"].includes(form.compStatus) ? ["If you already shared a number"] : []),
       "Closing the call",
       "Sign-off",
@@ -89,9 +91,11 @@ export function remainingHeadings(flow, form = {}) {
     ...(form.salaryStage === "told_number" ? ["How to respond to the number they told you"] : []),
     "Your word-for-word answers to the salary question",
     "If the recruiter shares a range",
-    "If they push for a number anyway",
+    "When they insist on a number",
     "If they ask for your current salary",
+    "If a lower number works for you",
     ...(form.salaryStage === "gave_number" ? ["If you already gave a number"] : []),
+    "If money already came up",
     "Questions to ask before the call ends",
     "Sign-off",
   ];

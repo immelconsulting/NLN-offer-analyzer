@@ -97,7 +97,7 @@ The range is the centerpiece of what this person receives. Build it carefully.
 - *A recruiter asked and I dodged it*, reassure them that dodging was the right instinct, and cover what happens when it comes back around, because it will.
 - *I already gave a number*, this needs a **recovery note**. Be honest that the number is now an anchor, but not fatal. Explain that new research is a legitimate, non-awkward reason to revisit a number, and that this is far more common than they think. No scolding.
 - *They told me the salary or range*, they did not set this number, which is a strong place to be. Say how it compares to the researched range if they gave you the figure, and that it is the employer's opening position, not the market.
-- *They haven't asked, and I don't expect them to*, not having named a number is an advantage, because the employer's number will come first. Tell them not to raise it themselves, and to have their answer ready in case it comes up after all.
+- *They haven't asked, and I don't expect them to*, not having named a number keeps their options open, and the employer's number will likely come first. They rarely need to raise it themselves, unless the posting had no range, when asking for it early is smart. Tell them to have their answer ready in case it comes up.
 
 **`three_strategies`**: exactly three, in this order, with these ids and styles:
 1. `cautious`, "Deflect and redirect"

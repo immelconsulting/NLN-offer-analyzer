@@ -7,6 +7,8 @@ import { remainingHeadings } from "../api/_lib/scriptJob.js";
 
 vi.mock("../src/lib/track.js", () => ({ track: vi.fn() }));
 const { default: ScriptPreview } = await import("../src/components/ScriptPreview.jsx");
+const { default: ScriptMarkdown } = await import("../src/components/ScriptMarkdown.jsx");
+const { isOfferLink } = await import("../src/lib/offerLink.js");
 
 describe("previewSections", () => {
   it("separates headers from the text under them", () => {
@@ -83,5 +85,32 @@ describe("Alex's section and the script's own intro", () => {
     const html = renderToStaticMarkup(createElement(ScriptPreview, { state: { status: "ready", preview: '## N\n\nAdvice here.\n\n🗣️ "Say this."', headings: [] }, onUnlock: () => {} }));
     expect(html).toMatch(/<p [^>]*border-l-4[^>]*>🗣️ “Say this.”<\/p>/);
     expect(html).toMatch(/<p [^>]*text-slate-800 leading-relaxed mb-4[^>]*>Advice here.<\/p>/);
+  });
+});
+
+describe("the Analyze your offer link", () => {
+  const script = (md) => renderToStaticMarkup(createElement(ScriptMarkdown, { spokenBlocks: true }, md));
+  it("is a button on the page, for new links and older bare URLs", () => {
+    for (const md of ["[Analyze your offer](https://www.jobofferanalyzer.com/offer)", "See https://www.jobofferanalyzer.com/offer"]) {
+      const html = script(md);
+      expect(html).toContain('href="/offer"');
+      expect(html).toContain("Analyze your offer");
+      expect(html).toContain("bg-navy-900");
+    }
+  });
+  it("leaves other links as they are", () => {
+    expect(script("[book](https://www.jobofferanalyzer.com/session)")).toContain('href="https://www.jobofferanalyzer.com/session"');
+    expect(isOfferLink("https://www.jobofferanalyzer.com/offer-soon")).toBe(false);
+  });
+});
+
+describe("the Analyze your offer link in the script email", () => {
+  it("is a button, and other links are left alone", async () => {
+    const { offerLinkAsButton } = await import("../api/_lib/email.js");
+    const button = offerLinkAsButton('<a style="color:#0099CC" href="https://www.jobofferanalyzer.com/offer">Analyze your offer</a>');
+    expect(button).toContain('href="https://www.jobofferanalyzer.com/offer"');
+    expect(button).toContain("display:inline-block");
+    const other = '<a style="color:#0099CC" href="https://www.jobofferanalyzer.com/session">book</a>';
+    expect(offerLinkAsButton(other)).toBe(other);
   });
 });
