@@ -84,7 +84,7 @@ export default function OfferSoonResultsPage() {
         <RangeCard
           analysis={analysis}
           noDataNote="Rather than show you a number we can't stand behind, we've left this open. Everything below still applies, and your script will include instructions for building a range from your own research before the call."
-          floorNote="An offer below that is a real gap worth addressing in your counter, and knowing the number before the call is what lets you recognize it instantly."
+          floorNote="An offer below that is a real gap worth addressing in your counter. Where you set your own floor is up to you."
         />
 
         <Callout title="How to read the offer when you hear it" tone="light">

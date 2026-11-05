@@ -1,3 +1,4 @@
+import { Children } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -34,9 +35,34 @@ const markdownComponents = {
   td: (props) => <td className="px-4 py-2 border-b border-slate-100" {...props} />,
 };
 
-export default function ScriptMarkdown({ children }) {
+// The free preview sets lines to say apart from advice, so they're easy to tell
+// from it at a glance.
+const isSpoken = (children) =>
+  Children.toArray(children).some((c) => typeof c === "string" && c.includes("🗣"));
+
+const SPOKEN_CLASS = "bg-navy-50 border-l-4 border-navy-600 rounded-r-lg px-4 py-3 mb-4 text-slate-800 leading-relaxed";
+
+const previewComponents = {
+  ...markdownComponents,
+  p: ({ children, ...props }) =>
+    isSpoken(children) ? (
+      <p className={SPOKEN_CLASS} {...props}>{children}</p>
+    ) : (
+      markdownComponents.p({ children, ...props })
+    ),
+  li: ({ children, ...props }) =>
+    isSpoken(children) ? (
+      <li className="list-none -ml-6" {...props}>
+        <div className={SPOKEN_CLASS}>{children}</div>
+      </li>
+    ) : (
+      markdownComponents.li({ children, ...props })
+    ),
+};
+
+export default function ScriptMarkdown({ children, spokenBlocks = false }) {
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+    <ReactMarkdown remarkPlugins={[remarkGfm]} components={spokenBlocks ? previewComponents : markdownComponents}>
       {children}
     </ReactMarkdown>
   );

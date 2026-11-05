@@ -61,8 +61,7 @@ export default function ApplyResultsPage({ flow = "apply" }) {
             {form.location} · {form.yearsExperience} years
           </p>
           <p className="text-navy-800 mt-4 font-medium max-w-xl">
-            Negotiation doesn't start at the offer. It starts the moment a
-            recruiter asks what you make.
+            Know Your Number Before the Recruiter Asks.
           </p>
         </div>
       </header>
@@ -84,7 +83,7 @@ export default function ApplyResultsPage({ flow = "apply" }) {
         <RangeCard
           analysis={analysis}
           noDataNote="Rather than show you a number we can't stand behind, we've left this open. Everything below still applies, and your script will include instructions for building a range from your own research."
-          floorNote="Below that, the role isn't worth your time, and knowing that before the call is what keeps you from drifting down during it."
+          floorNote="Where you set your own floor is up to you."
         />
 
         <SourceList sources={analysis.sources} />

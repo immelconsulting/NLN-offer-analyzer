@@ -96,7 +96,7 @@ export const SOURCES_SCHEMA = {
   items: {
     type: "object",
     properties: {
-      name: { type: "string", description: "e.g. 'Levels.fyi', 'BLS'" },
+      name: { type: "string", description: "Plain English, e.g. 'Levels.fyi', 'U.S. Bureau of Labor Statistics wage data'" },
       url: { type: "string", description: "URL from the search result." },
       note: {
         type: "string",

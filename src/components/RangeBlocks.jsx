@@ -1,4 +1,4 @@
-import { splitIntoParagraphs } from "../lib/readableText.js";
+import { plainSourceNames, splitIntoParagraphs } from "../lib/readableText.js";
 import MeetJennyLink from "./MeetJennyLink.jsx";
 
 // Shared building blocks for the researched-range results pages
@@ -63,7 +63,8 @@ export function RangeRow({ label, points, featured }) {
 
 // The hero. Handles the no-data case explicitly rather than rendering
 // placeholder numbers that would look authoritative. `floorNote` lets each
-// flow word the walk-away line for its own moment.
+// flow word the line about the low end for its own moment. The low end is a
+// reference point they control, never a line they're told to walk away at.
 export function RangeCard({ analysis, noDataNote, floorNote }) {
   const range = analysis.market_range;
 
@@ -100,7 +101,7 @@ export function RangeCard({ analysis, noDataNote, floorNote }) {
 
       <p className="text-sm text-navy-800 mt-4 bg-navy-50 rounded-lg px-4 py-3">
         <span className="font-semibold">
-          Your walk-away floor is {money(range.base.low)}.
+          The lowest number the market data supports is {money(range.base.low)}.
         </span>{" "}
         {floorNote}
       </p>
@@ -112,7 +113,7 @@ export function RangeCard({ analysis, noDataNote, floorNote }) {
 function Paragraphs({ text, className }) {
   return (
     <div className="space-y-3">
-      {splitIntoParagraphs(text).map((paragraph, i) => (
+      {splitIntoParagraphs(plainSourceNames(text)).map((paragraph, i) => (
         <p key={i} className={className}>
           {paragraph}
         </p>
@@ -161,7 +162,7 @@ export function SourceList({ sources }) {
             title={s.note}
             className="font-medium text-navy-600 hover:text-navy-900 underline transition"
           >
-            {s.name}
+            {plainSourceNames(s.name)}
           </a>
         </span>
       ))}
