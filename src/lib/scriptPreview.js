@@ -28,9 +28,12 @@ export function previewSections(preview, headings = []) {
     }
   }
   const opening = sections
-    .map(({ heading, lines }) => ({ heading, body: curlyQuotes(lines.join("\n").trim()) }))
-    .map(({ heading, body }, i) => ({ heading: curlyQuotes(heading), body: i === 0 ? body.replace(ALEX_INTRO, "") : body }))
+    .map(({ heading, lines }) => ({ heading, body: lines.join("\n").trim() }))
     .filter(({ heading, body }) => heading || body);
+  const intro = opening.find(({ body }) => body);
+  if (intro) intro.body = intro.body.replace(ALEX_INTRO, "");
+  for (const section of opening) section.body = curlyQuotes(section.body);
+  for (const section of opening) section.heading = curlyQuotes(section.heading);
   const last = opening[opening.length - 1];
   if (last && !last.body) last.placeholder = true;
   return [...opening, ...headings.map((h) => ({ heading: curlyQuotes(`## ${h}`), body: "", placeholder: true }))];

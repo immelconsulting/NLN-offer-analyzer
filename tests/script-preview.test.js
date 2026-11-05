@@ -62,6 +62,7 @@ describe("Alex's section and the script's own intro", () => {
   it("the page doesn't repeat the opening's introduction of Alex", () => {
     expect(previewSections("## Note\n\nI'm Alex Immel, founder and CEO of NLN. You have a solid offer.")[0].body).toBe("You have a solid offer.");
     expect(previewSections("## Note\n\nHi, I’m Alex.")[0].body).toBe("");
+    expect(previewSections("# Your Script\n\n## Note\n\nI'm Alex Immel. You have an offer.")[1].body).toBe("You have an offer.");
     expect(previewSections("## Note\n\nYou have a solid offer from Alex's team.")[0].body).toBe("You have a solid offer from Alex’s team.");
   });
   it("shows his section, then a headline into their script, and hides neither button", () => {

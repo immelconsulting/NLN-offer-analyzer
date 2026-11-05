@@ -67,7 +67,7 @@ export default function ScriptPreview({ state, onUnlock, onDetails }) {
     <>
       <AlexIntro />
     <section id="script-preview" className="scroll-mt-6 print:hidden bg-white rounded-xl border border-slate-200 shadow-sm p-6 sm:p-10">
-      <h2 className="text-2xl font-serif font-semibold text-navy-900">Now, let's get to your script</h2>
+      <h2 className="text-2xl font-serif font-semibold text-navy-900">Now, let’s get to your script</h2>
       <p className="text-slate-700 mt-2 mb-4">Unlock it to read the rest, written around your numbers.</p>
       <button
         type="button"
