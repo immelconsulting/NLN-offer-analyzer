@@ -68,7 +68,7 @@ export function curlyQuotes(text) {
       let line = raw.replace(/[“”"]{2,}/g, '"').replace(/[“”]/g, '"');
       if (line.includes("🗣") && (line.match(/"/g) || []).length === 1) {
         const at = line.indexOf('"');
-        const opensLine = /[🗣️\s*:]$/u.test(line.slice(0, at));
+        const opensLine = /(?:🗣\uFE0F?|[\s*:])$/u.test(line.slice(0, at));
         line = opensLine ? `${line.trimEnd()}"` : line.replace(/(🗣\S*\s*)/u, '$1"');
       }
       return line
