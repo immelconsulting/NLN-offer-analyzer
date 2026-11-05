@@ -8,6 +8,7 @@ import { CONTACT_EMAIL } from "../lib/config.js";
 import { track, getVisitorId } from "../lib/track.js";
 import { newRequestRef, linkRequestToAnalysis } from "../lib/resultsEmail.js";
 import AnalysisLoading, { loadingSteps } from "./AnalysisLoading.jsx";
+import ResumePrivacyNote from "./ResumePrivacyNote.jsx";
 
 // Expecting-an-offer-soon form. Field names match ApplyForm wherever the
 // question is the same, so formDraft.js prefill carries across flows.
@@ -499,7 +500,7 @@ export default function OfferSoonForm() {
               </span>
             </h2>
             <p className="text-sm text-slate-500 -mt-2">
-              These are used only to add context to your analysis and script.
+              These add context to your analysis and script.
               Nothing here is required.
             </p>
 
@@ -510,9 +511,7 @@ export default function OfferSoonForm() {
                 onChange={setResumeFile}
                 onError={setError}
               />
-              <p className="text-sm text-slate-500 mt-1.5">
-                Helps place you accurately within the experience band.
-              </p>
+              <ResumePrivacyNote />
             </div>
 
             <div>
