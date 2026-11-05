@@ -8,6 +8,7 @@ import { CONTACT_EMAIL } from "../lib/config.js";
 import { track, getVisitorId } from "../lib/track.js";
 import { newRequestRef, linkRequestToAnalysis } from "../lib/resultsEmail.js";
 import AnalysisLoading, { loadingSteps } from "./AnalysisLoading.jsx";
+import ResumePrivacyNote from "./ResumePrivacyNote.jsx";
 
 // Pre-offer form, shared by the Applying and Interviewing stages (see
 // src/lib/flows.js). Deliberately much shorter than OfferForm — people at
@@ -362,7 +363,7 @@ export default function ApplyForm({ flow = "apply" }) {
               Extra Context <span className="text-sm font-sans font-normal text-slate-500">(optional)</span>
             </h2>
             <p className="text-sm text-slate-500 -mt-2">
-              These are used only to add context to your analysis and script.
+              These add context to your analysis and script.
               Nothing here is required.
             </p>
 
@@ -373,9 +374,7 @@ export default function ApplyForm({ flow = "apply" }) {
                 onChange={setResumeFile}
                 onError={setError}
               />
-              <p className="text-sm text-slate-500 mt-1.5">
-                Helps place you accurately within the experience band.
-              </p>
+              <ResumePrivacyNote />
             </div>
 
             <div>

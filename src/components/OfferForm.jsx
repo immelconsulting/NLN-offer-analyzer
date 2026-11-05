@@ -6,6 +6,7 @@ import SiteHeader from "./SiteHeader.jsx";
 import { track, getVisitorId } from "../lib/track.js";
 import { newRequestRef, linkRequestToAnalysis } from "../lib/resultsEmail.js";
 import AnalysisLoading, { loadingSteps } from "./AnalysisLoading.jsx";
+import ResumePrivacyNote from "./ResumePrivacyNote.jsx";
 
 const INDUSTRIES = [
   "Tech",
@@ -456,7 +457,7 @@ export default function OfferForm() {
               Extra Context <span className="text-sm font-sans font-normal text-slate-500">(optional)</span>
             </h2>
             <p className="text-sm text-slate-500 -mt-2">
-              These are used only to add context to your analysis and script.
+              These add context to your analysis and script.
               Nothing here is required.
             </p>
 
@@ -467,9 +468,7 @@ export default function OfferForm() {
                 onChange={setResumeFile}
                 onError={setError}
               />
-              <p className="text-sm text-slate-500 mt-1.5">
-                Helps tailor your value framing to your actual background.
-              </p>
+              <ResumePrivacyNote />
             </div>
 
             <div>

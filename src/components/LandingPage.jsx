@@ -72,15 +72,6 @@ export default function LandingPage() {
           <p className="text-slate-700 mt-2 max-w-xl font-medium">
             Free. No sign-up. Your analysis is ready in about 3 minutes.
           </p>
-          <a
-            href={TRUSTPILOT_REVIEWS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 inline-flex items-center gap-1.5 rounded-full bg-[#00B67A] hover:bg-[#00A36D] px-4 py-1.5 text-sm font-medium text-navy-950 transition"
-          >
-            <span aria-hidden="true">★</span>
-            100% 5-star reviews on Trustpilot
-          </a>
         </div>
       </header>
 
@@ -123,6 +114,21 @@ export default function LandingPage() {
               Privacy Policy
             </Link>
             .
+          </p>
+        </div>
+
+        <div className="mt-6 text-center">
+          <a
+            href={TRUSTPILOT_REVIEWS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#00B67A] hover:bg-[#00A36D] px-4 py-1.5 text-sm font-medium text-navy-950 transition"
+          >
+            <span aria-hidden="true">★</span>
+            100% 5-star reviews on Trustpilot
+          </a>
+          <p className="text-sm text-slate-600 mt-2">
+            Reviews of Next Level Negotiation (NLN), Alex Immel's salary negotiation coaching practice.
           </p>
         </div>
       </main>
