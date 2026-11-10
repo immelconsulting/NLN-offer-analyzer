@@ -117,8 +117,9 @@ function BioDialog({ onClose }) {
   );
 }
 
-// The inline text button that opens it.
-export default function WhoIsBehindThis({ className = "" }) {
+// The inline text button that opens it. `children` replaces the default
+// label, e.g. Alex's name inside a sentence.
+export default function WhoIsBehindThis({ className = "", children }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
 
@@ -139,7 +140,7 @@ export default function WhoIsBehindThis({ className = "" }) {
         onClick={openModal}
         className={`font-medium text-navy-600 hover:text-navy-900 underline underline-offset-2 ${className}`}
       >
-        {curlyQuotes("Who's behind this?")}
+        {children ?? curlyQuotes("Who's behind this?")}
       </button>
       {open && <BioDialog onClose={close} />}
     </>
