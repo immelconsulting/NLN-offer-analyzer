@@ -14,8 +14,9 @@ describe("landing page", () => {
     expect(landing.slice(link, link + 120)).toContain('target="_blank"');
     expect(landing.slice(link, link + 120)).toContain('rel="noopener noreferrer"');
   });
-  it("says whose reviews they are", () => {
-    expect(landing).toContain("Reviews of Next Level Negotiation (NLN)");
+  it("names Alex in the AI line, and his name opens the bio", () => {
+    expect(landing).not.toContain("Reviews of Next Level Negotiation (NLN)");
+    expect(landing).toMatch(/This tool uses AI, guided by\{" "\}\s*<WhoIsBehindThis[^>]*>Alex Immel<\/WhoIsBehindThis>\s*'s Next Level Negotiation methodology/);
   });
 });
 

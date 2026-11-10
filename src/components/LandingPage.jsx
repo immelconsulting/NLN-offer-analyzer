@@ -106,8 +106,10 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-sm text-slate-500">
-            This tool uses AI, guided by NLN's negotiation methodology, to
-            generate your offer analysis and script. Submissions are saved so
+            This tool uses AI, guided by{" "}
+            <WhoIsBehindThis className="!font-normal !text-slate-500 hover:!text-navy-600">Alex Immel</WhoIsBehindThis>
+            's Next Level Negotiation methodology, to generate your offer
+            analysis and script. Submissions are saved so
             our team can prepare if you book a coaching call, and anonymized,
             aggregated compensation data may help inform other users'
             analyses. See our{" "}
@@ -128,10 +130,6 @@ export default function LandingPage() {
             <span aria-hidden="true">★</span>
             100% 5-star reviews on Trustpilot
           </a>
-          <p className="text-sm text-slate-600 mt-2">
-            Reviews of Next Level Negotiation (NLN), Alex Immel's salary negotiation coaching practice.{" "}
-            <WhoIsBehindThis />
-          </p>
           <p className="text-xs text-slate-500 mt-3">
             Built by Next Level Negotiation in partnership with JobJenny.com.
           </p>
