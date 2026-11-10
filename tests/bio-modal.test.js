@@ -77,3 +77,10 @@ describe("partnership and JobJenny.com", () => {
     }
   });
 });
+
+describe("Alex's years of experience match everywhere", () => {
+  it("says 6+ years, like his bio", () => {
+    expect(read("src/components/ProofContent.jsx")).not.toMatch(/\b5\+ years/);
+    expect(read("src/components/BioModal.jsx")).toContain("For 6+ years");
+  });
+});

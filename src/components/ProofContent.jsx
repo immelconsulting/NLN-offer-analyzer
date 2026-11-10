@@ -12,7 +12,7 @@ const FLOW_COPY = {
     proofPoints: [
       "100% 5-star reviews on Trustpilot",
       "Real outcomes: an average 8% salary increase, with one client offer increasing by as much as $30,000",
-      "5+ years and 200+ negotiations behind every script, not a generic AI template",
+      "6+ years and 200+ negotiations behind every script, not a generic AI template",
       "Delivered instantly: a fully customized script ready in under 5 minutes, because negotiation calls don't wait for a good time",
     ],
     ctaLabel: "Get my instant script ($47)",
@@ -32,7 +32,7 @@ const FLOW_COPY = {
     proofPoints: [
       "100% 5-star reviews on Trustpilot",
       "Word-for-word answers to the two questions that cost people the most: what are your expectations, and what do you make now",
-      "5+ years and 200+ negotiations behind every script, not a generic AI template",
+      "6+ years and 200+ negotiations behind every script, not a generic AI template",
       "Delivered instantly: a fully customized script ready in under 5 minutes, because recruiter calls don't wait for a good time",
     ],
     ctaLabel: "Get my screening call script ($47)",
@@ -57,7 +57,7 @@ FLOW_COPY.offer_soon = {
   proofPoints: [
     "100% 5-star reviews on Trustpilot",
     "Word-for-word lines for the moment the number lands: how to respond, what to ask, and how to buy time without losing momentum",
-    "5+ years and 200+ negotiations behind every script, not a generic AI template",
+    "6+ years and 200+ negotiations behind every script, not a generic AI template",
     "Delivered instantly: a fully customized script in under 5 minutes, because offer calls don't wait for a good time",
   ],
   ctaLabel: "Get my offer call script ($47)",
