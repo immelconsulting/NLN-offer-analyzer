@@ -289,6 +289,9 @@ export default function ScriptPage() {
             {copy.title}
           </h1>
           {subtitle && <p className="text-slate-700 mt-4">{subtitle}</p>}
+          <p className="text-sm text-slate-600 mt-2">
+            Built from Alex Immel’s negotiation playbook and tailored to your role, your market and your situation.
+          </p>
         </div>
       </header>
 

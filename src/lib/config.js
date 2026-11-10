@@ -51,6 +51,9 @@ export const SESSION_TIERS = {
 // Jenny Foss's bio, linked wherever someone decides whether to book a
 // session with her. ⚠️ Temporary: JobJenny's team page until Alex gets the
 // right link from Jenny/Alisa.
+// Alex's LinkedIn: the main button in the "Who's behind this?" bio.
+export const ALEX_LINKEDIN_URL = "https://www.linkedin.com/in/aleximmel/";
+
 export const JENNY_BIO_URL = "https://www.jobjenny.com/our-team";
 
 // Display-only price labels used in CTA captions and the session proof page.

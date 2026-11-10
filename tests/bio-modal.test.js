@@ -42,9 +42,38 @@ describe("Who's behind this?", () => {
     expect(CLIENT_EVENTS).toContain("bio_modal_opened");
     expect(read("src/components/AdminDashboard.jsx")).toContain("bio_modal_opened:");
   });
-  it("the footer uses it, with Get my number only on the landing page", () => {
-    const footer = read("src/components/SiteFooter.jsx");
-    expect(footer).toContain("<WhoIsBehindThis");
-    expect(footer).toContain('onLanding ? "Get my number" : "Close"');
+  it("its main button goes to Alex's LinkedIn in a new tab", () => {
+    const src = read("src/components/BioModal.jsx");
+    expect(src).toContain("href={ALEX_LINKEDIN_URL}");
+    expect(src).not.toContain("Get my number");
+    expect(read("src/lib/config.js")).toContain('ALEX_LINKEDIN_URL = "https://www.linkedin.com/in/aleximmel/"');
+  });
+  it.each(["src/components/SiteFooter.jsx", "src/components/LandingPage.jsx", "src/components/ProofContent.jsx"])("%s offers it", (f) => {
+    expect(read(f)).toContain("<WhoIsBehindThis");
+  });
+  it("on the landing page it sits below the stage choice", () => {
+    const landing = read("src/components/LandingPage.jsx");
+    expect(landing.indexOf("<WhoIsBehindThis")).toBeGreaterThan(landing.indexOf("STAGES.map"));
+  });
+  it("on the $47 offer the note sits below the checkout button", () => {
+    const proof = read("src/components/ProofContent.jsx");
+    expect(proof.indexOf("Your script is built on the same approach")).toBeGreaterThan(proof.indexOf("onClick={onCheckout}"));
+  });
+});
+
+describe("partnership and JobJenny.com", () => {
+  it("credits the partnership on the landing page and in the footer", () => {
+    for (const f of ["src/components/LandingPage.jsx", "src/components/SiteFooter.jsx"]) {
+      expect(read(f)).toContain("Built by Next Level Negotiation in partnership with JobJenny.com.");
+    }
+  });
+  it("introduces Jenny on the session page", () => {
+    expect(read("src/components/SessionProofPage.jsx")).toContain("Jenny Foss, career coach and founder of JobJenny.com.");
+  });
+  it("names the company JobJenny.com wherever customers read it", () => {
+    for (const f of ["src/components/ProofContent.jsx", "src/components/PrivacyPolicy.jsx", "src/components/SessionProofPage.jsx"]) {
+      const copy = read(f).replace(/\/\/.*$/gm, "").replace(/\{\/\*[\s\S]*?\*\/\}/g, "");
+      expect(copy).not.toMatch(/JobJenny(?!\.com|\/)/);
+    }
   });
 });

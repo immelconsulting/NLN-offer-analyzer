@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import SiteHeader from "./SiteHeader.jsx";
 import { TRUSTPILOT_REVIEWS_URL } from "../lib/config.js";
 import { track } from "../lib/track.js";
+import WhoIsBehindThis from "./BioModal.jsx";
 
 const STAGES = [
   {
@@ -85,7 +86,7 @@ export default function LandingPage() {
               Wherever you are, we'll tailor your analysis to the conversation
               in front of you.
             </p>
-            <div id="stage-choice" className="grid sm:grid-cols-2 gap-3">
+            <div className="grid sm:grid-cols-2 gap-3">
               {STAGES.map((s) => (
                 <button
                   key={s.value}
@@ -128,7 +129,11 @@ export default function LandingPage() {
             100% 5-star reviews on Trustpilot
           </a>
           <p className="text-sm text-slate-600 mt-2">
-            Reviews of Next Level Negotiation (NLN), Alex Immel's salary negotiation coaching practice.
+            Reviews of Next Level Negotiation (NLN), Alex Immel's salary negotiation coaching practice.{" "}
+            <WhoIsBehindThis />
+          </p>
+          <p className="text-xs text-slate-500 mt-3">
+            Built by Next Level Negotiation in partnership with JobJenny.com.
           </p>
         </div>
       </main>
