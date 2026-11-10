@@ -62,10 +62,9 @@ describe("Who's behind this?", () => {
 });
 
 describe("partnership and JobJenny.com", () => {
-  it("credits the partnership on the landing page and in the footer", () => {
-    for (const f of ["src/components/LandingPage.jsx", "src/components/SiteFooter.jsx"]) {
-      expect(read(f)).toContain("Built by Next Level Negotiation in partnership with JobJenny.com.");
-    }
+  it("credits the partnership once, in the footer under every page", () => {
+    expect(read("src/components/SiteFooter.jsx")).toContain("Built by Next Level Negotiation in partnership with JobJenny.com.");
+    expect(read("src/components/LandingPage.jsx")).not.toContain("Built by Next Level Negotiation");
   });
   it("introduces Jenny on the session page", () => {
     expect(read("src/components/SessionProofPage.jsx")).toContain("Jenny Foss, career coach and founder of JobJenny.com.");
