@@ -29,6 +29,7 @@ const EVENT_LABELS = {
   script_cta_clicked: "Clicked “Get my script”",
   session_cta_clicked: "Clicked “Book a session”",
   proof_viewed: "Opened the $47 script offer",
+  bio_modal_opened: "Opened “Who’s behind this?”",
   script_checkout_clicked: "Started script checkout",
   script_purchased: "Bought a script",
   script_generated: "Script delivered",

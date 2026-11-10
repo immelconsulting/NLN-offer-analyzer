@@ -85,7 +85,7 @@ export default function LandingPage() {
               Wherever you are, we'll tailor your analysis to the conversation
               in front of you.
             </p>
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div id="stage-choice" className="grid sm:grid-cols-2 gap-3">
               {STAGES.map((s) => (
                 <button
                   key={s.value}
