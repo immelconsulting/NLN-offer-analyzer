@@ -130,9 +130,6 @@ export default function LandingPage() {
             <span aria-hidden="true">★</span>
             100% 5-star reviews on Trustpilot
           </a>
-          <p className="text-xs text-slate-500 mt-3">
-            Built by Next Level Negotiation in partnership with JobJenny.com.
-          </p>
         </div>
       </main>
     </div>
