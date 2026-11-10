@@ -1,20 +1,20 @@
 import { useEffect, useRef, useState } from "react";
 import headshot from "../assets/alex-headshot.jpg";
-import { TRUSTPILOT_REVIEWS_URL } from "../lib/config.js";
+import { ALEX_LINKEDIN_URL, TRUSTPILOT_REVIEWS_URL } from "../lib/config.js";
 import { curlyQuotes } from "../lib/readableText.js";
 import { track } from "../lib/track.js";
 
 // "Who's behind this?": a short bio that only ever opens on a click. Never
 // automatically, on a timer or on exit, so nothing competes with the form.
-// The trigger is reusable anywhere; `primary` is the main button, which on the
-// landing page sends them to the stage choice and elsewhere just closes.
+// The trigger is reusable anywhere, including inside the $47 pop-up, so Esc is
+// caught first here and closes only this one.
 
 const BIO =
   "I'm the founder of Next Level Negotiation (NLN). For 6+ years, I've coached 200+ professionals through job offer and raise negotiations at companies like Amazon, TikTok and OpenAI, and my clients average more than $26k in increases. This tool takes what worked in those real negotiations and tailors it to your role, your market and your situation.";
 
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-function BioDialog({ onClose, primary }) {
+function BioDialog({ onClose }) {
   const dialogRef = useRef(null);
   const closeRef = useRef(null);
 
@@ -23,6 +23,7 @@ function BioDialog({ onClose, primary }) {
     const onKey = (e) => {
       if (e.key === "Escape") {
         e.preventDefault();
+        e.stopPropagation();
         onClose();
         return;
       }
@@ -40,7 +41,7 @@ function BioDialog({ onClose, primary }) {
         first.focus();
       }
     };
-    document.addEventListener("keydown", onKey);
+    document.addEventListener("keydown", onKey, true);
     // Stop the page scrolling behind it, without the page jumping sideways
     // when the scrollbar disappears.
     const { overflow, paddingRight } = document.body.style;
@@ -48,7 +49,7 @@ function BioDialog({ onClose, primary }) {
     document.body.style.overflow = "hidden";
     if (scrollbar > 0) document.body.style.paddingRight = `${scrollbar}px`;
     return () => {
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey, true);
       document.body.style.overflow = overflow;
       document.body.style.paddingRight = paddingRight;
     };
@@ -83,7 +84,7 @@ function BioDialog({ onClose, primary }) {
             alt="Alex Immel, founder of Next Level Negotiation"
             width="72"
             height="72"
-            className="h-18 w-18 h-[72px] w-[72px] rounded-full object-cover"
+            className="h-[72px] w-[72px] rounded-full object-cover"
           />
           <h2 id="bio-modal-heading" className="text-2xl font-serif font-semibold text-navy-900">
             {curlyQuotes("Hi, I'm Alex Immel")}
@@ -103,21 +104,21 @@ function BioDialog({ onClose, primary }) {
             Read our reviews on Trustpilot
           </a>
         </p>
-        <button
-          type="button"
-          onClick={primary.onClick}
-          className="mt-6 w-full bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-6 py-3 transition"
+        <a
+          href={ALEX_LINKEDIN_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-6 block w-full text-center bg-navy-900 hover:bg-navy-600 text-white font-semibold rounded-md px-6 py-3 transition"
         >
-          {primary.label}
-        </button>
+          Connect with me on LinkedIn
+        </a>
       </div>
     </div>
   );
 }
 
-// The inline text button that opens it. `onPrimary` runs after the modal
-// closes; without it the main button just closes the modal.
-export default function WhoIsBehindThis({ className = "", primaryLabel = "Close", onPrimary }) {
+// The inline text button that opens it.
+export default function WhoIsBehindThis({ className = "" }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
 
@@ -128,11 +129,6 @@ export default function WhoIsBehindThis({ className = "", primaryLabel = "Close"
   function close() {
     setOpen(false);
     triggerRef.current?.focus();
-  }
-  function primary() {
-    setOpen(false);
-    if (onPrimary) onPrimary();
-    else triggerRef.current?.focus();
   }
 
   return (
@@ -145,7 +141,7 @@ export default function WhoIsBehindThis({ className = "", primaryLabel = "Close"
       >
         {curlyQuotes("Who's behind this?")}
       </button>
-      {open && <BioDialog onClose={close} primary={{ label: primaryLabel, onClick: primary }} />}
+      {open && <BioDialog onClose={close} />}
     </>
   );
 }

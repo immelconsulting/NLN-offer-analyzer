@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import MeetJennyLink from "./MeetJennyLink.jsx";
 import { STRATEGY_SESSION_PRICE_LABEL, TRUSTPILOT_REVIEWS_URL } from "../lib/config.js";
+import headshot from "../assets/alex-headshot.jpg";
+import WhoIsBehindThis from "./BioModal.jsx";
 
 // Copy differs per flow; everything structural below is shared. The offer
 // flow is the default so its behavior is untouched by the apply path.
@@ -145,10 +147,19 @@ export default function ProofContent({ flow = "offer", form, onCheckout, heading
           <MeetJennyLink className="text-slate-600 hover:text-navy-900">
             Jenny Foss
           </MeetJennyLink>{" "}
-          of JobJenny. Sessions start at{" "}
+          of JobJenny.com. Sessions start at{" "}
           {STRATEGY_SESSION_PRICE_LABEL}.
         </p>
         {children}
+      </div>
+
+      {/* Below the buttons, so it never pushes checkout down on a phone. */}
+      <div className="mt-6 flex items-center gap-3 rounded-lg bg-navy-50 px-4 py-3">
+        <img src={headshot} alt="" width="40" height="40" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+        <p className="text-sm text-slate-700">
+          Your script is built on the same approach Alex has used with 200+ professionals at
+          companies like Amazon, TikTok and OpenAI. <WhoIsBehindThis />
+        </p>
       </div>
     </>
   );

@@ -96,7 +96,8 @@ export default function SessionProofPage() {
           <p className="text-center mt-3 text-lg font-serif font-semibold text-navy-600">
             Get Jenny Foss in your corner.
           </p>
-          <p className="text-center mt-1 text-sm">
+          <p className="text-center mt-1 text-sm text-slate-600">
+            Jenny Foss, career coach and founder of JobJenny.com.{" "}
             <MeetJennyLink className="text-navy-600 hover:text-navy-900">
               Meet Jenny →
             </MeetJennyLink>
