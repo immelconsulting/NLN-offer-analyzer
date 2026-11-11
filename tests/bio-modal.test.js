@@ -104,6 +104,20 @@ describe("JobJenny is always JobJenny.com (Alisa, Nov 2026)", () => {
   it.each(files)("%s", (f) => {
     expect(copyOf(read(f))).not.toMatch(/JobJenny(?!\.com)/i);
   });
+  it("a cleaning failure never blocks the text", async () => {
+    const { cleanForCustomers } = await import("../api/_lib/text.js");
+    const original = String.prototype.replace;
+    String.prototype.replace = () => {
+      throw new Error("boom");
+    };
+    let out;
+    try {
+      out = cleanForCustomers({ note: "Jenny Foss of JobJenny" });
+    } finally {
+      String.prototype.replace = original;
+    }
+    expect(out).toEqual({ note: "Jenny Foss of JobJenny" });
+  });
   it("AI-written text gets fixed too, without touching addresses", async () => {
     const { cleanForCustomers } = await import("../api/_lib/text.js");
     expect(cleanForCustomers("Book with Jenny Foss of JobJenny.")).toBe("Book with Jenny Foss of JobJenny.com.");

@@ -46,6 +46,15 @@ function fixJargon(s) {
 }
 
 // Everything a model writes passes through here before a customer sees it.
+// Wording fixes are nice to have, never a reason to fail: if one ever throws,
+// the text goes out as the model wrote it.
 export function cleanForCustomers(value) {
-  return mapStrings(value, (s) => fixJargon(fixString(s)));
+  return mapStrings(value, (s) => {
+    try {
+      return fixJargon(fixString(s));
+    } catch (err) {
+      console.error("Cleaning text failed; showing it as written:", err);
+      return s;
+    }
+  });
 }
