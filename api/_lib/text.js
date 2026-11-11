@@ -36,6 +36,9 @@ export const ONE_LINE_CASE_HEADER = "Your one-line case for why you're worth mor
 
 function fixJargon(s) {
   return plainSourceNames(s)
+    // Alisa (Nov 2026): the brand is always "JobJenny.com". Leaves web and
+    // email addresses alone (jobjenny.com, /JobJenny/, @jobjenny.com).
+    .replace(/(?<![\w./@-])JobJenny(?![\w.]*\.com|[\w/])/g, "JobJenny.com")
     .replace(/^(#{1,6}[ \t]+(?:\d+\.[ \t]*)?)[^\n]*value[\s-]+headline[^\n]*$/gim, `$1${ONE_LINE_CASE_HEADER}`)
     .replace(/walk[\s-]away floor(s?)/g, "reference floor$1")
     .replace(/Walk[\s-]Away Floor(s?)/g, "Reference Floor$1")
@@ -43,6 +46,15 @@ function fixJargon(s) {
 }
 
 // Everything a model writes passes through here before a customer sees it.
+// Wording fixes are nice to have, never a reason to fail: if one ever throws,
+// the text goes out as the model wrote it.
 export function cleanForCustomers(value) {
-  return mapStrings(value, (s) => fixJargon(fixString(s)));
+  return mapStrings(value, (s) => {
+    try {
+      return fixJargon(fixString(s));
+    } catch (err) {
+      console.error("Cleaning text failed; showing it as written:", err);
+      return s;
+    }
+  });
 }

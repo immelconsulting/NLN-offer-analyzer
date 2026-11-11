@@ -83,3 +83,48 @@ describe("Alex's years of experience match everywhere", () => {
     expect(read("src/components/BioModal.jsx")).toContain("For 6+ years");
   });
 });
+
+describe("JobJenny is always JobJenny.com (Alisa, Nov 2026)", () => {
+  // Developer notes and web addresses don't count; customer-facing copy does.
+  const copyOf = (src) =>
+    src
+      .replace(/\{\/\*[\s\S]*?\*\/\}/g, "")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/(^|[^:])\/\/.*$/gm, "$1")
+      .replace(/https?:\/\/\S+/g, "");
+  const files = [
+    ...fs.readdirSync(new URL("../src/components/", import.meta.url)).map((f) => `src/components/${f}`),
+    ...fs.readdirSync(new URL("../src/lib/", import.meta.url)).map((f) => `src/lib/${f}`),
+    "api/_lib/email.js",
+    "api/_lib/resultsEmail.js",
+    "api/_lib/scriptJob.js",
+    "api/_lib/scriptMessages.js",
+    ...fs.readdirSync(new URL("../", import.meta.url)).filter((f) => f.endsWith("-prompt.md")),
+  ].filter((f) => /\.(jsx?|md)$/.test(f) && !/Admin/.test(f));
+  it.each(files)("%s", (f) => {
+    expect(copyOf(read(f))).not.toMatch(/JobJenny(?!\.com)/i);
+  });
+  it("a cleaning failure never blocks the text", async () => {
+    const { cleanForCustomers } = await import("../api/_lib/text.js");
+    const original = String.prototype.replace;
+    String.prototype.replace = () => {
+      throw new Error("boom");
+    };
+    let out;
+    try {
+      out = cleanForCustomers({ note: "Jenny Foss of JobJenny" });
+    } finally {
+      String.prototype.replace = original;
+    }
+    expect(out).toEqual({ note: "Jenny Foss of JobJenny" });
+  });
+  it("AI-written text gets fixed too, without touching addresses", async () => {
+    const { cleanForCustomers } = await import("../api/_lib/text.js");
+    expect(cleanForCustomers("Book with Jenny Foss of JobJenny.")).toBe("Book with Jenny Foss of JobJenny.com.");
+    expect(cleanForCustomers("JobJenny's team")).toBe("JobJenny.com's team");
+    expect(cleanForCustomers("Already JobJenny.com")).toBe("Already JobJenny.com");
+    expect(cleanForCustomers("https://go.thryv.com/site/JobJenny/online")).toBe("https://go.thryv.com/site/JobJenny/online");
+    expect(cleanForCustomers("info@jobjenny.com")).toBe("info@jobjenny.com");
+  });
+});
+
